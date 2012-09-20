@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author Cristiano
  */
-public class MonitoredRepositoriesBean implements Serializable {
+public final class MonitoredRepositoriesBean implements Serializable {
 
     private static final long serialVersionUID = -7567721142354738718L;
     private PropertyChangeSupport propertySupport;
@@ -36,25 +36,35 @@ public class MonitoredRepositoriesBean implements Serializable {
         }
         return output;
     }
-
-    /**
-     * Set the value of monitoredProjects
-     *
-     * @param monitoredProjects new value of monitoredProjects
-     */
-    public void setMonitoredProjects(List<RepositoryBean> monitoredProjects) {
-        List<RepositoryBean> oldValue = getMonitoredProjects();
-        this.monitoredRepositories = new HashMap();
-        for (Iterator<RepositoryBean> it = monitoredProjects.iterator(); it.hasNext();) {
-            RepositoryBean repositoryBean = it.next();
-
-            this.monitoredRepositories.put(repositoryBean.getName(), repositoryBean);
+    
+    public void addMonitoredRepository(RepositoryBean repository) {
+        if (monitoredRepositories == null) {
+            monitoredRepositories= new HashMap();
         }
-        propertySupport.firePropertyChange(MONITORED_REPOSITORIES, oldValue, monitoredProjects);
+        this.monitoredRepositories.put(repository.getName(), repository);
+    }
+
+    public void removeMonitoredRepository(RepositoryBean repository) {
+        this.monitoredRepositories.remove(repository.getName());
+    }
+
+    public void removeMonitoredRepository(String repositoryName) {
+        this.monitoredRepositories.remove(repositoryName);
     }
 
     public MonitoredRepositoriesBean() {
         propertySupport = new PropertyChangeSupport(this);
+        
+        RepositoryBean bean = new RepositoryBean();
+        bean.setName("repo name");
+        bean.setCloneAddress("http://algum.endereco");
+        
+        RepositoryBean bean2 = new RepositoryBean();
+        bean2.setName("repo name 2");
+        bean2.setCloneAddress("http://algum.endereco2");
+        
+        addMonitoredRepository(bean);
+        addMonitoredRepository(bean2);
 
     }
 

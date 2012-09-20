@@ -2,6 +2,11 @@
 
 <Form version="1.5" maxVersion="1.8" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
   <NonVisualComponents>
+    <Component class="br.uff.ic.dyevc.beans.ApplicationSettingsBean" name="applicationSettingsBean1">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="PreferencesUtils.loadPreferences()"/>
+      </AuxValues>
+    </Component>
     <Container class="javax.swing.JDialog" name="AboutDialog">
       <Properties>
         <Property name="defaultCloseOperation" type="int" value="2"/>
@@ -189,8 +194,18 @@
               </Properties>
             </Component>
             <Component class="javax.swing.JTextField" name="workingPath">
+              <BindingProperties>
+                <BindingProperty name="text" source="applicationSettingsBean1" sourcePath="${workingPath}" target="workingPath" targetPath="text" updateStrategy="0" immediately="false">
+                  <BindingParameter name="javax.swing.binding.ParameterKeys.TEXT_CHANGE_STRATEGY" value="javax.swing.binding.TextChangeStrategy.ON_TYPE"/>
+                </BindingProperty>
+              </BindingProperties>
             </Component>
             <Component class="javax.swing.JTextField" name="refreshRate">
+              <BindingProperties>
+                <BindingProperty name="text" source="applicationSettingsBean1" sourcePath="${refreshInterval}" target="refreshRate" targetPath="text" updateStrategy="0" immediately="false">
+                  <BindingParameter name="javax.swing.binding.ParameterKeys.TEXT_CHANGE_STRATEGY" value="javax.swing.binding.TextChangeStrategy.ON_TYPE"/>
+                </BindingProperty>
+              </BindingProperties>
             </Component>
             <Component class="javax.swing.JButton" name="exploreWPathButton">
               <Properties>
@@ -209,6 +224,7 @@
             <Component class="javax.swing.JButton" name="saveButton">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Save"/>
+                <Property name="selected" type="boolean" value="true"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="saveButtonActionPerformed"/>
@@ -237,6 +253,9 @@
               <Properties>
                 <Property name="text" type="java.lang.String" value="New Project"/>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="newProjectMnuItemActionPerformed"/>
+              </Events>
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="settingsMnuItem">
               <Properties>
@@ -366,10 +385,8 @@
               </Properties>
               <BindingProperties>
                 <BindingProperty name="elements" source="monitoredRepositoriesBean1" sourcePath="${monitoredProjects}" target="repoList" targetPath="elements" updateStrategy="0" immediately="false">
+                  <BindingParameter name="DISPLAY" value="\&quot;${name}\&quot; at ${cloneAddress}"/>
                   <Property name="name" type="java.lang.String" value="repoNames"/>
-                </BindingProperty>
-                <BindingProperty name="toolTipText" source="repoList" sourcePath="${selectedElement.cloneAddress}" target="repoList" targetPath="toolTipText" updateStrategy="0" immediately="false">
-                  <Property name="name" type="java.lang.String" value="repoAddresses"/>
                 </BindingProperty>
               </BindingProperties>
               <Events>

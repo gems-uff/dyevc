@@ -4,9 +4,11 @@
  */
 package br.uff.ic.dyevc.application;
 
+import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.prefs.Preferences;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.UIManager;
@@ -36,6 +38,7 @@ public class DyeVC extends javax.swing.JFrame {
     private void initComponents() {
         bindingGroup = new org.jdesktop.beansbinding.BindingGroup();
 
+        applicationSettingsBean1 = PreferencesUtils.loadPreferences();
         AboutDialog = new javax.swing.JDialog();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -136,6 +139,12 @@ public class DyeVC extends javax.swing.JFrame {
 
         jLabel3.setText("Refresh Rate (s):");
 
+        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, applicationSettingsBean1, org.jdesktop.beansbinding.ELProperty.create("${workingPath}"), workingPath, org.jdesktop.beansbinding.BeanProperty.create("text"));
+        bindingGroup.addBinding(binding);
+
+        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, applicationSettingsBean1, org.jdesktop.beansbinding.ELProperty.create("${refreshInterval}"), refreshRate, org.jdesktop.beansbinding.BeanProperty.create("text"));
+        bindingGroup.addBinding(binding);
+
         exploreWPathButton.setText("Explore");
         exploreWPathButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -178,6 +187,7 @@ public class DyeVC extends javax.swing.JFrame {
         );
 
         saveButton.setText("Save");
+        saveButton.setSelected(true);
         saveButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 saveButtonActionPerformed(evt);
@@ -220,9 +230,8 @@ public class DyeVC extends javax.swing.JFrame {
 
         org.jdesktop.beansbinding.ELProperty eLProperty = org.jdesktop.beansbinding.ELProperty.create("${monitoredProjects}");
         org.jdesktop.swingbinding.JListBinding jListBinding = org.jdesktop.swingbinding.SwingBindings.createJListBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, monitoredRepositoriesBean1, eLProperty, repoList, "repoNames");
+        jListBinding.setDetailBinding(org.jdesktop.beansbinding.ELProperty.create("\"${name}\" at ${cloneAddress}"));
         bindingGroup.addBinding(jListBinding);
-        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, repoList, org.jdesktop.beansbinding.ELProperty.create("${selectedElement.cloneAddress}"), repoList, org.jdesktop.beansbinding.BeanProperty.create("toolTipText"), "repoAddresses");
-        bindingGroup.addBinding(binding);
 
         repoList.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -249,6 +258,11 @@ public class DyeVC extends javax.swing.JFrame {
         File.setText("File");
 
         newProjectMnuItem.setText("New Project");
+        newProjectMnuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newProjectMnuItemActionPerformed(evt);
+            }
+        });
         File.add(newProjectMnuItem);
 
         settingsMnuItem.setText("Settings");
@@ -339,11 +353,12 @@ public class DyeVC extends javax.swing.JFrame {
     }//GEN-LAST:event_repoListMouseClicked
 
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
-        this.dispose();
+        settingsWindow.dispose();
     }//GEN-LAST:event_cancelButtonActionPerformed
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
-        // TODO implementar o salvamento das configurações como preferências.
+        PreferencesUtils.storePreferences(applicationSettingsBean1);
+        settingsWindow.dispose();
     }//GEN-LAST:event_saveButtonActionPerformed
 
     private void exploreWPathButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exploreWPathButtonActionPerformed
@@ -354,6 +369,10 @@ public class DyeVC extends javax.swing.JFrame {
             workingPath.setText(file.getAbsolutePath());
         }
     }//GEN-LAST:event_exploreWPathButtonActionPerformed
+
+    private void newProjectMnuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newProjectMnuItemActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_newProjectMnuItemActionPerformed
 
     /**
      * @param args the command line arguments
@@ -388,6 +407,7 @@ public class DyeVC extends javax.swing.JFrame {
     private javax.swing.JMenu File;
     private javax.swing.JMenu Help;
     private br.uff.ic.dyevc.beans.ApplicationPropertiesBean applicationPropertiesBean1;
+    private br.uff.ic.dyevc.beans.ApplicationSettingsBean applicationSettingsBean1;
     private javax.swing.JButton cancelButton;
     private javax.swing.JMenuItem exitMnuItem;
     private javax.swing.JButton exploreWPathButton;
@@ -411,4 +431,5 @@ public class DyeVC extends javax.swing.JFrame {
     private javax.swing.JFileChooser workingPathFileChooser;
     private org.jdesktop.beansbinding.BindingGroup bindingGroup;
     // End of variables declaration//GEN-END:variables
+
 }

@@ -36,4 +36,8 @@
                 <exec.executable>${profiler.java}</exec.executable>
             </properties>
         </action>
+        <action>
+            <actionName>build</actionName>
+        </action>
+        
     </actions>
