@@ -16,9 +16,32 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>webstart-maven-plugin</artifactId>
                     <version>1.0-beta-3</version>
+                    <!-- do not bind to install phase
+                    <executions>
+                     <execution>
+                       <goals>
+                         <goal>report</goal>
+                       </goals>
+                     </execution>
+                    </executions>
+                    -->
+                    <configuration>
+                        <jnlp>
+                            <mainClass>br.uff.ic.dyevc.application.DyeVC</mainClass>
+                        </jnlp>
+                        <sign>
+                            <keystore>/F://mybackups/Educação/Mestrado-UFF/Git/dyevc/keystore/dyevc.jks</keystore>
+                            <keypass>hijaack</keypass>
+                            <storepass>hijaack</storepass>
+                            <storetype>jks</storetype>
+                            <alias>dyevc</alias>
+                            <verify>true</verify>
+                        </sign>
+                        <verbose>true</verbose>
+                    </configuration>
                 </plugin>
             </plugins>
-        </pluginManagement>        
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -27,6 +50,20 @@
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <mainClass>br.uff.ic.dyevc.application.DyeVC</mainClass>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
             <plugin>
@@ -47,7 +84,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>webstart-maven-plugin</artifactId>
-                <version>1.0-beta-3</version>
             </plugin>
         </plugins>
     </build>
