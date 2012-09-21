@@ -55,13 +55,28 @@ public class DyeVC extends javax.swing.JFrame {
         jPanel4 = new javax.swing.JPanel();
         saveButton = new javax.swing.JButton();
         cancelButton = new javax.swing.JButton();
+        addRepositoryWindow = new javax.swing.JFrame();
+        jPanel5 = new javax.swing.JPanel();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
+        jLabel6 = new javax.swing.JLabel();
+        repositoryNameTxt = new javax.swing.JTextField();
+        cloneAddresTxt = new javax.swing.JTextField();
+        originURLTxt = new javax.swing.JTextField();
+        cloneAddressExploreButton = new javax.swing.JButton();
+        originURLExploreButton = new javax.swing.JButton();
+        jPanel7 = new javax.swing.JPanel();
+        saveRepository = new javax.swing.JButton();
+        jButton1 = new javax.swing.JButton();
+        jPanel6 = new javax.swing.JPanel();
+        repositoryBean1 = new br.uff.ic.dyevc.beans.RepositoryBean();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         repoList = new javax.swing.JList();
         workingPathFileChooser = new javax.swing.JFileChooser();
         jMenuBar1 = new javax.swing.JMenuBar();
         File = new javax.swing.JMenu();
-        newProjectMnuItem = new javax.swing.JMenuItem();
+        addProjectMnuItem = new javax.swing.JMenuItem();
         settingsMnuItem = new javax.swing.JMenuItem();
         exitMnuItem = new javax.swing.JMenuItem();
         Help = new javax.swing.JMenu();
@@ -218,6 +233,118 @@ public class DyeVC extends javax.swing.JFrame {
                 .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
+        addRepositoryWindow.setTitle("Enter theh information about the repository to be monitored");
+        addRepositoryWindow.setMinimumSize(new java.awt.Dimension(506, 110));
+        addRepositoryWindow.setPreferredSize(new java.awt.Dimension(506, 110));
+        int addRepositoryWindowWidth = addRepositoryWindow.getWidth();
+        int addRepositoryWindowHeight = addRepositoryWindow.getHeight();
+        settingsWindow.setBounds((java.awt.Toolkit.getDefaultToolkit().getScreenSize().width-addRepositoryWindowWidth)/2, (java.awt.Toolkit.getDefaultToolkit().getScreenSize().height-addRepositoryWindowHeight)/2, addRepositoryWindowWidth, addRepositoryWindowHeight);
+
+        jPanel5.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+
+        jLabel4.setText("Repository Name:");
+
+        jLabel5.setText("Clone Address:");
+
+        jLabel6.setText("Origin URL:");
+
+        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, repositoryBean1, org.jdesktop.beansbinding.ELProperty.create("${name}"), repositoryNameTxt, org.jdesktop.beansbinding.BeanProperty.create("text"));
+        bindingGroup.addBinding(binding);
+
+        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, repositoryBean1, org.jdesktop.beansbinding.ELProperty.create("${cloneAddress}"), cloneAddresTxt, org.jdesktop.beansbinding.BeanProperty.create("text"));
+        bindingGroup.addBinding(binding);
+
+        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, repositoryBean1, org.jdesktop.beansbinding.ELProperty.create("${originUrl}"), originURLTxt, org.jdesktop.beansbinding.BeanProperty.create("text"));
+        bindingGroup.addBinding(binding);
+
+        cloneAddressExploreButton.setText("Explore");
+
+        originURLExploreButton.setText("Explore");
+
+        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
+        jPanel5.setLayout(jPanel5Layout);
+        jPanel5Layout.setHorizontalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel5, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(repositoryNameTxt)
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addComponent(originURLExploreButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(originURLTxt, javax.swing.GroupLayout.DEFAULT_SIZE, 413, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
+                        .addComponent(cloneAddressExploreButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(cloneAddresTxt)))
+                .addContainerGap())
+        );
+        jPanel5Layout.setVerticalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel4)
+                    .addComponent(repositoryNameTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel5)
+                    .addComponent(cloneAddresTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cloneAddressExploreButton))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel6)
+                    .addComponent(originURLTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(originURLExploreButton))
+                .addContainerGap(282, Short.MAX_VALUE))
+        );
+
+        java.awt.FlowLayout flowLayout1 = new java.awt.FlowLayout();
+        flowLayout1.setAlignOnBaseline(true);
+        jPanel7.setLayout(flowLayout1);
+
+        saveRepository.setText("Save");
+        jPanel7.add(saveRepository);
+
+        jButton1.setText("Cancel");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        jPanel7.add(jButton1);
+
+        javax.swing.GroupLayout addRepositoryWindowLayout = new javax.swing.GroupLayout(addRepositoryWindow.getContentPane());
+        addRepositoryWindow.getContentPane().setLayout(addRepositoryWindowLayout);
+        addRepositoryWindowLayout.setHorizontalGroup(
+            addRepositoryWindowLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel7, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+        addRepositoryWindowLayout.setVerticalGroup(
+            addRepositoryWindowLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(addRepositoryWindowLayout.createSequentialGroup()
+                .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        );
+
+        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
+        jPanel6.setLayout(jPanel6Layout);
+        jPanel6Layout.setHorizontalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+        jPanel6Layout.setVerticalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("DyeVC");
         setMinimumSize(new java.awt.Dimension(400, 300));
@@ -257,13 +384,13 @@ public class DyeVC extends javax.swing.JFrame {
 
         File.setText("File");
 
-        newProjectMnuItem.setText("New Project");
-        newProjectMnuItem.addActionListener(new java.awt.event.ActionListener() {
+        addProjectMnuItem.setText(" Add Project");
+        addProjectMnuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                newProjectMnuItemActionPerformed(evt);
+                addProjectMnuItemActionPerformed(evt);
             }
         });
-        File.add(newProjectMnuItem);
+        File.add(addProjectMnuItem);
 
         settingsMnuItem.setText("Settings");
         settingsMnuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -370,9 +497,13 @@ public class DyeVC extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_exploreWPathButtonActionPerformed
 
-    private void newProjectMnuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newProjectMnuItemActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_newProjectMnuItemActionPerformed
+    private void addProjectMnuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addProjectMnuItemActionPerformed
+        addRepositoryWindow.setVisible(true);
+    }//GEN-LAST:event_addProjectMnuItemActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        addRepositoryWindow.dispose();
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -406,30 +537,44 @@ public class DyeVC extends javax.swing.JFrame {
     private javax.swing.JButton AboutOK;
     private javax.swing.JMenu File;
     private javax.swing.JMenu Help;
+    private javax.swing.JMenuItem addProjectMnuItem;
+    private javax.swing.JFrame addRepositoryWindow;
     private br.uff.ic.dyevc.beans.ApplicationPropertiesBean applicationPropertiesBean1;
     private br.uff.ic.dyevc.beans.ApplicationSettingsBean applicationSettingsBean1;
     private javax.swing.JButton cancelButton;
+    private javax.swing.JTextField cloneAddresTxt;
+    private javax.swing.JButton cloneAddressExploreButton;
     private javax.swing.JMenuItem exitMnuItem;
     private javax.swing.JButton exploreWPathButton;
+    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
+    private javax.swing.JPanel jPanel7;
     private javax.swing.JScrollPane jScrollPane1;
     private br.uff.ic.dyevc.beans.MonitoredRepositoriesBean monitoredRepositoriesBean1;
-    private javax.swing.JMenuItem newProjectMnuItem;
+    private javax.swing.JButton originURLExploreButton;
+    private javax.swing.JTextField originURLTxt;
     private javax.swing.JTextField refreshRate;
     private javax.swing.JList repoList;
+    private br.uff.ic.dyevc.beans.RepositoryBean repositoryBean1;
+    private javax.swing.JTextField repositoryNameTxt;
     private javax.swing.JButton saveButton;
+    private javax.swing.JButton saveRepository;
     private javax.swing.JMenuItem settingsMnuItem;
     private javax.swing.JFrame settingsWindow;
     private javax.swing.JTextField workingPath;
     private javax.swing.JFileChooser workingPathFileChooser;
     private org.jdesktop.beansbinding.BindingGroup bindingGroup;
     // End of variables declaration//GEN-END:variables
-
 }

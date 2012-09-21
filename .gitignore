@@ -1,6 +1,5 @@
 *.class
 *.log
-/
 # Package Files #
 *.jar
 *.war
@@ -8,3 +7,4 @@
 *.bak
 /DyeVC/target/
 /keystore/
+/DyeVC/src/main/jnlp/template2.vm.jnlp

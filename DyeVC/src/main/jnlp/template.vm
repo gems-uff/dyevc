@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<jnlp codebase="http://www.ic.uff.br/~ccesario/DyeVC/" href="launch.jnlp" spec="0.1.1+">
+<jnlp codebase="http://www.ic.uff.br/~ccesario/DyeVC/" href="launch.jnlp" spec="6.0+">
     <information>
         <title>DyeVC</title>
         <vendor>GEMS-UFF</vendor>
@@ -8,11 +8,13 @@
         <description kind="short">DyeVC - Dye over Version Control</description>
         <description kind="tooltip">DyeVC - Dye over Version Control</description>
         <!--    <icon href="http://timefinder.sourceforge.net/jnlp/shamrockwhite.jpg" kind="default"/> -->
-        <shortcut online="false">
+        <offline-allowed/> 
+<!--        <shortcut online="false">
             <desktop/>
             <menu submenu="DyeVC"/>
-        </shortcut>
+        </shortcut> -->
     </information>
+    <update check="always" policy="prompt-update">
     <security>
         <all-permissions/>
     </security>

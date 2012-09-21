@@ -61,4 +61,27 @@ public class RepositoryBean implements Serializable {
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         propertySupport.removePropertyChangeListener(listener);
     }
+    private String originUrl;
+    public static final String PROP_ORIGIN_URL = "originUrl";
+
+    /**
+     * Get the value of originUrl
+     *
+     * @return the value of originUrl
+     */
+    public String getOriginUrl() {
+        return originUrl;
+    }
+
+    /**
+     * Set the value of originUrl
+     *
+     * @param originUrl new value of originUrl
+     */
+    public void setOriginUrl(String originUrl) {
+        String oldOriginUrl = this.originUrl;
+        this.originUrl = originUrl;
+        propertySupport.firePropertyChange(PROP_ORIGIN_URL, oldOriginUrl, originUrl);
+    }
+
 }
