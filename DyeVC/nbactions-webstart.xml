@@ -7,4 +7,12 @@
                 <goal>webstart:jnlp</goal>
             </goals>
         </action>
+        <action>
+            <actionName>rebuild</actionName>
+            <goals>
+                <goal>clean</goal>
+                <goal>install</goal>
+                <goal>webstart:jnlp</goal>
+            </goals>
+        </action>
     </actions>

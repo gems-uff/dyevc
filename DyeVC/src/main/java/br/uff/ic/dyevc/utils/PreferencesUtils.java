@@ -19,14 +19,14 @@ public final class PreferencesUtils {
     }
 
     public static void storePreferences(ApplicationSettingsBean bean) {
-        pref.put("workingPath", bean.getWorkingPath());
-        pref.putInt("refreshInterval", bean.getRefreshInterval());
+        pref.put("workingpath", bean.getWorkingPath());
+        pref.putInt("refreshinterval", bean.getRefreshInterval());
     }
 
     public static ApplicationSettingsBean loadPreferences() {
         ApplicationSettingsBean bean = new ApplicationSettingsBean();
-        bean.setWorkingPath(pref.get("workingPath","not set"));
-        bean.setRefreshInterval(pref.getInt("refreshInterval", 60));
+        bean.setWorkingPath(pref.get("workingpath",""));
+        bean.setRefreshInterval(pref.getInt("refreshinterval", 0));
         
         return bean;
     }

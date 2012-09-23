@@ -186,6 +186,7 @@
             <Component class="javax.swing.JLabel" name="jLabel2">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Working Path:"/>
+                <Property name="toolTipText" type="java.lang.String" value="Informe o working Path"/>
               </Properties>
             </Component>
             <Component class="javax.swing.JLabel" name="jLabel3">
@@ -194,6 +195,9 @@
               </Properties>
             </Component>
             <Component class="javax.swing.JTextField" name="workingPath">
+              <Properties>
+                <Property name="toolTipText" type="java.lang.String" value=""/>
+              </Properties>
               <BindingProperties>
                 <BindingProperty name="text" source="applicationSettingsBean1" sourcePath="${workingPath}" target="workingPath" targetPath="text" updateStrategy="0" immediately="false">
                   <BindingParameter name="javax.swing.binding.ParameterKeys.TEXT_CHANGE_STRATEGY" value="javax.swing.binding.TextChangeStrategy.ON_TYPE"/>
@@ -299,7 +303,7 @@
                           <Group type="102" attributes="0">
                               <Component id="originURLExploreButton" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="originURLTxt" pref="413" max="32767" attributes="0"/>
+                              <Component id="originURLTxt" pref="317" max="32767" attributes="0"/>
                           </Group>
                           <Group type="102" alignment="1" attributes="0">
                               <Component id="cloneAddressExploreButton" min="-2" max="-2" attributes="0"/>
@@ -331,7 +335,7 @@
                           <Component id="originURLTxt" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="originURLExploreButton" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace pref="282" max="32767" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -479,21 +483,6 @@
           </LayoutCode>
         </Container>
       </SubComponents>
-    </Container>
-    <Container class="javax.swing.JPanel" name="jPanel6">
-
-      <Layout>
-        <DimensionLayout dim="0">
-          <Group type="103" groupAlignment="0" attributes="0">
-              <EmptySpace min="0" pref="100" max="32767" attributes="0"/>
-          </Group>
-        </DimensionLayout>
-        <DimensionLayout dim="1">
-          <Group type="103" groupAlignment="0" attributes="0">
-              <EmptySpace min="0" pref="100" max="32767" attributes="0"/>
-          </Group>
-        </DimensionLayout>
-      </Layout>
     </Container>
     <Component class="br.uff.ic.dyevc.beans.RepositoryBean" name="repositoryBean1">
     </Component>

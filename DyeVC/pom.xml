@@ -4,7 +4,7 @@
 
     <groupId>br.uff.ic.dyevc</groupId>
     <artifactId>DyeVC</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <packaging>jar</packaging>
 
     <name>DyeVC</name>
