@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.gui;
 
 import javax.swing.JList;
@@ -16,7 +12,7 @@ public class MainWindow extends javax.swing.JFrame {
     private static final long serialVersionUID = 6569285531097330071L;
 
     /**
-     * Creates new form DyeVC
+     * Creates new form MainWindow
      */
     public MainWindow() {
         initComponents();

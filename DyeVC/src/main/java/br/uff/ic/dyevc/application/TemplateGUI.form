@@ -252,9 +252,6 @@
         <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
           <Dimension value="[506, 110]"/>
         </Property>
-        <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-          <Dimension value="[506, 110]"/>
-        </Property>
       </Properties>
       <AuxValues>
         <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="int addRepositoryWindowWidth = addRepositoryWindow.getWidth();&#xd;&#xa;int addRepositoryWindowHeight = addRepositoryWindow.getHeight();&#xd;&#xa;settingsWindow.setBounds((java.awt.Toolkit.getDefaultToolkit().getScreenSize().width-addRepositoryWindowWidth)/2, (java.awt.Toolkit.getDefaultToolkit().getScreenSize().height-addRepositoryWindowHeight)/2, addRepositoryWindowWidth, addRepositoryWindowHeight); "/>

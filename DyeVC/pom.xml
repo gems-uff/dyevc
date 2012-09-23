@@ -4,7 +4,7 @@
 
     <groupId>br.uff.ic.dyevc</groupId>
     <artifactId>DyeVC</artifactId>
-    <version>0.1.2</version>
+    <version>0.1.3</version>
     <packaging>jar</packaging>
 
     <name>DyeVC</name>
@@ -30,7 +30,7 @@
                             <mainClass>br.uff.ic.dyevc.application.DyeVC</mainClass>
                         </jnlp>
                         <sign>
-                            <keystore>/F://mybackups/Educação/Mestrado-UFF/Git/dyevc/keystore/dyevc.jks</keystore>
+                            <keystore>/F://mybackups/Educacao/Mestrado-UFF/Git/dyevc/keystore/dyevc.jks</keystore>
                             <keypass>hijaack</keypass>
                             <storepass>hijaack</storepass>
                             <storetype>jks</storetype>
