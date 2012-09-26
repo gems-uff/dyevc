@@ -41,6 +41,9 @@ public class RepositoryBean implements Serializable {
     private PropertyChangeSupport propertySupport;
 
     public RepositoryBean() {
+        this.name = "";
+        this.cloneAddress = "";
+        this.originUrl = "";
         propertySupport = new PropertyChangeSupport(this);
     }
 

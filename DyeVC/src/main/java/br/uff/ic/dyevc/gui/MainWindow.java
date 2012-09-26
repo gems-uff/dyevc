@@ -1,5 +1,10 @@
 package br.uff.ic.dyevc.gui;
 
+import br.uff.ic.dyevc.beans.MonitoredRepositoriesBean;
+import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.utils.PreferencesUtils;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JList;
 import javax.swing.UIManager;
 
@@ -28,12 +33,12 @@ public class MainWindow extends javax.swing.JFrame {
         setName("MainWindow"); // NOI18N
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
-        setLocation((screenSize.width-dialogSize.width)/2,(screenSize.height-dialogSize.height)/2);
+        setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
 
         bindingGroup = new org.jdesktop.beansbinding.BindingGroup();
         dlgAbout = new AboutDialog(this, rootPaneCheckingEnabled);
         frameSettings = new SettingsWindow();
-        monitoredRepositoriesBean1 = new br.uff.ic.dyevc.beans.MonitoredRepositoriesBean();
+        monitoredRepositoriesBean1 = PreferencesUtils.loadMonitoredRepositories();
 
         pnlMain = new javax.swing.JPanel();
         pnlMain.setBorder(javax.swing.BorderFactory.createTitledBorder("Monitored repositories"));
@@ -44,7 +49,7 @@ public class MainWindow extends javax.swing.JFrame {
         repoList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 
         org.jdesktop.beansbinding.ELProperty eLProperty = org.jdesktop.beansbinding.ELProperty.create("${monitoredProjects}");
-        org.jdesktop.swingbinding.JListBinding jListBinding = org.jdesktop.swingbinding.SwingBindings.createJListBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, monitoredRepositoriesBean1, eLProperty, repoList, "repoNames");
+        org.jdesktop.swingbinding.JListBinding jListBinding = org.jdesktop.swingbinding.SwingBindings.createJListBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, monitoredRepositoriesBean1, eLProperty, repoList, MonitoredRepositoriesBean.MONITORED_PROJECTS);
         jListBinding.setDetailBinding(org.jdesktop.beansbinding.ELProperty.create("\"${name}\" at ${cloneAddress}"));
         bindingGroup.addBinding(jListBinding);
 
@@ -59,52 +64,46 @@ public class MainWindow extends javax.swing.JFrame {
         javax.swing.GroupLayout pnlMainLayout = new javax.swing.GroupLayout(pnlMain);
         pnlMain.setLayout(pnlMainLayout);
         pnlMainLayout.setHorizontalGroup(
-            pnlMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 590, Short.MAX_VALUE)
-        );
+                pnlMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 590, Short.MAX_VALUE));
         pnlMainLayout.setVerticalGroup(
-            pnlMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 396, Short.MAX_VALUE)
-        );
+                pnlMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 396, Short.MAX_VALUE));
 
         buildMenu();
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(pnlMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(pnlMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
-                    .addContainerGap()
-//                    .addComponent(workingPathFileChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-        );
+                .addContainerGap()
+                //                    .addComponent(workingPathFileChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))));
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(pnlMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(pnlMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
-                    .addContainerGap()
-//                    .addComponent(workingPathFileChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-        );
+                .addContainerGap()
+                //                    .addComponent(workingPathFileChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))));
 
         bindingGroup.bind();
 
         pack();
     }// </editor-fold>                        
 
-    private void repoListMouseClicked(java.awt.event.MouseEvent evt) {                                      
+    private void repoListMouseClicked(java.awt.event.MouseEvent evt) {
         //TODO implementar a chamada à janela para editar as informações do projeto.
         JList list = (JList) evt.getSource();
         if (evt.getClickCount() == 2) {          // Double-click
             // Get item index
             int index = list.locationToIndex(evt.getPoint());
         }
-    }                                     
-
-    
+    }
 
     // <editor-fold defaultstate="collapsed" desc="main method">                          
     /**
@@ -135,7 +134,6 @@ public class MainWindow extends javax.swing.JFrame {
         });
     }
     // </editor-fold>
-    
     // <editor-fold defaultstate="collapsed" desc="buildMenu">                          
     //Variáveis de menu
     private javax.swing.JMenuBar jMenuBar;
@@ -146,7 +144,6 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuItem mntExit;
     private javax.swing.JMenuItem mntSettings;
 
-    
     /**
      * This method creates the menu bar
      */
@@ -207,32 +204,37 @@ public class MainWindow extends javax.swing.JFrame {
         setJMenuBar(jMenuBar);
     }
     //</editor-fold>
-    
+
     // <editor-fold defaultstate="collapsed" desc="menu event actions">                          
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
-        new RepositoryConfigWindow(null).setVisible(true);
-    }                                                 
-    private void mntExitActionPerformed(java.awt.event.ActionEvent evt) {                                            
+        try {
+            new RepositoryConfigWindow(monitoredRepositoriesBean1, null).setVisible(true);
+        } catch (DyeVCException ex) {
+            Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(Thread t, Throwable ex) {
+                    Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            });
+        }
+        bindingGroup.bind();
+    }
+
+    private void mntExitActionPerformed(java.awt.event.ActionEvent evt) {
         System.exit(0);
-    }                                           
+    }
 
-    private void mntAboutActionPerformed(java.awt.event.ActionEvent evt) {                                             
+    private void mntAboutActionPerformed(java.awt.event.ActionEvent evt) {
         dlgAbout.setVisible(true);
-    }                                            
+    }
 
-    private void mntSettingsActionPerformed(java.awt.event.ActionEvent evt) {                                                
+    private void mntSettingsActionPerformed(java.awt.event.ActionEvent evt) {
         frameSettings.setVisible(true);
-    }                                               
-
+    }
     // </editor-fold>
-
     //Variaveis refatoradas
     private javax.swing.JDialog dlgAbout;
     private javax.swing.JFrame frameSettings;
-
-    
-    //Variaveis não refatoradas
-    private br.uff.ic.dyevc.beans.ApplicationSettingsBean applicationSettingsBean1;
     private javax.swing.JPanel pnlMain;
     private javax.swing.JScrollPane jScrollPane1;
     private br.uff.ic.dyevc.beans.MonitoredRepositoriesBean monitoredRepositoriesBean1;
