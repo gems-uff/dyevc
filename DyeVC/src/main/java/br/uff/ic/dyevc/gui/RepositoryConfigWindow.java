@@ -148,6 +148,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         }
     }
     //</editor-fold>
+    
     /**
      * @param args the command line arguments
      */

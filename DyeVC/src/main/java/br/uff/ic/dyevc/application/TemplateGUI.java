@@ -69,6 +69,9 @@ public class TemplateGUI extends javax.swing.JFrame {
         saveRepository = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
         repositoryBean1 = new br.uff.ic.dyevc.beans.RepositoryBean();
+        jPopupMenu1 = new javax.swing.JPopupMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
+        jMenuItem2 = new javax.swing.JMenuItem();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         repoList = new javax.swing.JList();
@@ -335,6 +338,12 @@ public class TemplateGUI extends javax.swing.JFrame {
                 .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
+        jMenuItem1.setText("jMenuItem1");
+        jPopupMenu1.add(jMenuItem1);
+
+        jMenuItem2.setText("jMenuItem2");
+        jPopupMenu1.add(jMenuItem2);
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("DyeVC");
         setMinimumSize(new java.awt.Dimension(400, 300));
@@ -467,6 +476,7 @@ public class TemplateGUI extends javax.swing.JFrame {
             // Get item index
             int index = list.locationToIndex(evt.getPoint());
         }
+        
     }//GEN-LAST:event_repoListMouseClicked
 
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
@@ -544,12 +554,15 @@ public class TemplateGUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel7;
+    private javax.swing.JPopupMenu jPopupMenu1;
     private javax.swing.JScrollPane jScrollPane1;
     private br.uff.ic.dyevc.beans.MonitoredRepositoriesBean monitoredRepositoriesBean1;
     private javax.swing.JButton originURLExploreButton;
