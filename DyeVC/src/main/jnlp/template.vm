@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<jnlp codebase="http://www.ic.uff.br/~ccesario/DyeVC/" href="dyeVC.jnlp" spec="6.0+">
+<jnlp codebase="http://www.ic.uff.br/~ccesario/DyeVC/" href="DyeVC.jnlp" spec="6.0+">
     <information>
         <title>DyeVC</title>
         <vendor>GEMS-UFF</vendor>

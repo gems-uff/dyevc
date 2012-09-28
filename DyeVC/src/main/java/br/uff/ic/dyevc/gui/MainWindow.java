@@ -1,12 +1,21 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.beans.MonitoredRepositoriesBean;
-import br.uff.ic.dyevc.beans.RepositoryBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
+import java.awt.AWTException;
+import java.awt.CheckboxMenuItem;
+import java.awt.Frame;
+import java.awt.Image;
+import java.awt.Menu;
+import java.awt.MenuItem;
 import java.awt.PopupMenu;
+import java.awt.SystemTray;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JList;
@@ -38,6 +47,7 @@ public class MainWindow extends javax.swing.JFrame {
         setSize(new java.awt.Dimension(400, 300));
         setMinimumSize(new java.awt.Dimension(400, 300));
         setName("MainWindow"); // NOI18N
+        setIconImage(getDyeVCImage());
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
         setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
@@ -99,13 +109,19 @@ public class MainWindow extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))));
 
         bindingGroup.bind();
-
+        addWindowStateListener(new java.awt.event.WindowStateListener() {
+            @Override
+            public void windowStateChanged(WindowEvent evt) {
+                handleWindowStateChanged(evt);
+            }
+        });
         pack();
     }// </editor-fold>                        
 
     /**
      * Shows up a popup menu when the user clicks with the right button
-     * @param evt 
+     *
+     * @param evt
      */
     private void repoListMouseClicked(java.awt.event.MouseEvent evt) {
         //TODO implementar a chamada à janela para editar as informações do projeto.
@@ -118,12 +134,89 @@ public class MainWindow extends javax.swing.JFrame {
 
     /**
      * Gets the name of selected repository in Jlist
+     *
      * @return name of the selected repository
      */
     private String getSelectedRepName() {
         String selectedRep = (String) repoList.getSelectedValue();
         String repName = selectedRep.substring(0, selectedRep.indexOf("@"));
         return repName;
+    }
+
+    private void handleWindowStateChanged(WindowEvent evt) {
+        if (evt.getNewState() == ICONIFIED) {
+            setVisible(false);
+            showTrayIcon();
+        }
+        if (evt.getNewState() == MAXIMIZED_BOTH) {
+            setVisible(true);
+        }
+        if (evt.getNewState() == NORMAL) {
+            setVisible(true);
+        }
+    }
+
+    private void showTrayIcon() {
+        //Check the SystemTray is supported
+        if (!SystemTray.isSupported()) {
+            System.out.println("SystemTray is not supported");
+            setVisible(true);
+            return;
+        }
+        trayPopup = new PopupMenu();
+        trayIcon =
+                new TrayIcon(getDyeVCImage(), "DyeVC Application", trayPopup);
+        final SystemTray tray = SystemTray.getSystemTray();
+
+
+        // Create a pop-up menu components
+        MenuItem aboutItem = new MenuItem("About");
+        aboutItem.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntAboutActionPerformed(evt);
+            }
+        });
+        MenuItem showMainWindowItem = new MenuItem("Show Main Window");
+        showMainWindowItem.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntshowMainWindowActionPerformed();
+            }
+        });
+
+        //Add components to pop-up menu
+        trayPopup.add(showMainWindowItem);
+        trayPopup.addSeparator();
+        trayPopup.add(aboutItem);
+
+        trayIcon.setPopupMenu(trayPopup);
+        trayIcon.setToolTip("DyeVC Application");
+
+        trayIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+
+                if (e.getButton() == MouseEvent.BUTTON3) { //right button
+                    try {
+                        trayPopup.show(pnlMain, e.getX(), e.getY());
+                    } catch (java.lang.IllegalArgumentException ex) {
+                        //IllegalArgument suppressed
+                    }
+                } else { //any other button
+                    mntshowMainWindowActionPerformed();
+                }
+            }
+        });
+        try {
+            tray.add(trayIcon);
+        } catch (AWTException e) {
+            System.out.println("TrayIcon could not be added.");
+        }
+    }
+    
+    private Image getDyeVCImage() {
+        return Toolkit.getDefaultToolkit().getImage(getClass().getResource("/br/uff/ic/dyevc/images/DyeVCIcon.png"));
     }
 
     // <editor-fold defaultstate="collapsed" desc="main method">                          
@@ -135,14 +228,20 @@ public class MainWindow extends javax.swing.JFrame {
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainWindow.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainWindow.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainWindow.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MainWindow.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
@@ -155,21 +254,8 @@ public class MainWindow extends javax.swing.JFrame {
         });
     }
     // </editor-fold>
-    
-    // <editor-fold defaultstate="collapsed" desc="buildMenu">                          
-    //Variáveis de menu
-    private javax.swing.JMenuBar jMenuBar;
-    private javax.swing.JMenuItem mntAbout;
-    private javax.swing.JMenu mnuFile;
-    private javax.swing.JMenu mnuHelp;
-    private javax.swing.JMenuItem mntAddProject;
-    private javax.swing.JMenuItem mntExit;
-    private javax.swing.JMenuItem mntSettings;
-    //Variáveis do popup menu
-    private JPopupMenu jPopupMenu;
-    private JMenuItem mntRemoveProject;
-    private JMenuItem mntEditProject;
 
+    // <editor-fold defaultstate="collapsed" desc="buildMenu">                          
     /**
      * This method creates the menu bar
      */
@@ -177,10 +263,10 @@ public class MainWindow extends javax.swing.JFrame {
     private void buildMenu() {
         jMenuBar = new javax.swing.JMenuBar();
 
-        mnuFile = new javax.swing.JMenu();
+        javax.swing.JMenu mnuFile = new javax.swing.JMenu();
         mnuFile.setText("File");
 
-        mntAddProject = new javax.swing.JMenuItem();
+        javax.swing.JMenuItem mntAddProject = new javax.swing.JMenuItem();
         mntAddProject.setText(" Add Project");
         mntAddProject.addActionListener(new java.awt.event.ActionListener() {
             @Override
@@ -190,7 +276,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         mnuFile.add(mntAddProject);
 
-        mntSettings = new javax.swing.JMenuItem();
+        javax.swing.JMenuItem mntSettings = new javax.swing.JMenuItem();
         mntSettings.setText("Settings");
         mntSettings.addActionListener(new java.awt.event.ActionListener() {
             @Override
@@ -200,7 +286,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         mnuFile.add(mntSettings);
 
-        mntExit = new javax.swing.JMenuItem();
+        javax.swing.JMenuItem mntExit = new javax.swing.JMenuItem();
         mntExit.setText("Exit");
         mntExit.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         mntExit.addActionListener(new java.awt.event.ActionListener() {
@@ -213,10 +299,10 @@ public class MainWindow extends javax.swing.JFrame {
         jMenuBar.add(mnuFile);
 
 
-        mnuHelp = new javax.swing.JMenu();
+        javax.swing.JMenu mnuHelp = new javax.swing.JMenu();
         mnuHelp.setText("Help");
 
-        mntAbout = new javax.swing.JMenuItem();
+        javax.swing.JMenuItem mntAbout = new javax.swing.JMenuItem();
         mntAbout.setText("About");
         mntAbout.addActionListener(new java.awt.event.ActionListener() {
             @Override
@@ -230,7 +316,7 @@ public class MainWindow extends javax.swing.JFrame {
         setJMenuBar(jMenuBar);
 
         jPopupMenu = new JPopupMenu();
-        mntEditProject = new javax.swing.JMenuItem();
+        JMenuItem mntEditProject = new javax.swing.JMenuItem();
         mntEditProject.setText(" Edit Project");
         mntEditProject.addActionListener(new java.awt.event.ActionListener() {
             @Override
@@ -240,7 +326,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jPopupMenu.add(mntEditProject);
 
-        mntRemoveProject = new javax.swing.JMenuItem();
+        JMenuItem mntRemoveProject = new javax.swing.JMenuItem();
         mntRemoveProject.setText(" Remove Project");
         mntRemoveProject.addActionListener(new java.awt.event.ActionListener() {
             @Override
@@ -261,7 +347,8 @@ public class MainWindow extends javax.swing.JFrame {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
                 public void uncaughtException(Thread t, Throwable ex) {
-                    Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(MainWindow.class
+                            .getName()).log(Level.SEVERE, null, ex);
                 }
             });
         }
@@ -274,7 +361,8 @@ public class MainWindow extends javax.swing.JFrame {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
                 public void uncaughtException(Thread t, Throwable ex) {
-                    Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(MainWindow.class
+                            .getName()).log(Level.SEVERE, null, ex);
                 }
             });
         }
@@ -297,11 +385,16 @@ public class MainWindow extends javax.swing.JFrame {
         dlgAbout.setVisible(true);
     }
 
+    private void mntshowMainWindowActionPerformed() {
+        setVisible(true);
+        setState(NORMAL);
+        SystemTray.getSystemTray().remove(trayIcon);
+    }
+
     private void mntSettingsActionPerformed(java.awt.event.ActionEvent evt) {
         frameSettings.setVisible(true);
     }
     // </editor-fold>
-    
     private javax.swing.JDialog dlgAbout;
     private javax.swing.JFrame frameSettings;
     private javax.swing.JPanel pnlMain;
@@ -309,5 +402,10 @@ public class MainWindow extends javax.swing.JFrame {
     private br.uff.ic.dyevc.beans.MonitoredRepositoriesBean monitoredRepositoriesBean1;
     private javax.swing.JList repoList;
     private org.jdesktop.beansbinding.BindingGroup bindingGroup;
+    //Variáveis de menu
+    private javax.swing.JMenuBar jMenuBar;
+    private JPopupMenu jPopupMenu;
+    private PopupMenu trayPopup;
+    private TrayIcon trayIcon;
 
 }
