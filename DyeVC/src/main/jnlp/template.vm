@@ -10,7 +10,7 @@
         <offline-allowed/> 
         <shortcut online="false" install="true">
             <desktop/>
-            <!--<menu submenu="DyeVC"/> -->
+            <menu submenu="DyeVC"/>
         </shortcut>
     </information>
     <update check="always" policy="prompt-update"/>

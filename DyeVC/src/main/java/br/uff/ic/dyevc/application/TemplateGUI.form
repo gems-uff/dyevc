@@ -95,7 +95,7 @@
     </Container>
     <Component class="br.uff.ic.dyevc.beans.ApplicationPropertiesBean" name="applicationPropertiesBean1">
     </Component>
-    <Component class="br.uff.ic.dyevc.beans.MonitoredRepositoriesBean" name="monitoredRepositoriesBean1">
+    <Component class="br.uff.ic.dyevc.model.MonitoredRepositories" name="monitoredRepositoriesBean1">
     </Component>
     <Container class="javax.swing.JFrame" name="settingsWindow">
       <Properties>
@@ -481,7 +481,7 @@
         </Container>
       </SubComponents>
     </Container>
-    <Component class="br.uff.ic.dyevc.beans.RepositoryBean" name="repositoryBean1">
+    <Component class="br.uff.ic.dyevc.model.Repository" name="repositoryBean1">
     </Component>
     <Container class="javax.swing.JPopupMenu" name="jPopupMenu1">
 

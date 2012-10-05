@@ -4,8 +4,8 @@
  */
 package br.uff.ic.dyevc.gui;
 
-import br.uff.ic.dyevc.beans.MonitoredRepositoriesBean;
-import br.uff.ic.dyevc.beans.RepositoryBean;
+import br.uff.ic.dyevc.model.MonitoredRepositories;
+import br.uff.ic.dyevc.model.Repository;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.io.File;
@@ -25,7 +25,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     /**
      * Creates new form RepositoryConfigWindow
      */
-    public RepositoryConfigWindow(MonitoredRepositoriesBean monBean, String name) throws DyeVCException {
+    public RepositoryConfigWindow(MonitoredRepositories monBean, String name) throws DyeVCException {
         if (monBean == null) {
             Logger.getLogger(RepositoryConfigWindow.class.getName()).log(Level.SEVERE, "Received a null list of monitored repositories");
             throw new DyeVCException("Received a null list of monitored repositories");
@@ -36,7 +36,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             repositoryBean = monitoredRepositoriesBean.getMonitoredProjectByName(name);
         } else {
             create = true;
-            repositoryBean = new RepositoryBean();
+            repositoryBean = new Repository();
         }
         initComponents();
     }
@@ -50,8 +50,8 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         } else {
             setTitle("Changing a monitoring configuration");
         }
-        setSize(new java.awt.Dimension(506, 200));
-        setMinimumSize(new java.awt.Dimension(506, 200));
+        setSize(new java.awt.Dimension(506, 150));
+        setMinimumSize(new java.awt.Dimension(506, 150));
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
         setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
@@ -62,17 +62,13 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
 
         lblRepositoryName = new javax.swing.JLabel();
         lblCloneAddress = new javax.swing.JLabel();
-        lblOriginURL = new javax.swing.JLabel();
         lblRepositoryName.setText("Repository Name:");
         lblCloneAddress.setText("Clone Address:");
-        lblOriginURL.setText("Origin URL:");
 
         txtRepositoryName = new javax.swing.JTextField();
         txtCloneAddres = new javax.swing.JTextField();
-        txtOriginURL = new javax.swing.JTextField();
         txtRepositoryName.setText(repositoryBean.getName());
         txtCloneAddres.setText(repositoryBean.getCloneAddress());
-        txtOriginURL.setText(repositoryBean.getOriginUrl());
 
         btnExploreCloneAddress = new javax.swing.JButton();
         btnExploreCloneAddress.setText("Explore");
@@ -80,15 +76,6 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 exploreAddressButtonActionPerformed(evt, txtCloneAddres);
-            }
-        });
-
-        btnExploreOriginURL = new javax.swing.JButton();
-        btnExploreOriginURL.setText("Explore");
-        btnExploreOriginURL.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                exploreAddressButtonActionPerformed(evt, txtOriginURL);
             }
         });
 
@@ -123,7 +110,6 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private void btnSaveRepositoryActionPerformed(java.awt.event.ActionEvent evt) {
         repositoryBean.setName(txtRepositoryName.getText());
         repositoryBean.setCloneAddress(txtCloneAddres.getText());
-        repositoryBean.setOriginUrl(txtOriginURL.getText());
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
         PreferencesUtils.persistRepositories(monitoredRepositoriesBean);
         dispose();
@@ -188,22 +174,19 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             }
         });
     }
-    private br.uff.ic.dyevc.beans.MonitoredRepositoriesBean monitoredRepositoriesBean;
-    private br.uff.ic.dyevc.beans.RepositoryBean repositoryBean;
+    private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean;
+    private br.uff.ic.dyevc.model.Repository repositoryBean;
     /**
      * If true, bean will be created. Otherwise it will be modified.
      */
     boolean create;
     private javax.swing.JButton btnExploreCloneAddress;
-    private javax.swing.JButton btnExploreOriginURL;
     private javax.swing.JButton btnSaveRepository;
     private javax.swing.JButton btnCancel;
     private javax.swing.JLabel lblRepositoryName;
     private javax.swing.JLabel lblCloneAddress;
-    private javax.swing.JLabel lblOriginURL;
     private javax.swing.JTextField txtCloneAddres;
     private javax.swing.JTextField txtRepositoryName;
-    private javax.swing.JTextField txtOriginURL;
     private javax.swing.JPanel pnlTop;
     private javax.swing.JPanel pnlBottom;
 
@@ -216,15 +199,10 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addComponent(lblRepositoryName, javax.swing.GroupLayout.Alignment.TRAILING)
-                .addComponent(lblCloneAddress, javax.swing.GroupLayout.Alignment.TRAILING)
-                .addComponent(lblOriginURL, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addComponent(lblCloneAddress, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addComponent(txtRepositoryName)
-                .addGroup(jPanel5Layout.createSequentialGroup()
-                .addComponent(btnExploreOriginURL)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtOriginURL, javax.swing.GroupLayout.DEFAULT_SIZE, 413, Short.MAX_VALUE))
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addComponent(btnExploreCloneAddress)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -242,11 +220,6 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addComponent(lblCloneAddress)
                 .addComponent(txtCloneAddres, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addComponent(btnExploreCloneAddress))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(lblOriginURL)
-                .addComponent(txtOriginURL, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addComponent(btnExploreOriginURL))
                 .addContainerGap(282, Short.MAX_VALUE)));
         
         java.awt.FlowLayout flowLayout1 = new java.awt.FlowLayout();

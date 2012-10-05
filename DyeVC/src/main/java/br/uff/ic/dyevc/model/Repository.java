@@ -1,8 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package br.uff.ic.dyevc.beans;
+package br.uff.ic.dyevc.model;
 
 import java.beans.*;
 import java.io.Serializable;
@@ -11,7 +7,7 @@ import java.io.Serializable;
  *
  * @author Cristiano
  */
-public class RepositoryBean implements Serializable {
+public class Repository implements Serializable {
 
     public static final String NAME = "name";
     private static final long serialVersionUID = -8604175800390199323L;
@@ -40,7 +36,7 @@ public class RepositoryBean implements Serializable {
     }
     private PropertyChangeSupport propertySupport;
 
-    public RepositoryBean() {
+    public Repository() {
         this.name = "";
         this.cloneAddress = "";
         this.originUrl = "";
@@ -67,24 +63,10 @@ public class RepositoryBean implements Serializable {
     private String originUrl;
     public static final String PROP_ORIGIN_URL = "originUrl";
 
-    /**
-     * Get the value of originUrl
-     *
-     * @return the value of originUrl
-     */
-    public String getOriginUrl() {
-        return originUrl;
+    @Override
+    public String toString() {
+        return "Repository{" + "name=" + name + ", cloneAddress=" + cloneAddress + '}';
     }
 
-    /**
-     * Set the value of originUrl
-     *
-     * @param originUrl new value of originUrl
-     */
-    public void setOriginUrl(String originUrl) {
-        String oldOriginUrl = this.originUrl;
-        this.originUrl = originUrl;
-        propertySupport.firePropertyChange(PROP_ORIGIN_URL, oldOriginUrl, originUrl);
-    }
-
+    
 }

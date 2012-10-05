@@ -44,7 +44,7 @@ public class TemplateGUI extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         AboutOK = new javax.swing.JButton();
         applicationPropertiesBean1 = new br.uff.ic.dyevc.beans.ApplicationPropertiesBean();
-        monitoredRepositoriesBean1 = new br.uff.ic.dyevc.beans.MonitoredRepositoriesBean();
+        monitoredRepositoriesBean1 = new br.uff.ic.dyevc.model.MonitoredRepositories();
         settingsWindow = new javax.swing.JFrame();
         jPanel3 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
@@ -68,7 +68,7 @@ public class TemplateGUI extends javax.swing.JFrame {
         jPanel7 = new javax.swing.JPanel();
         saveRepository = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
-        repositoryBean1 = new br.uff.ic.dyevc.beans.RepositoryBean();
+        repositoryBean1 = new br.uff.ic.dyevc.model.Repository();
         jPopupMenu1 = new javax.swing.JPopupMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -564,12 +564,12 @@ public class TemplateGUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPopupMenu jPopupMenu1;
     private javax.swing.JScrollPane jScrollPane1;
-    private br.uff.ic.dyevc.beans.MonitoredRepositoriesBean monitoredRepositoriesBean1;
+    private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean1;
     private javax.swing.JButton originURLExploreButton;
     private javax.swing.JTextField originURLTxt;
     private javax.swing.JTextField refreshRate;
     private javax.swing.JList repoList;
-    private br.uff.ic.dyevc.beans.RepositoryBean repositoryBean1;
+    private br.uff.ic.dyevc.model.Repository repositoryBean1;
     private javax.swing.JTextField repositoryNameTxt;
     private javax.swing.JButton saveButton;
     private javax.swing.JButton saveRepository;

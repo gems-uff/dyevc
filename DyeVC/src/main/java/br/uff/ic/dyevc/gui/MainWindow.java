@@ -1,6 +1,6 @@
 package br.uff.ic.dyevc.gui;
 
-import br.uff.ic.dyevc.beans.MonitoredRepositoriesBean;
+import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.AWTException;
@@ -66,7 +66,7 @@ public class MainWindow extends javax.swing.JFrame {
         repoList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 
         org.jdesktop.beansbinding.ELProperty eLProperty = org.jdesktop.beansbinding.ELProperty.create("${monitoredProjects}");
-        org.jdesktop.swingbinding.JListBinding jListBinding = org.jdesktop.swingbinding.SwingBindings.createJListBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, monitoredRepositoriesBean1, eLProperty, repoList, MonitoredRepositoriesBean.MONITORED_PROJECTS);
+        org.jdesktop.swingbinding.JListBinding jListBinding = org.jdesktop.swingbinding.SwingBindings.createJListBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, monitoredRepositoriesBean1, eLProperty, repoList, MonitoredRepositories.MONITORED_PROJECTS);
         jListBinding.setDetailBinding(org.jdesktop.beansbinding.ELProperty.create("${name}@${cloneAddress}"));
         bindingGroup.addBinding(jListBinding);
 
@@ -399,7 +399,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JFrame frameSettings;
     private javax.swing.JPanel pnlMain;
     private javax.swing.JScrollPane jScrollPane1;
-    private br.uff.ic.dyevc.beans.MonitoredRepositoriesBean monitoredRepositoriesBean1;
+    private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean1;
     private javax.swing.JList repoList;
     private org.jdesktop.beansbinding.BindingGroup bindingGroup;
     //Variáveis de menu

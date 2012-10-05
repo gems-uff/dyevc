@@ -1,22 +1,17 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package br.uff.ic.dyevc.beans;
+package br.uff.ic.dyevc.model;
 
 import java.beans.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  *
  * @author Cristiano
  */
-public final class MonitoredRepositoriesBean implements Serializable {
+public final class MonitoredRepositories implements Serializable {
 
     private static final long serialVersionUID = -7567721142354738718L;
     private PropertyChangeSupport propertySupport;
@@ -28,8 +23,8 @@ public final class MonitoredRepositoriesBean implements Serializable {
      *
      * @return the value of monitoredProjects
      */
-    public List<RepositoryBean> getMonitoredProjects() {
-        List<RepositoryBean> output = Collections.EMPTY_LIST;
+    public List<Repository> getMonitoredProjects() {
+        List<Repository> output = Collections.EMPTY_LIST;
 
         if (monitoredRepositories != null) {
             output = new ArrayList(monitoredRepositories.values());
@@ -43,43 +38,43 @@ public final class MonitoredRepositoriesBean implements Serializable {
      *
      * @return the required monitored repository
      */
-    public RepositoryBean getMonitoredProjectByName(String name) {
-        RepositoryBean output = null;
+    public Repository getMonitoredProjectByName(String name) {
+        Repository output = null;
         if (monitoredRepositories != null) {
-            output = (RepositoryBean)monitoredRepositories.get(name);
+            output = (Repository)monitoredRepositories.get(name);
         }
         return output;
     }
     
-    public void addMonitoredRepository(RepositoryBean repository) {
+    public void addMonitoredRepository(Repository repository) {
         if (monitoredRepositories == null) {
             monitoredRepositories= new HashMap();
         }
-        List<RepositoryBean> oldValue = getMonitoredProjects();
+        List<Repository> oldValue = getMonitoredProjects();
         this.monitoredRepositories.put(repository.getName(), repository);
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
 
-    public void removeMonitoredRepository(RepositoryBean repository) {
-        List<RepositoryBean> oldValue = getMonitoredProjects();
+    public void removeMonitoredRepository(Repository repository) {
+        List<Repository> oldValue = getMonitoredProjects();
         this.monitoredRepositories.remove(repository.getName());
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
 
     public void removeMonitoredRepository(String repositoryName) {
-        List<RepositoryBean> oldValue = getMonitoredProjects();
+        List<Repository> oldValue = getMonitoredProjects();
         this.monitoredRepositories.remove(repositoryName);
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
 
-    public MonitoredRepositoriesBean() {
+    public MonitoredRepositories() {
         propertySupport = new PropertyChangeSupport(this);
         
-//        RepositoryBean bean = new RepositoryBean();
+//        Repository bean = new Repository();
 //        bean.setName("repo name");
 //        bean.setCloneAddress("http://algum.endereco");
 //        
-//        RepositoryBean bean2 = new RepositoryBean();
+//        Repository bean2 = new Repository();
 //        bean2.setName("repo name 2");
 //        bean2.setCloneAddress("http://algum.endereco2");
 //        
