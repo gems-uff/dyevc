@@ -14,6 +14,7 @@ import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.util.logging.Level;
@@ -37,6 +38,7 @@ public class MainWindow extends javax.swing.JFrame {
      */
     public MainWindow() {
         initComponents();
+        minizeToTray();
     }
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">                          
@@ -156,6 +158,11 @@ public class MainWindow extends javax.swing.JFrame {
         }
     }
 
+    private void minizeToTray() {
+        WindowEvent ev = new WindowEvent(this, WindowEvent.WINDOW_STATE_CHANGED, NORMAL, ICONIFIED);
+        Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(ev);
+    }
+
     private void showTrayIcon() {
         //Check the SystemTray is supported
         if (!SystemTray.isSupported()) {
@@ -208,13 +215,20 @@ public class MainWindow extends javax.swing.JFrame {
                 }
             }
         });
+        trayIcon.addActionListener(new ActionListener() {
+            @Override
+         public void actionPerformed(ActionEvent e) {
+            JOptionPane.showMessageDialog(null, "Just testing click on application's ballon. Will be replaced by showing details about the message");
+         }
+      });
         try {
             tray.add(trayIcon);
+            trayIcon.displayMessage("DyeVC", "DyeVC is running in background.\nClick on the icon to view application's console\nand configure settings.", TrayIcon.MessageType.INFO);
         } catch (AWTException e) {
             System.out.println("TrayIcon could not be added.");
         }
     }
-    
+
     private Image getDyeVCImage() {
         return Toolkit.getDefaultToolkit().getImage(getClass().getResource("/br/uff/ic/dyevc/images/DyeVCIcon.png"));
     }
@@ -370,7 +384,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntRemoveProjectActionPerformed(ActionEvent evt) {
         String repName = getSelectedRepName();
-        int n = JOptionPane.showConfirmDialog(repoList, "Do you confirm removal of " + repName + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        int n = JOptionPane.showConfirmDialog(repoList, "Do you really want to stop monitoring " + repName + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (n == JOptionPane.YES_OPTION) {
             monitoredRepositoriesBean1.removeMonitoredRepository(repName);
             PreferencesUtils.persistRepositories(monitoredRepositoriesBean1);
@@ -407,5 +421,4 @@ public class MainWindow extends javax.swing.JFrame {
     private JPopupMenu jPopupMenu;
     private PopupMenu trayPopup;
     private TrayIcon trayIcon;
-
 }

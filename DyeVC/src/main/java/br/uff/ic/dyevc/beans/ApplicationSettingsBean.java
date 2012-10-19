@@ -16,7 +16,7 @@ public class ApplicationSettingsBean implements Serializable {
     private static final long serialVersionUID = 6840556021845882092L;
     private PropertyChangeSupport propertySupport;
     private String workingPath;
-    public static final String PROP_WORKING_PATH = "workingPath";
+    public static final String PROP_WORKING_PATH = "workingpath";
 
     /**
      * Get the value of workingPath
@@ -38,7 +38,7 @@ public class ApplicationSettingsBean implements Serializable {
         propertySupport.firePropertyChange(PROP_WORKING_PATH, oldWorkingPath, workingPath);
     }
     private int refreshInterval;
-    public static final String PROP_REFRESHINTERVAL = "refreshInterval";
+    public static final String PROP_REFRESHINTERVAL = "refreshinterval";
 
     /**
      * Get the value of refreshInterval

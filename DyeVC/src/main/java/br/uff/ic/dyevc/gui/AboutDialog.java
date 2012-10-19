@@ -19,7 +19,7 @@ public class AboutDialog extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="initComponents">
     @SuppressWarnings("unchecked")
     private void initComponents() {
-        applicationPropertiesBean1 = new br.uff.ic.dyevc.beans.ApplicationPropertiesBean();
+        applicationPropertiesBean1 = new br.uff.ic.dyevc.beans.ApplicationVersionBean();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("About");
@@ -137,6 +137,6 @@ public class AboutDialog extends javax.swing.JDialog {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JButton AboutOK;
-    private br.uff.ic.dyevc.beans.ApplicationPropertiesBean applicationPropertiesBean1;
+    private br.uff.ic.dyevc.beans.ApplicationVersionBean applicationPropertiesBean1;
     // End of variables declaration
 }

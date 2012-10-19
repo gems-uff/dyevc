@@ -1,26 +1,42 @@
 package br.uff.ic.dyevc.tools.vcs;
 
+import br.uff.ic.dyevc.model.RepositoryRelationship;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.CommitCommand;
+import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.BranchConfig;
+import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.eclipse.jgit.lib.Config;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.lib.StoredConfig;
-import org.eclipse.jgit.revwalk.RevWalkUtils;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.PushResult;
+import org.eclipse.jgit.transport.RefSpec;
 
 /**
  * Connects to a git repository, providing a way to invoke commands upon it
@@ -79,17 +95,38 @@ public class GitConnector {
         return result;
     }
 
-    public HashMap<String, String> getBranches() {
-        HashMap<String, String> result = new HashMap<String, String>();
+    /**
+     * Returns branches with remote tracking configuration
+     *
+     * @return
+     */
+    public Set<String> getBranchesFromRemote() {
         Config storedConfig = repository.getConfig();
-        Set<String> branches = storedConfig.getSubsections("branch");
-        System.out.println("Known branches:");
-        for (String branchName : branches) {
-            String merge = storedConfig.getString("branch", branchName, "merge");
-            System.out.println("\t" + branchName + " " + merge);
-            result.put(branchName, merge);
-        }
+        return storedConfig.getSubsections("branch");
+    }
 
+    /**
+     * Returns list of local branches
+     * @return 
+     */
+    public Set<String> getLocalBranches() {
+        //TODO ver se tem a opção --no-merged via jgit
+        Set<String> result = new TreeSet<String>();
+        try {
+            List<Ref> branchList = git.branchList().call();
+            for (Iterator<Ref> it = branchList.iterator(); it.hasNext();) {
+                Ref ref = it.next();
+                result.add(ref.getName());
+            }
+            //            System.out.println("Known branches:");
+            //            for (String branchName : branches) {
+            //                String merge = storedConfig.getString("branch", branchName, "merge");
+            //                System.out.println("\t" + branchName + " " + merge);
+            //                result.put(branchName, merge);
+            //            }
+        } catch (GitAPIException ex) {
+            Logger.getLogger(GitConnector.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return result;
     }
 
@@ -103,9 +140,36 @@ public class GitConnector {
     public boolean pull() throws GitAPIException {
         PullCommand pull = git.pull();
         PullResult result = pull.call();
-        Logger.getLogger(GitConnectorTest.class.getName()).log(Level.INFO, result.toString());
+        Logger
+                .getLogger(GitConnectorTest.class
+                .getName()).log(Level.INFO, result.toString());
 
         return result.isSuccessful();
+    }
+
+    /**
+     * Fetches modifications from the default origin to the repository this
+     * connector is connected with.
+     *
+     * @throws GitAPIException
+     */
+    public void fetch() throws GitAPIException {
+        git.fetch().call();
+    }
+
+    /**
+     * Fetches modifications from the specified remoteAddress origin to the repository this
+     * connector is connected with.
+     * @param remoteAddress Address to fetch from
+     * @param refSpec the ref specs to use in fetch command
+     *
+     * @throws GitAPIException
+     */
+    public void fetch(String remoteAddress, String refSpec) throws GitAPIException {
+        FetchCommand fetch = git.fetch();
+        fetch.setRemote(remoteAddress);
+        fetch.setRefSpecs(new RefSpec(refSpec));
+        fetch.call();
     }
 
     /**
@@ -117,9 +181,6 @@ public class GitConnector {
     public void push() throws GitAPIException {
         PushCommand push = git.push();
         Iterator<PushResult> it = push.call().iterator();
-        if (it.hasNext()) {
-            System.out.println(it.next().toString());
-        }
     }
 
     /**
@@ -174,5 +235,63 @@ public class GitConnector {
      */
     public Repository cloneRepository(String source, String target) throws GitAPIException {
         return cloneRepository(source, new File(target));
+    }
+
+    public List<RepositoryRelationship> testAhead() throws IOException {
+        //TODO não está funcionando direito
+        List<RepositoryRelationship> result = Collections.EMPTY_LIST;
+        Set<String> branches = getBranchesFromRemote();
+        for (Iterator<String> it = branches.iterator(); it.hasNext();) {
+            String string = it.next();
+            BranchTrackingStatus status = BranchTrackingStatus.of(repository, string);
+            System.out.println(repository.getDirectory().getAbsolutePath());
+            System.out.printf("Branch: %s \tRemote: %s\tAhead: %d\tBehind: %d\n\n", string, status.getRemoteTrackingBranch(), status.getAheadCount(), status.getBehindCount());
+            RepositoryRelationship relationship = new RepositoryRelationship();
+            relationship.setAhead(status.getAheadCount());
+            relationship.setBehind(status.getBehindCount());
+            br.uff.ic.dyevc.model.MonitoredRepository target = new br.uff.ic.dyevc.model.MonitoredRepository();
+        }
+        return result;
+    }
+
+    public void testRevCommit() {
+        //TODO teste, pega mensagens de log de todos os commits
+        try {
+            RevWalk walk = new RevWalk(repository);
+            RevCommit commit = null;
+
+            // Add all files
+            // AddCommand add = git.add();
+            // add.addFilepattern(".").call();
+
+            // Commit them
+            // CommitCommand commit = git.commit();
+            // commit.setMessage("Commiting from java").call();
+
+            Iterable<RevCommit> logs = git.log().call();
+            Iterator<RevCommit> i = logs.iterator();
+
+            while (i.hasNext()) {
+                commit = walk.parseCommit(i.next());
+
+                System.out.println(commit.getFullMessage());
+
+
+
+            }
+        } catch (MissingObjectException ex) {
+            Logger.getLogger(GitConnector.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        } catch (IncorrectObjectTypeException ex) {
+            Logger.getLogger(GitConnector.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(GitConnector.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        } catch (GitAPIException ex) {
+            Logger.getLogger(GitConnector.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 }

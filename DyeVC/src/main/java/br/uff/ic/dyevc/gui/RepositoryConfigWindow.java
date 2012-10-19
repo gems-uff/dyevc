@@ -5,7 +5,7 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.model.MonitoredRepositories;
-import br.uff.ic.dyevc.model.Repository;
+import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.io.File;
@@ -36,7 +36,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             repositoryBean = monitoredRepositoriesBean.getMonitoredProjectByName(name);
         } else {
             create = true;
-            repositoryBean = new Repository();
+            repositoryBean = new MonitoredRepository();
         }
         initComponents();
     }
@@ -175,7 +175,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         });
     }
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean;
-    private br.uff.ic.dyevc.model.Repository repositoryBean;
+    private br.uff.ic.dyevc.model.MonitoredRepository repositoryBean;
     /**
      * If true, bean will be created. Otherwise it will be modified.
      */

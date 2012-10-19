@@ -23,8 +23,8 @@ public final class MonitoredRepositories implements Serializable {
      *
      * @return the value of monitoredProjects
      */
-    public List<Repository> getMonitoredProjects() {
-        List<Repository> output = Collections.EMPTY_LIST;
+    public List<MonitoredRepository> getMonitoredProjects() {
+        List<MonitoredRepository> output = Collections.EMPTY_LIST;
 
         if (monitoredRepositories != null) {
             output = new ArrayList(monitoredRepositories.values());
@@ -38,31 +38,31 @@ public final class MonitoredRepositories implements Serializable {
      *
      * @return the required monitored repository
      */
-    public Repository getMonitoredProjectByName(String name) {
-        Repository output = null;
+    public MonitoredRepository getMonitoredProjectByName(String name) {
+        MonitoredRepository output = null;
         if (monitoredRepositories != null) {
-            output = (Repository)monitoredRepositories.get(name);
+            output = (MonitoredRepository)monitoredRepositories.get(name);
         }
         return output;
     }
     
-    public void addMonitoredRepository(Repository repository) {
+    public void addMonitoredRepository(MonitoredRepository repository) {
         if (monitoredRepositories == null) {
             monitoredRepositories= new HashMap();
         }
-        List<Repository> oldValue = getMonitoredProjects();
+        List<MonitoredRepository> oldValue = getMonitoredProjects();
         this.monitoredRepositories.put(repository.getName(), repository);
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
 
-    public void removeMonitoredRepository(Repository repository) {
-        List<Repository> oldValue = getMonitoredProjects();
+    public void removeMonitoredRepository(MonitoredRepository repository) {
+        List<MonitoredRepository> oldValue = getMonitoredProjects();
         this.monitoredRepositories.remove(repository.getName());
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
 
     public void removeMonitoredRepository(String repositoryName) {
-        List<Repository> oldValue = getMonitoredProjects();
+        List<MonitoredRepository> oldValue = getMonitoredProjects();
         this.monitoredRepositories.remove(repositoryName);
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
@@ -70,11 +70,11 @@ public final class MonitoredRepositories implements Serializable {
     public MonitoredRepositories() {
         propertySupport = new PropertyChangeSupport(this);
         
-//        Repository bean = new Repository();
+//        MonitoredRepository bean = new MonitoredRepository();
 //        bean.setName("repo name");
 //        bean.setCloneAddress("http://algum.endereco");
 //        
-//        Repository bean2 = new Repository();
+//        MonitoredRepository bean2 = new MonitoredRepository();
 //        bean2.setName("repo name 2");
 //        bean2.setCloneAddress("http://algum.endereco2");
 //        

@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.beans;
 
 import java.beans.*;
@@ -14,17 +10,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Reads application version from manifest file and publishes it as a property.
  * @author Cristiano
  */
-public class ApplicationPropertiesBean implements Serializable {
+public class ApplicationVersionBean implements Serializable {
 
     public static final String PROP_APP_VERSION = "appVersion";
     private static final long serialVersionUID = -5459049343284022481L;
     private final String appVersion;
     private PropertyChangeSupport propertySupport;
 
-    public ApplicationPropertiesBean() {
+    public ApplicationVersionBean() {
         propertySupport = new PropertyChangeSupport(this);
         appVersion = getVersionFromManifest();
     }
@@ -44,7 +40,7 @@ public class ApplicationPropertiesBean implements Serializable {
     private String getVersionFromManifest() {
         String out = "DyeVC: Version not Identified!";
 
-        Class clazz = ApplicationPropertiesBean.class;
+        Class clazz = ApplicationVersionBean.class;
         String className = clazz.getSimpleName() + ".class";
         String classPath = clazz.getResource(className).toString();
         if (classPath.startsWith("jar")) {
@@ -56,7 +52,7 @@ public class ApplicationPropertiesBean implements Serializable {
                 Attributes attr = manifest.getMainAttributes();
                 out = "DieVC Version: " + attr.getValue("Implementation-Version");
             } catch (IOException ex) {
-                Logger.getLogger(ApplicationPropertiesBean.class.getName()).log(Level.WARNING, "Error reading manifest file.", ex);
+                Logger.getLogger(ApplicationVersionBean.class.getName()).log(Level.WARNING, "Error reading manifest file.", ex);
             }
         }
         return out;

@@ -31,7 +31,7 @@ public class DyeVC {
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new MainWindow().setVisible(true);
+                new MainWindow();
             }
         });
     }

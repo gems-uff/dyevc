@@ -7,7 +7,7 @@ package br.uff.ic.dyevc.utils;
 import br.uff.ic.dyevc.application.DyeVC;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
-import br.uff.ic.dyevc.model.Repository;
+import br.uff.ic.dyevc.model.MonitoredRepository;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -49,7 +49,7 @@ public final class PreferencesUtils {
     }
 
     public static void persistRepositories(MonitoredRepositories listBeans) {
-        List<Repository> reps = listBeans.getMonitoredProjects();
+        List<MonitoredRepository> reps = listBeans.getMonitoredProjects();
         if (!reps.isEmpty()) {
             int i = 0;
             try {
@@ -61,8 +61,8 @@ public final class PreferencesUtils {
                 Logger.getLogger(PreferencesUtils.class.getName()).log(Level.SEVERE, null, ex);
             }
             Preferences nodeToStore = pref.node(NODE_MONITORED_REPOSITORIES);
-            for (Iterator<Repository> it = reps.iterator(); it.hasNext();) {
-                Repository repositoryBean = it.next();
+            for (Iterator<MonitoredRepository> it = reps.iterator(); it.hasNext();) {
+                MonitoredRepository repositoryBean = it.next();
                 nodeToStore.node("rep." + i).put("name", repositoryBean.getName());
                 nodeToStore.node("rep." + i).put("cloneaddress", repositoryBean.getCloneAddress());
                 i++;
@@ -78,7 +78,7 @@ public final class PreferencesUtils {
                 String[] reps = nodeToStore.childrenNames();
                 for (int i = 0; i < reps.length; i++) {
                     String rep = reps[i];
-                    Repository bean = new Repository();
+                    MonitoredRepository bean = new MonitoredRepository();
                     bean.setName(nodeToStore.node(rep).get("name", "no name"));
                     bean.setCloneAddress(nodeToStore.node(rep).get("cloneaddress", "no cloneaddress"));
                     monBean.addMonitoredRepository(bean);

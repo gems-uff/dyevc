@@ -13,7 +13,7 @@ public class RepositoryUser implements Serializable {
     private String login;
     private String password;
     private boolean anonymous = false;
-    private Repository repository;
+    private MonitoredRepository repository;
 
     public RepositoryUser(boolean anonymous) {
         this.anonymous = anonymous;

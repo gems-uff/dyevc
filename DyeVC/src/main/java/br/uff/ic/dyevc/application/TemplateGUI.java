@@ -43,7 +43,7 @@ public class TemplateGUI extends javax.swing.JFrame {
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         AboutOK = new javax.swing.JButton();
-        applicationPropertiesBean1 = new br.uff.ic.dyevc.beans.ApplicationPropertiesBean();
+        applicationPropertiesBean1 = new br.uff.ic.dyevc.beans.ApplicationVersionBean();
         monitoredRepositoriesBean1 = new br.uff.ic.dyevc.model.MonitoredRepositories();
         settingsWindow = new javax.swing.JFrame();
         jPanel3 = new javax.swing.JPanel();
@@ -68,7 +68,7 @@ public class TemplateGUI extends javax.swing.JFrame {
         jPanel7 = new javax.swing.JPanel();
         saveRepository = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
-        repositoryBean1 = new br.uff.ic.dyevc.model.Repository();
+        repositoryBean1 = new br.uff.ic.dyevc.model.MonitoredRepository();
         jPopupMenu1 = new javax.swing.JPopupMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -539,7 +539,7 @@ public class TemplateGUI extends javax.swing.JFrame {
     private javax.swing.JMenu Help;
     private javax.swing.JMenuItem addProjectMnuItem;
     private javax.swing.JFrame addRepositoryWindow;
-    private br.uff.ic.dyevc.beans.ApplicationPropertiesBean applicationPropertiesBean1;
+    private br.uff.ic.dyevc.beans.ApplicationVersionBean applicationPropertiesBean1;
     private br.uff.ic.dyevc.beans.ApplicationSettingsBean applicationSettingsBean1;
     private javax.swing.JButton cancelButton;
     private javax.swing.JTextField cloneAddresTxt;
@@ -569,7 +569,7 @@ public class TemplateGUI extends javax.swing.JFrame {
     private javax.swing.JTextField originURLTxt;
     private javax.swing.JTextField refreshRate;
     private javax.swing.JList repoList;
-    private br.uff.ic.dyevc.model.Repository repositoryBean1;
+    private br.uff.ic.dyevc.model.MonitoredRepository repositoryBean1;
     private javax.swing.JTextField repositoryNameTxt;
     private javax.swing.JButton saveButton;
     private javax.swing.JButton saveRepository;
