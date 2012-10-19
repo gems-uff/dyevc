@@ -1,5 +1,6 @@
 package br.uff.ic.dyevc.tools.vcs;
 
+import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.model.RepositoryRelationship;
 import java.io.File;
 import java.io.IOException;
@@ -74,10 +75,25 @@ public class GitConnector {
      * @param path location of the repository to connect with
      * @throws IOException
      */
-    public GitConnector(String path) throws IOException {
-        repository = new FileRepositoryBuilder().setGitDir(new File(path + "/.git")).readEnvironment() // scan environment GIT_* variables
-                .findGitDir() // scan up the file system tree
-                .build();
+    public GitConnector(String path) throws VCSException {
+        try {
+            repository = new FileRepositoryBuilder().setGitDir(new File(path + "/.git")).readEnvironment() // scan environment GIT_* variables
+                    .findGitDir() // scan up the file system tree
+                    .build();
+            git = new Git(repository);
+        } catch (IOException ex) {
+            Logger.getLogger(GitConnector.class.getName()).log(Level.SEVERE, null, ex);
+            throw new VCSException("Error initializing a git repository.", ex);
+        }
+    }
+
+    /**
+     * Constructor that connects this class to the specified repository.
+     *
+     * @param rep repository to connect to
+     */
+    public GitConnector(Repository rep) {
+        repository = rep;
         git = new Git(repository);
     }
 
@@ -107,7 +123,8 @@ public class GitConnector {
 
     /**
      * Returns list of local branches
-     * @return 
+     *
+     * @return
      */
     public Set<String> getLocalBranches() {
         //TODO ver se tem a opção --no-merged via jgit
@@ -158,8 +175,9 @@ public class GitConnector {
     }
 
     /**
-     * Fetches modifications from the specified remoteAddress origin to the repository this
-     * connector is connected with.
+     * Fetches modifications from the specified remoteAddress origin to the
+     * repository this connector is connected with.
+     *
      * @param remoteAddress Address to fetch from
      * @param refSpec the ref specs to use in fetch command
      *
@@ -214,13 +232,14 @@ public class GitConnector {
      *
      * @param source address of the repository to be cloned
      * @param target path to clone the repository to
-     * @return the clone of the source repository
+     * @return a connector to the clone of this repository
      * @throws GitAPIException
      */
-    public Repository cloneRepository(String source, File target) throws GitAPIException {
+    public GitConnector cloneRepository(String source, File target) throws GitAPIException {
         CloneCommand cloneCmd = Git.cloneRepository().setURI(source).setDirectory(target);
         Git result = cloneCmd.call();
-        return result.getRepository();
+
+        return new GitConnector(result.getRepository());
     }
 
     /**
@@ -229,27 +248,45 @@ public class GitConnector {
      *
      * @param source address of the repository to be cloned
      * @param target path to clone the repository to
-     * @return the clone of the source repository
+     * @return a connector to the clone of this repository
      * @see #cloneRepository(java.lang.String, java.io.File)
      * @throws GitAPIException
      */
-    public Repository cloneRepository(String source, String target) throws GitAPIException {
+    public GitConnector cloneRepository(String source, String target) throws GitAPIException {
         return cloneRepository(source, new File(target));
     }
 
-    public List<RepositoryRelationship> testAhead() throws IOException {
+    /**
+     * Method that allows to clone this repository to target represented by a
+     * String
+     *
+     * @param target path to clone the repository to
+     * @return a connector to the clone of this repository
+     * @see #cloneRepository(java.lang.String, java.io.File)
+     * @throws GitAPIException
+     */
+    public GitConnector cloneThis(String target) throws GitAPIException {
+        return cloneRepository(repository.getDirectory().getAbsolutePath(), new File(target));
+    }
+
+    public List<RepositoryRelationship> testAhead() throws VCSException {
         //TODO não está funcionando direito
         List<RepositoryRelationship> result = Collections.EMPTY_LIST;
         Set<String> branches = getBranchesFromRemote();
         for (Iterator<String> it = branches.iterator(); it.hasNext();) {
-            String string = it.next();
-            BranchTrackingStatus status = BranchTrackingStatus.of(repository, string);
-            System.out.println(repository.getDirectory().getAbsolutePath());
-            System.out.printf("Branch: %s \tRemote: %s\tAhead: %d\tBehind: %d\n\n", string, status.getRemoteTrackingBranch(), status.getAheadCount(), status.getBehindCount());
-            RepositoryRelationship relationship = new RepositoryRelationship();
-            relationship.setAhead(status.getAheadCount());
-            relationship.setBehind(status.getBehindCount());
-            br.uff.ic.dyevc.model.MonitoredRepository target = new br.uff.ic.dyevc.model.MonitoredRepository();
+            try {
+                String string = it.next();
+                BranchTrackingStatus status = BranchTrackingStatus.of(repository, string);
+                System.out.println(repository.getDirectory().getAbsolutePath());
+                System.out.printf("Branch: %s \tRemote: %s\tAhead: %d\tBehind: %d\n\n", string, status.getRemoteTrackingBranch(), status.getAheadCount(), status.getBehindCount());
+                RepositoryRelationship relationship = new RepositoryRelationship();
+                relationship.setAhead(status.getAheadCount());
+                relationship.setBehind(status.getBehindCount());
+                br.uff.ic.dyevc.model.MonitoredRepository target = new br.uff.ic.dyevc.model.MonitoredRepository();
+            } catch (IOException ex) {
+                Logger.getLogger(GitConnector.class.getName()).log(Level.SEVERE, null, ex);
+                throw new VCSException("Error calculating ahead count.", ex);
+            }
         }
         return result;
     }

@@ -158,8 +158,8 @@ public class GitConnectorTest {
         String source = "";
         File target = null;
         GitConnector instance = null;
-        Repository expResult = null;
-        Repository result = instance.cloneRepository(source, target);
+        GitConnector expResult = null;
+        GitConnector result = instance.cloneRepository(source, target);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -174,8 +174,8 @@ public class GitConnectorTest {
         String source = "";
         String target = "";
         GitConnector instance = null;
-        Repository expResult = null;
-        Repository result = instance.cloneRepository(source, target);
+        GitConnector expResult = null;
+        GitConnector result = instance.cloneRepository(source, target);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");

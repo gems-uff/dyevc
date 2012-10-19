@@ -2,6 +2,7 @@ package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.monitor.RepositoryMonitor;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.AWTException;
 import java.awt.CheckboxMenuItem;
@@ -39,6 +40,7 @@ public class MainWindow extends javax.swing.JFrame {
     public MainWindow() {
         initComponents();
         minizeToTray();
+        startMonitor();
     }
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">                          
@@ -421,4 +423,9 @@ public class MainWindow extends javax.swing.JFrame {
     private JPopupMenu jPopupMenu;
     private PopupMenu trayPopup;
     private TrayIcon trayIcon;
+    private RepositoryMonitor monitor;
+
+    private void startMonitor() {
+        monitor = new RepositoryMonitor();
+    }
 }

@@ -1,5 +1,6 @@
 package br.uff.ic.dyevc.tools.vcs;
 
+import br.uff.ic.dyevc.exception.VCSException;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -33,13 +34,12 @@ public class GitConnectorTest {
             clone2.testAhead();
             GitConnector clone = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgcclone");
             clone.testAhead();
-            cmd.cloneRepository("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgcclone", "/F:/mybackups/Educacao/Mestrado-UFF/Git/labgccloneteste");
-            GitConnector cloneteste = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgccloneteste");
+            GitConnector cloneteste = cmd.cloneRepository("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgcclone", "/F:/mybackups/Educacao/Mestrado-UFF/Git/labgccloneteste");
             cloneteste.fetch("https://github.com/leomurta/labgc-2012.2.git", "+refs/heads/*:refs/remotes/origin/*");
             cloneteste.testAhead();
         } catch (GitAPIException ex) {
             Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
+        } catch (VCSException ex) {
             Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
