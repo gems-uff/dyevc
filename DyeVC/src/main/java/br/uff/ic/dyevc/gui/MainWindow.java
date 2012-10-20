@@ -219,10 +219,10 @@ public class MainWindow extends javax.swing.JFrame {
         });
         trayIcon.addActionListener(new ActionListener() {
             @Override
-         public void actionPerformed(ActionEvent e) {
-            JOptionPane.showMessageDialog(null, "Just testing click on application's ballon. Will be replaced by showing details about the message");
-         }
-      });
+            public void actionPerformed(ActionEvent e) {
+                mntshowMainWindowActionPerformed();
+            }
+        });
         try {
             tray.add(trayIcon);
             trayIcon.displayMessage("DyeVC", "DyeVC is running in background.\nClick on the icon to view application's console\nand configure settings.", TrayIcon.MessageType.INFO);
