@@ -48,8 +48,8 @@ public class MainWindow extends javax.swing.JFrame {
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("DyeVC");
-        setSize(new java.awt.Dimension(400, 300));
-        setMinimumSize(new java.awt.Dimension(400, 300));
+        setSize(new java.awt.Dimension(400, 400));
+        setMinimumSize(new java.awt.Dimension(400, 400));
         setName("MainWindow"); // NOI18N
         setIconImage(getDyeVCImage());
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
@@ -82,14 +82,36 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(repoList);
 
+        jScrollPaneMessages = new javax.swing.JScrollPane();
+        jScrollPaneMessages.setBorder(javax.swing.BorderFactory.createTitledBorder("Messages"));
+        jTextAreaMessages = new javax.swing.JTextArea();
+        jTextAreaMessages.setColumns(20);
+        jTextAreaMessages.setRows(5);
+
+        jTextAreaMessages.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTextAreaMessagesMouseClicked(evt);
+            }
+        });
+
+        jScrollPaneMessages.setViewportView(jTextAreaMessages);
+        MessageManager manager = MessageManager.initialize(jTextAreaMessages);
+        manager.addMessage("DyeVC started");
+
         javax.swing.GroupLayout pnlMainLayout = new javax.swing.GroupLayout(pnlMain);
         pnlMain.setLayout(pnlMainLayout);
         pnlMainLayout.setHorizontalGroup(
                 pnlMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 590, Short.MAX_VALUE));
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 590, Short.MAX_VALUE)
+                .addComponent(jScrollPaneMessages));
         pnlMainLayout.setVerticalGroup(
                 pnlMainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 396, Short.MAX_VALUE));
+                .addGroup(pnlMainLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 279, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPaneMessages, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)));
 
         buildMenu();
 
@@ -128,11 +150,20 @@ public class MainWindow extends javax.swing.JFrame {
      * @param evt
      */
     private void repoListMouseClicked(java.awt.event.MouseEvent evt) {
-        //TODO implementar a chamada à janela para editar as informações do projeto.
         JList list = (JList) evt.getSource();
         if (evt.getButton() == MouseEvent.BUTTON3) {
             list.setSelectedIndex(list.locationToIndex(evt.getPoint()));
-            jPopupMenu.show(evt.getComponent(), evt.getX(), evt.getY());
+            jPopupRepoList.show(evt.getComponent(), evt.getX(), evt.getY());
+        }
+    }
+
+    /**
+     * Shows up a popup menu when the user clicks with the right button
+     * @param evt 
+     */
+    private void jTextAreaMessagesMouseClicked(MouseEvent evt) {
+        if (evt.getButton() == MouseEvent.BUTTON3) {
+            jPopupTextAreaMessages.show(evt.getComponent(), evt.getX(), evt.getY());
         }
     }
 
@@ -331,7 +362,7 @@ public class MainWindow extends javax.swing.JFrame {
         jMenuBar.add(mnuHelp);
         setJMenuBar(jMenuBar);
 
-        jPopupMenu = new JPopupMenu();
+        jPopupRepoList = new JPopupMenu();
         JMenuItem mntEditProject = new javax.swing.JMenuItem();
         mntEditProject.setText(" Edit Project");
         mntEditProject.addActionListener(new java.awt.event.ActionListener() {
@@ -340,7 +371,7 @@ public class MainWindow extends javax.swing.JFrame {
                 mntEditProjectActionPerformed(evt);
             }
         });
-        jPopupMenu.add(mntEditProject);
+        jPopupRepoList.add(mntEditProject);
 
         JMenuItem mntRemoveProject = new javax.swing.JMenuItem();
         mntRemoveProject.setText(" Remove Project");
@@ -350,8 +381,18 @@ public class MainWindow extends javax.swing.JFrame {
                 mntRemoveProjectActionPerformed(evt);
             }
         });
-        jPopupMenu.add(mntRemoveProject);
-
+        jPopupRepoList.add(mntRemoveProject);
+        
+        jPopupTextAreaMessages = new JPopupMenu();
+        JMenuItem mntClear = new javax.swing.JMenuItem();
+        mntClear.setText("Clear Messages");
+        mntClear.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                MessageManager.getInstance().clearMessages();
+            }
+        });
+        jPopupTextAreaMessages.add(mntClear);
     }
     //</editor-fold>
 
@@ -415,12 +456,15 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JFrame frameSettings;
     private javax.swing.JPanel pnlMain;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPaneMessages;
+    private javax.swing.JTextArea jTextAreaMessages;
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean1;
     private javax.swing.JList repoList;
     private org.jdesktop.beansbinding.BindingGroup bindingGroup;
     //Variáveis de menu
     private javax.swing.JMenuBar jMenuBar;
-    private JPopupMenu jPopupMenu;
+    private JPopupMenu jPopupRepoList;
+    private JPopupMenu jPopupTextAreaMessages;
     private PopupMenu trayPopup;
     private TrayIcon trayIcon;
     private RepositoryMonitor monitor;
