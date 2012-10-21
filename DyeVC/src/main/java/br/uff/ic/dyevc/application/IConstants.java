@@ -10,5 +10,5 @@ package br.uff.ic.dyevc.application;
  */
 public interface IConstants {
     public static final String FETCH_SPECS = "+refs/heads/*:refs/remotes/origin/*";
-    public static final String DIR_SEPARATOR = "/";
+    public static final String DIR_SEPARATOR = System.getProperty("file.separator");
 }

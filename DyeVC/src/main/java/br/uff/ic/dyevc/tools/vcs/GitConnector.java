@@ -46,6 +46,7 @@ import org.eclipse.jgit.transport.RefSpec;
  */
 public class GitConnector {
 
+    private static final String GIT_DIR = "/.git";
     private Repository repository;
     private Git git;
 
@@ -77,7 +78,7 @@ public class GitConnector {
      */
     public GitConnector(String path) throws VCSException {
         try {
-            repository = new FileRepositoryBuilder().setGitDir(new File(path + "/.git")).readEnvironment() // scan environment GIT_* variables
+            repository = new FileRepositoryBuilder().setGitDir(new File(getGitPath(path))).readEnvironment() // scan environment GIT_* variables
                     .findGitDir() // scan up the file system tree
                     .build();
             git = new Git(repository);
@@ -85,6 +86,23 @@ public class GitConnector {
             Logger.getLogger(GitConnector.class.getName()).log(Level.SEVERE, null, ex);
             throw new VCSException("Error initializing a git repository.", ex);
         }
+    }
+
+    /**
+     * Checks if the specified path is a valid repository.
+     *
+     * @param path location to check if it is a valid repository
+     * @return true if the specified path is a valid repository and false if
+     * it's not.
+     */
+    public static boolean isValidRepository(String path) {
+        boolean result;
+        try {
+            result = new FileRepository(getGitPath(path)).getObjectDatabase().exists();
+        } catch (IOException e) {
+            result = false;
+        }
+        return result;
     }
 
     /**
@@ -97,6 +115,11 @@ public class GitConnector {
         git = new Git(repository);
     }
 
+    /**
+     * Returns the configured remote repositories for the connected repository.
+     * @return the Hashmap for known remote repositories. The key for the hashmap
+     * is the remoteName and the value is the remote URL.
+     */
     public HashMap<String, String> getRemotes() {
         HashMap<String, String> result = new HashMap<String, String>();
         Config storedConfig = repository.getConfig();
@@ -134,6 +157,8 @@ public class GitConnector {
             for (Iterator<Ref> it = branchList.iterator(); it.hasNext();) {
                 Ref ref = it.next();
                 result.add(ref.getName());
+
+
             }
             //            System.out.println("Known branches:");
             //            for (String branchName : branches) {
@@ -157,10 +182,6 @@ public class GitConnector {
     public boolean pull() throws GitAPIException {
         PullCommand pull = git.pull();
         PullResult result = pull.call();
-        Logger
-                .getLogger(GitConnectorTest.class
-                .getName()).log(Level.INFO, result.toString());
-
         return result.isSuccessful();
     }
 
@@ -222,7 +243,7 @@ public class GitConnector {
      * @throws IOException
      */
     public Repository createRepository(String path) throws IOException {
-        Repository fileRepo = new FileRepository(path + "/.git");
+        Repository fileRepo = new FileRepository(getGitPath(path));
         fileRepo.create();
         return fileRepo;
     }
@@ -283,9 +304,13 @@ public class GitConnector {
                 relationship.setAhead(status.getAheadCount());
                 relationship.setBehind(status.getBehindCount());
                 br.uff.ic.dyevc.model.MonitoredRepository target = new br.uff.ic.dyevc.model.MonitoredRepository();
+
+
             } catch (IOException ex) {
-                Logger.getLogger(GitConnector.class.getName()).log(Level.SEVERE, null, ex);
-                throw new VCSException("Error calculating ahead count.", ex);
+                Logger.getLogger(GitConnector.class
+                        .getName()).log(Level.SEVERE, null, ex);
+                throw new VCSException(
+                        "Error calculating ahead count.", ex);
             }
         }
         return result;
@@ -315,6 +340,8 @@ public class GitConnector {
 
 
 
+
+
             }
         } catch (MissingObjectException ex) {
             Logger.getLogger(GitConnector.class
@@ -330,5 +357,16 @@ public class GitConnector {
                     .getName()).log(Level.SEVERE, null, ex);
         }
 
+    }
+    
+    /**
+     * Checks if specified path ends with "/.git" and appends it if it doesn't
+     * @param path the path to be checked
+     * @return a path to a git repository
+     */
+    private static final String getGitPath(String path) {
+        return (path.endsWith(GIT_DIR))
+                ? path
+                : path + GIT_DIR;
     }
 }

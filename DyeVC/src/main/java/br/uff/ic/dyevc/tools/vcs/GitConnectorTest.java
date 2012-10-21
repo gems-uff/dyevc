@@ -2,6 +2,7 @@ package br.uff.ic.dyevc.tools.vcs;
 
 import br.uff.ic.dyevc.exception.VCSException;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.logging.Logger;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.RefDatabase;
+import org.eclipse.jgit.transport.URIish;
 
 /**
  * Hello world!
@@ -34,7 +36,7 @@ public class GitConnectorTest {
             clone2.testAhead();
             GitConnector clone = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgcclone");
             clone.testAhead();
-            GitConnector cloneteste = cmd.cloneRepository("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgcclone", "/F:/mybackups/Educacao/Mestrado-UFF/Git/labgccloneteste");
+            GitConnector cloneteste = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgccloneteste");
             cloneteste.fetch("https://github.com/leomurta/labgc-2012.2.git", "+refs/heads/*:refs/remotes/origin/*");
             cloneteste.testAhead();
         } catch (GitAPIException ex) {
@@ -43,4 +45,5 @@ public class GitConnectorTest {
             Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
 }

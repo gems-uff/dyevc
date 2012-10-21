@@ -7,11 +7,13 @@ package br.uff.ic.dyevc.gui;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.tools.vcs.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
 /**
@@ -61,14 +63,18 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         pnlTop.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         lblRepositoryName = new javax.swing.JLabel();
-        lblCloneAddress = new javax.swing.JLabel();
         lblRepositoryName.setText("Repository Name:");
+        lblRepositoryName.setToolTipText("Enter a name to recognize this repository.");
+        lblCloneAddress = new javax.swing.JLabel();
         lblCloneAddress.setText("Clone Address:");
+        lblCloneAddress.setToolTipText("Click on the button to select the path to a local repository you want to monitor.");
+        
 
         txtRepositoryName = new javax.swing.JTextField();
-        txtCloneAddres = new javax.swing.JTextField();
         txtRepositoryName.setText(repositoryBean.getName());
+        txtCloneAddres = new javax.swing.JTextField();
         txtCloneAddres.setText(repositoryBean.getCloneAddress());
+        txtCloneAddres.setEditable(false);
 
         btnExploreCloneAddress = new javax.swing.JButton();
         btnExploreCloneAddress.setText("Explore");
@@ -128,13 +134,19 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
         int returnVal = fileChooser.showOpenDialog(this);
+        String pathChosen;
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
-            field.setText(file.getAbsolutePath());
+            pathChosen = file.getAbsolutePath();
+            if (!GitConnector.isValidRepository(pathChosen)) {
+                JOptionPane.showMessageDialog(txtCloneAddres, "The specified path does not contain a valid git repository.", "Message", JOptionPane.ERROR_MESSAGE);
+            } else {
+                field.setText(file.getAbsolutePath());
+            }
         }
     }
     //</editor-fold>
-    
+
     /**
      * @param args the command line arguments
      */
@@ -221,13 +233,13 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addComponent(txtCloneAddres, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addComponent(btnExploreCloneAddress))
                 .addContainerGap(282, Short.MAX_VALUE)));
-        
+
         java.awt.FlowLayout flowLayout1 = new java.awt.FlowLayout();
         flowLayout1.setAlignOnBaseline(true);
         pnlBottom.setLayout(flowLayout1);
         pnlBottom.add(btnSaveRepository);
         pnlBottom.add(btnCancel);
-        
+
         javax.swing.GroupLayout addRepositoryWindowLayout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(addRepositoryWindowLayout);
         addRepositoryWindowLayout.setHorizontalGroup(

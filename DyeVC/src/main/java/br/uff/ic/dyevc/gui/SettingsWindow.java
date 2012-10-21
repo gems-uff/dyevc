@@ -78,11 +78,12 @@ public class SettingsWindow extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
         lblWorkingPath.setText("Working Path:");
-        lblWorkingPath.setToolTipText("Enter path to be used to store temporary files.");
+        lblWorkingPath.setToolTipText("Click on the button to set a different path to be used to store temporary files.");
         lblRefreshRate.setText("Refresh Rate (s):");
         lblRefreshRate.setToolTipText("Enter the time in seconds between new checks.");
 
         txtWorkingPath.setText(applicationSettingsBean.getWorkingPath());
+        txtWorkingPath.setEditable(false);
         txtRefreshRate.setText(Integer.valueOf(applicationSettingsBean.getRefreshInterval()).toString());
 
         btnExploreWorkingPath.setText("Explore");
