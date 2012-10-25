@@ -1,14 +1,11 @@
 package br.uff.ic.dyevc.gui;
 
-import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.AWTException;
-import java.awt.CheckboxMenuItem;
-import java.awt.Frame;
 import java.awt.Image;
-import java.awt.Menu;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.SystemTray;
@@ -42,6 +39,25 @@ public class MainWindow extends javax.swing.JFrame {
         minizeToTray();
         startMonitor();
     }
+
+    // <editor-fold defaultstate="collapsed" desc="private variables">      
+    private javax.swing.JDialog dlgAbout;
+    private javax.swing.JFrame frameSettings;
+    private javax.swing.JPanel pnlMain;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPaneMessages;
+    private javax.swing.JTextArea jTextAreaMessages;
+    private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean1;
+    private javax.swing.JList repoList;
+    private org.jdesktop.beansbinding.BindingGroup bindingGroup;
+    //Variáveis de menu
+    private javax.swing.JMenuBar jMenuBar;
+    private JPopupMenu jPopupRepoList;
+    private JPopupMenu jPopupTextAreaMessages;
+    private PopupMenu trayPopup;
+    private TrayIcon trayIcon;
+    private RepositoryMonitor monitor;
+    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">                          
     @SuppressWarnings("unchecked")
@@ -113,7 +129,9 @@ public class MainWindow extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPaneMessages, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)));
 
-        buildMenu();
+        buildMainMenu();
+        buildRepoListPopup();
+        buildTextAreaPopup();
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -123,7 +141,6 @@ public class MainWindow extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                //                    .addComponent(workingPathFileChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))));
         layout.setVerticalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -131,7 +148,6 @@ public class MainWindow extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                //                    .addComponent(workingPathFileChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))));
 
         bindingGroup.bind();
@@ -144,58 +160,18 @@ public class MainWindow extends javax.swing.JFrame {
         pack();
     }// </editor-fold>                        
 
+    // <editor-fold defaultstate="collapsed" desc="tray icon">
     /**
-     * Shows up a popup menu when the user clicks with the right button
-     *
-     * @param evt
+     * Minimizes the application to system tray
      */
-    private void repoListMouseClicked(java.awt.event.MouseEvent evt) {
-        JList list = (JList) evt.getSource();
-        if (evt.getButton() == MouseEvent.BUTTON3) {
-            list.setSelectedIndex(list.locationToIndex(evt.getPoint()));
-            jPopupRepoList.show(evt.getComponent(), evt.getX(), evt.getY());
-        }
-    }
-
-    /**
-     * Shows up a popup menu when the user clicks with the right button
-     * @param evt 
-     */
-    private void jTextAreaMessagesMouseClicked(MouseEvent evt) {
-        if (evt.getButton() == MouseEvent.BUTTON3) {
-            jPopupTextAreaMessages.show(evt.getComponent(), evt.getX(), evt.getY());
-        }
-    }
-
-    /**
-     * Gets the name of selected repository in Jlist
-     *
-     * @return name of the selected repository
-     */
-    private String getSelectedRepName() {
-        String selectedRep = (String) repoList.getSelectedValue();
-        String repName = selectedRep.substring(0, selectedRep.indexOf("@"));
-        return repName;
-    }
-
-    private void handleWindowStateChanged(WindowEvent evt) {
-        if (evt.getNewState() == ICONIFIED) {
-            setVisible(false);
-            showTrayIcon();
-        }
-        if (evt.getNewState() == MAXIMIZED_BOTH) {
-            setVisible(true);
-        }
-        if (evt.getNewState() == NORMAL) {
-            setVisible(true);
-        }
-    }
-
     private void minizeToTray() {
         WindowEvent ev = new WindowEvent(this, WindowEvent.WINDOW_STATE_CHANGED, NORMAL, ICONIFIED);
         Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(ev);
     }
 
+    /**
+     * Builds tray icon and menu
+     */
     private void showTrayIcon() {
         //Check the SystemTray is supported
         if (!SystemTray.isSupported()) {
@@ -262,52 +238,42 @@ public class MainWindow extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * Handles changes in window state, minimizing application to tray when
+     * window is iconified and restoring it when maximized.
+     *
+     * @param evt the event that has occurred.
+     */
+    private void handleWindowStateChanged(WindowEvent evt) {
+        if (evt.getNewState() == ICONIFIED) {
+            setVisible(false);
+            showTrayIcon();
+        }
+        if (evt.getNewState() == MAXIMIZED_BOTH) {
+            setVisible(true);
+        }
+        if (evt.getNewState() == NORMAL) {
+            setVisible(true);
+        }
+    }
+
+    /**
+     * Gets application image and returns it as an Image object.
+     *
+     * @return
+     */
     private Image getDyeVCImage() {
         return Toolkit.getDefaultToolkit().getImage(getClass().getResource("/br/uff/ic/dyevc/images/DyeVCIcon.png"));
     }
 
-    // <editor-fold defaultstate="collapsed" desc="main method">                          
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the System look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
-
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new MainWindow().setVisible(true);
-            }
-        });
-    }
     // </editor-fold>
-
-    // <editor-fold defaultstate="collapsed" desc="buildMenu">                          
+    
+    // <editor-fold defaultstate="collapsed" desc="main menu">                          
     /**
      * This method creates the menu bar
      */
     @SuppressWarnings("unchecked")
-    private void buildMenu() {
+    private void buildMainMenu() {
         jMenuBar = new javax.swing.JMenuBar();
 
         javax.swing.JMenu mnuFile = new javax.swing.JMenu();
@@ -361,42 +327,11 @@ public class MainWindow extends javax.swing.JFrame {
 
         jMenuBar.add(mnuHelp);
         setJMenuBar(jMenuBar);
-
-        jPopupRepoList = new JPopupMenu();
-        JMenuItem mntEditProject = new javax.swing.JMenuItem();
-        mntEditProject.setText(" Edit Project");
-        mntEditProject.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mntEditProjectActionPerformed(evt);
-            }
-        });
-        jPopupRepoList.add(mntEditProject);
-
-        JMenuItem mntRemoveProject = new javax.swing.JMenuItem();
-        mntRemoveProject.setText(" Remove Project");
-        mntRemoveProject.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mntRemoveProjectActionPerformed(evt);
-            }
-        });
-        jPopupRepoList.add(mntRemoveProject);
-        
-        jPopupTextAreaMessages = new JPopupMenu();
-        JMenuItem mntClear = new javax.swing.JMenuItem();
-        mntClear.setText("Clear Messages");
-        mntClear.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                MessageManager.getInstance().clearMessages();
-            }
-        });
-        jPopupTextAreaMessages.add(mntClear);
     }
-    //</editor-fold>
 
-    // <editor-fold defaultstate="collapsed" desc="menu event actions">                          
+    // </editor-fold>
+    
+    // <editor-fold defaultstate="collapsed" desc="main menu events">                          
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
             new RepositoryConfigWindow(monitoredRepositoriesBean1, null).setVisible(true);
@@ -452,24 +387,124 @@ public class MainWindow extends javax.swing.JFrame {
         frameSettings.setVisible(true);
     }
     // </editor-fold>
-    private javax.swing.JDialog dlgAbout;
-    private javax.swing.JFrame frameSettings;
-    private javax.swing.JPanel pnlMain;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPaneMessages;
-    private javax.swing.JTextArea jTextAreaMessages;
-    private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean1;
-    private javax.swing.JList repoList;
-    private org.jdesktop.beansbinding.BindingGroup bindingGroup;
-    //Variáveis de menu
-    private javax.swing.JMenuBar jMenuBar;
-    private JPopupMenu jPopupRepoList;
-    private JPopupMenu jPopupTextAreaMessages;
-    private PopupMenu trayPopup;
-    private TrayIcon trayIcon;
-    private RepositoryMonitor monitor;
+    
+    // <editor-fold defaultstate="collapsed" desc="repoList menu">  
+    private void buildRepoListPopup() {
+        jPopupRepoList = new JPopupMenu();
+        JMenuItem mntEditProject = new javax.swing.JMenuItem();
+        mntEditProject.setText(" Edit Project");
+        mntEditProject.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntEditProjectActionPerformed(evt);
+            }
+        });
+        jPopupRepoList.add(mntEditProject);
 
+        JMenuItem mntRemoveProject = new javax.swing.JMenuItem();
+        mntRemoveProject.setText(" Remove Project");
+        mntRemoveProject.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntRemoveProjectActionPerformed(evt);
+            }
+        });
+        jPopupRepoList.add(mntRemoveProject);
+    }
+    
+        /**
+     * Shows up a popup menu when the user clicks with the right button
+     *
+     * @param evt
+     */
+    private void repoListMouseClicked(java.awt.event.MouseEvent evt) {
+        JList list = (JList) evt.getSource();
+        if (evt.getButton() == MouseEvent.BUTTON3) {
+            list.setSelectedIndex(list.locationToIndex(evt.getPoint()));
+            jPopupRepoList.show(evt.getComponent(), evt.getX(), evt.getY());
+        }
+    }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="textArea menu">  
+    private void buildTextAreaPopup() {
+        jPopupTextAreaMessages = new JPopupMenu();
+        JMenuItem mntClear = new javax.swing.JMenuItem();
+        mntClear.setText("Clear Messages");
+        mntClear.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                MessageManager.getInstance().clearMessages();
+            }
+        });
+        jPopupTextAreaMessages.add(mntClear);
+    }
+    
+        /**
+     * Shows up a popup menu when the user clicks with the right button
+     *
+     * @param evt
+     */
+    private void jTextAreaMessagesMouseClicked(MouseEvent evt) {
+        if (evt.getButton() == MouseEvent.BUTTON3) {
+            jPopupTextAreaMessages.show(evt.getComponent(), evt.getX(), evt.getY());
+        }
+    }
+    // </editor-fold>
+    
+    // <editor-fold defaultstate="collapsed" desc="other stuff">   
+    /**
+     * Gets the name of selected repository in Jlist
+     *
+     * @return name of the selected repository
+     */
+    private String getSelectedRepName() {
+        String selectedRep = (String) repoList.getSelectedValue();
+        String repName = selectedRep.substring(0, selectedRep.indexOf("@"));
+        return repName;
+    }
+
+    /**
+     * Starts the repository monitor.
+     */
     private void startMonitor() {
         monitor = new RepositoryMonitor();
     }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="main method">                          
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the System look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(MainWindow.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(MainWindow.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(MainWindow.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(MainWindow.class
+                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new MainWindow().setVisible(true);
+            }
+        });
+    }
+    // </editor-fold>
 }

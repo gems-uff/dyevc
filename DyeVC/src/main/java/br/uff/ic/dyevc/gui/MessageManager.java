@@ -31,7 +31,7 @@ public class MessageManager {
     }
     
     public void addMessage(String msg) {
-        messages.append(msg);
+        messages.append(msg + "\n");
     }
     
     public void clearMessages() {

@@ -4,8 +4,10 @@
  */
 package br.uff.ic.dyevc.tools.vcs;
 
+import br.uff.ic.dyevc.model.git.TrackedBranch;
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.After;
@@ -55,41 +57,28 @@ public class GitConnectorTest {
     }
 
     /**
-     * Test of setRepository method, of class GitConnector.
-     */
-    @Test
-    public void testSetRepository() {
-        System.out.println("setRepository");
-        Repository repository = null;
-        GitConnector instance = null;
-        instance.setRepository(repository);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of getRemotes method, of class GitConnector.
+     * Test of getRemoteNames method, of class GitConnector.
      */
     @Test
     public void testGetRemotes() {
         System.out.println("getRemotes");
         GitConnector instance = null;
-        HashMap expResult = null;
-        HashMap result = instance.getRemotes();
+        Set<String> expResult = null;
+        Set<String> result = instance.getRemoteNames();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
     }
 
     /**
-     * Test of getBranchesFromRemote method, of class GitConnector.
+     * Test of getTrackedBranches method, of class GitConnector.
      */
     @Test
     public void testGetBranches() {
         System.out.println("getBranches");
         GitConnector instance = null;
-        Set expResult = null;
-        Set result = instance.getBranchesFromRemote();
+        List<TrackedBranch> expResult = null;
+        List<TrackedBranch> result = instance.getTrackedBranches();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -157,9 +146,10 @@ public class GitConnectorTest {
         System.out.println("cloneRepository");
         String source = "";
         File target = null;
+        String id = null;
         GitConnector instance = null;
         GitConnector expResult = null;
-        GitConnector result = instance.cloneRepository(source, target);
+        GitConnector result = instance.cloneRepository(source, target, id);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
@@ -173,9 +163,10 @@ public class GitConnectorTest {
         System.out.println("cloneRepository");
         String source = "";
         String target = "";
+        String id = null;
         GitConnector instance = null;
         GitConnector expResult = null;
-        GitConnector result = instance.cloneRepository(source, target);
+        GitConnector result = instance.cloneRepository(source, target, id);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");

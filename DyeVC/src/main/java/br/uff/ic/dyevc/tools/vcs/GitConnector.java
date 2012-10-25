@@ -1,9 +1,12 @@
 package br.uff.ic.dyevc.tools.vcs;
 
+import br.uff.ic.dyevc.model.git.TrackedBranch;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.model.RepositoryRelationship;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,6 +41,7 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RefSpec;
+import org.eclipse.jgit.transport.RemoteConfig;
 
 /**
  * Connects to a git repository, providing a way to invoke commands upon it
@@ -50,6 +54,8 @@ public class GitConnector {
     private Repository repository;
     private Git git;
 
+    private String name;
+
     /**
      * Gets the reference to the repository connected to this connector
      *
@@ -60,28 +66,19 @@ public class GitConnector {
     }
 
     /**
-     * Sets a new repository and connects this connector to it
-     *
-     * @param repository the new repository to be connected to
-     */
-    public void setRepository(Repository repository) {
-        this.repository = repository;
-        git = new Git(this.repository);
-    }
-
-    /**
      * Constructor that connects this class to a repository located at the
      * specified path.
      *
      * @param path location of the repository to connect with
      * @throws IOException
      */
-    public GitConnector(String path) throws VCSException {
+    public GitConnector(String path, String name) throws VCSException {
         try {
             repository = new FileRepositoryBuilder().setGitDir(new File(getGitPath(path))).readEnvironment() // scan environment GIT_* variables
                     .findGitDir() // scan up the file system tree
                     .build();
             git = new Git(repository);
+            this.name = name;
         } catch (IOException ex) {
             Logger.getLogger(GitConnector.class.getName()).log(Level.SEVERE, null, ex);
             throw new VCSException("Error initializing a git repository.", ex);
@@ -110,28 +107,28 @@ public class GitConnector {
      *
      * @param rep repository to connect to
      */
-    public GitConnector(Repository rep) {
+    public GitConnector(Repository rep, String name) {
         repository = rep;
         git = new Git(repository);
+        this.name = name;
     }
 
     /**
-     * Returns the configured remote repositories for the connected repository.
-     * @return the Hashmap for known remote repositories. The key for the hashmap
-     * is the remoteName and the value is the remote URL.
+     * Returns the names of the configured remote repositories for the connected repository.
+     * @return the list of known remotes for the connected repository
      */
-    public HashMap<String, String> getRemotes() {
-        HashMap<String, String> result = new HashMap<String, String>();
+    public Set<String> getRemoteNames() {
         Config storedConfig = repository.getConfig();
-        Set<String> remotes = storedConfig.getSubsections("remote");
+        return storedConfig.getSubsections("remote");
+    }
 
-        System.out.println("Known remotes:");
-        for (String remoteName : remotes) {
-            String url = storedConfig.getString("remote", remoteName, "url");
-            System.out.println("\t" + remoteName + " " + url);
-            result.put(remoteName, url);
-        }
-        return result;
+    /**
+     * Returns the url of a existing remote repository
+     * @return the url of the repository specified by the giving remoteName
+     */
+    public String getRemoteUrl(String remoteName) {
+        Config storedConfig = repository.getConfig();
+        return storedConfig.getString("remote", remoteName, "url");
     }
 
     /**
@@ -139,9 +136,25 @@ public class GitConnector {
      *
      * @return
      */
-    public Set<String> getBranchesFromRemote() {
+    public List<TrackedBranch> getTrackedBranches() {
+        List<TrackedBranch> result = new ArrayList <TrackedBranch>();
         Config storedConfig = repository.getConfig();
-        return storedConfig.getSubsections("branch");
+        Set<String> trackedBranches = storedConfig.getSubsections("branch");
+        for (Iterator<String> it = trackedBranches.iterator(); it.hasNext();) {
+            String branchName = it.next();
+            TrackedBranch trackedBranch = new TrackedBranch();
+            trackedBranch.setName(branchName);
+            trackedBranch.setRemoteName(storedConfig.getString("branch", branchName, "remote"));
+            try {
+                RemoteConfig cfg = new RemoteConfig(storedConfig, storedConfig.getString("branch", branchName, "remote"));
+                System.out.println("");
+            } catch (URISyntaxException ex) {
+                Logger.getLogger(GitConnector.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            result.add(trackedBranch);
+                    
+        }
+        return result;
     }
 
     /**
@@ -256,11 +269,15 @@ public class GitConnector {
      * @return a connector to the clone of this repository
      * @throws GitAPIException
      */
-    public GitConnector cloneRepository(String source, File target) throws GitAPIException {
+    public GitConnector cloneRepository(String source, File target, String id) throws GitAPIException {
         CloneCommand cloneCmd = Git.cloneRepository().setURI(source).setDirectory(target);
         Git result = cloneCmd.call();
 
-        return new GitConnector(result.getRepository());
+        if (!id.endsWith("Clone")) {
+            id.concat("Clone");
+        }
+        
+        return new GitConnector(result.getRepository(), id);
     }
 
     /**
@@ -273,8 +290,8 @@ public class GitConnector {
      * @see #cloneRepository(java.lang.String, java.io.File)
      * @throws GitAPIException
      */
-    public GitConnector cloneRepository(String source, String target) throws GitAPIException {
-        return cloneRepository(source, new File(target));
+    public GitConnector cloneRepository(String source, String target, String id) throws GitAPIException {
+        return cloneRepository(source, new File(target), id + "Clone");
     }
 
     /**
@@ -287,24 +304,31 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public GitConnector cloneThis(String target) throws GitAPIException {
-        return cloneRepository(repository.getDirectory().getAbsolutePath(), new File(target));
+        return cloneRepository(repository.getDirectory().getAbsolutePath(), new File(target), this.getName() + "Clone");
     }
 
+    public void close() {
+        repository.close();
+    }
+    
     public List<RepositoryRelationship> testAhead() throws VCSException {
         //TODO não está funcionando direito
-        List<RepositoryRelationship> result = Collections.EMPTY_LIST;
-        Set<String> branches = getBranchesFromRemote();
-        for (Iterator<String> it = branches.iterator(); it.hasNext();) {
+        List<RepositoryRelationship> result = new ArrayList<RepositoryRelationship>();
+        List<TrackedBranch> branches = getTrackedBranches();
+        for (Iterator<TrackedBranch> it = branches.iterator(); it.hasNext();) {
             try {
-                String string = it.next();
-                BranchTrackingStatus status = BranchTrackingStatus.of(repository, string);
-                System.out.println(repository.getDirectory().getAbsolutePath());
-                System.out.printf("Branch: %s \tRemote: %s\tAhead: %d\tBehind: %d\n\n", string, status.getRemoteTrackingBranch(), status.getAheadCount(), status.getBehindCount());
+                TrackedBranch trackedBranch = it.next();
+                BranchTrackingStatus status = BranchTrackingStatus.of(repository, trackedBranch.getName());
+
                 RepositoryRelationship relationship = new RepositoryRelationship();
                 relationship.setAhead(status.getAheadCount());
                 relationship.setBehind(status.getBehindCount());
-                br.uff.ic.dyevc.model.MonitoredRepository target = new br.uff.ic.dyevc.model.MonitoredRepository();
-
+                relationship.setRepositoryBranch(trackedBranch.getName());
+                relationship.setRepositoryUrl(repository.getDirectory().getAbsolutePath());
+                relationship.setReferencedRepositoryBranch(status.getRemoteTrackingBranch());
+                relationship.setReferencedRepositoryUrl(getRemoteUrl(trackedBranch.getRemoteName()));
+                
+                result.add(relationship);
 
             } catch (IOException ex) {
                 Logger.getLogger(GitConnector.class
@@ -369,4 +393,9 @@ public class GitConnector {
                 ? path
                 : path + GIT_DIR;
     }
+    
+    public String getName() {
+        return name;
+    }
+
 }

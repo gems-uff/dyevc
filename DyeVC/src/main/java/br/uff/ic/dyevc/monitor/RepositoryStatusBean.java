@@ -8,6 +8,6 @@ package br.uff.ic.dyevc.monitor;
  *
  * @author Cristiano
  */
-public class MonitorMessageBean {
+public class RepositoryStatusBean {
     
 }
