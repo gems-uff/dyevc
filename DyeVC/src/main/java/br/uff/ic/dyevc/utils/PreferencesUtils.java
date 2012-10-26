@@ -68,6 +68,11 @@ public final class PreferencesUtils {
                 MonitoredRepository repositoryBean = it.next();
                 nodeToStore.node("rep." + i).put("name", repositoryBean.getName());
                 nodeToStore.node("rep." + i).put("cloneaddress", repositoryBean.getCloneAddress());
+                nodeToStore.node("rep." + i).put("needsauthentication", Boolean.toString(repositoryBean.needsAuthentication()));
+                if (repositoryBean.needsAuthentication()) {
+                    nodeToStore.node("rep." + i).put("user", repositoryBean.getUser());
+                    nodeToStore.node("rep." + i).put("password", repositoryBean.getPassword());
+                }
                 i++;
             }
         }
@@ -84,6 +89,11 @@ public final class PreferencesUtils {
                     MonitoredRepository bean = new MonitoredRepository();
                     bean.setName(nodeToStore.node(rep).get("name", "no name"));
                     bean.setCloneAddress(nodeToStore.node(rep).get("cloneaddress", "no cloneaddress"));
+                    bean.setNeedsAuthentication(new Boolean(nodeToStore.node(rep).get("needsauthentication", "false")));
+                    if (bean.needsAuthentication()) {
+                        bean.setUser(nodeToStore.node(rep).get("user", "user not set"));
+                        bean.setPassword(nodeToStore.node(rep).get("password", "password not set"));
+                    }
                     monBean.addMonitoredRepository(bean);
                 }
             }

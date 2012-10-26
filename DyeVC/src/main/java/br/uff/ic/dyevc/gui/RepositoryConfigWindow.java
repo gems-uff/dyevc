@@ -9,6 +9,7 @@ import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.tools.vcs.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,8 +53,8 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         } else {
             setTitle("Changing a monitoring configuration");
         }
-        setSize(new java.awt.Dimension(506, 150));
-        setMinimumSize(new java.awt.Dimension(506, 150));
+        setSize(new java.awt.Dimension(528, 230));
+        setMinimumSize(new java.awt.Dimension(528, 230));
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
         setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
@@ -68,13 +69,31 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         lblCloneAddress = new javax.swing.JLabel();
         lblCloneAddress.setText("Clone Address:");
         lblCloneAddress.setToolTipText("Click on the button to select the path to a local repository you want to monitor.");
-        
+        lblUser = new javax.swing.JLabel();
+        lblUser.setText("User:");
+        lblPassword = new javax.swing.JLabel();
+        lblPassword.setText("Password:");
+
+        needsAuthenticationCheckBox = new javax.swing.JCheckBox();
+        needsAuthenticationCheckBox.setText("Needs authentication");
+        needsAuthenticationCheckBox.setSelected(repositoryBean.needsAuthentication());
+        needsAuthenticationCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                needsAuthenticationCheckBoxActionPerformed(evt);
+            }
+        });
 
         txtRepositoryName = new javax.swing.JTextField();
         txtRepositoryName.setText(repositoryBean.getName());
         txtCloneAddres = new javax.swing.JTextField();
         txtCloneAddres.setText(repositoryBean.getCloneAddress());
         txtCloneAddres.setEditable(false);
+        txtUser = new javax.swing.JTextField();
+        txtUser.setText(repositoryBean.getUser());
+        txtUser.setEnabled(needsAuthenticationCheckBox.isSelected());
+        txtPassword = new javax.swing.JPasswordField();
+        txtPassword.setText(new String(repositoryBean.getPassword()));
+        txtPassword.setEnabled(needsAuthenticationCheckBox.isSelected());
 
         btnExploreCloneAddress = new javax.swing.JButton();
         btnExploreCloneAddress.setText("Explore");
@@ -116,6 +135,11 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private void btnSaveRepositoryActionPerformed(java.awt.event.ActionEvent evt) {
         repositoryBean.setName(txtRepositoryName.getText());
         repositoryBean.setCloneAddress(txtCloneAddres.getText());
+        repositoryBean.setNeedsAuthentication(needsAuthenticationCheckBox.isSelected());
+        if (needsAuthenticationCheckBox.isSelected()) {
+            repositoryBean.setUser(txtUser.getText());
+            repositoryBean.setPassword(new String(txtPassword.getPassword()));
+        }
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
         PreferencesUtils.persistRepositories(monitoredRepositoriesBean);
         dispose();
@@ -144,6 +168,13 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 field.setText(file.getAbsolutePath());
             }
         }
+    }
+
+    private void needsAuthenticationCheckBoxActionPerformed(ActionEvent evt) {
+        txtUser.setText("");
+        txtUser.setEnabled(needsAuthenticationCheckBox.isSelected());
+        txtPassword.setText("");
+        txtPassword.setEnabled(needsAuthenticationCheckBox.isSelected());
     }
     //</editor-fold>
 
@@ -199,6 +230,11 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private javax.swing.JLabel lblCloneAddress;
     private javax.swing.JTextField txtCloneAddres;
     private javax.swing.JTextField txtRepositoryName;
+    private javax.swing.JCheckBox needsAuthenticationCheckBox;
+    private javax.swing.JLabel lblUser;
+    private javax.swing.JTextField txtUser;
+    private javax.swing.JLabel lblPassword;
+    private javax.swing.JPasswordField txtPassword;
     private javax.swing.JPanel pnlTop;
     private javax.swing.JPanel pnlBottom;
 
@@ -211,14 +247,21 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addComponent(lblRepositoryName, javax.swing.GroupLayout.Alignment.TRAILING)
-                .addComponent(lblCloneAddress, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addComponent(lblCloneAddress, javax.swing.GroupLayout.Alignment.TRAILING)
+                .addComponent(lblUser, javax.swing.GroupLayout.Alignment.TRAILING)
+                .addComponent(lblPassword, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addComponent(txtRepositoryName)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addComponent(btnExploreCloneAddress)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtCloneAddres)))
+                .addComponent(txtCloneAddres))
+                .addComponent(txtPassword)
+                .addGroup(jPanel5Layout.createSequentialGroup()
+                .addComponent(needsAuthenticationCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 5, Short.MAX_VALUE))
+                .addComponent(txtUser, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap()));
         jPanel5Layout.setVerticalGroup(
                 jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -232,7 +275,17 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addComponent(lblCloneAddress)
                 .addComponent(txtCloneAddres, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addComponent(btnExploreCloneAddress))
-                .addContainerGap(282, Short.MAX_VALUE)));
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(needsAuthenticationCheckBox)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addComponent(txtUser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(lblUser))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addComponent(txtPassword, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(lblPassword))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
         java.awt.FlowLayout flowLayout1 = new java.awt.FlowLayout();
         flowLayout1.setAlignOnBaseline(true);

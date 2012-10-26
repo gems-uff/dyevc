@@ -59,12 +59,14 @@ public class TemplateGUI extends javax.swing.JFrame {
         jPanel5 = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
-        jLabel6 = new javax.swing.JLabel();
         repositoryNameTxt = new javax.swing.JTextField();
         cloneAddresTxt = new javax.swing.JTextField();
-        originURLTxt = new javax.swing.JTextField();
         cloneAddressExploreButton = new javax.swing.JButton();
-        originURLExploreButton = new javax.swing.JButton();
+        needsAuthenticationCheckBox = new javax.swing.JCheckBox();
+        userTxt = new javax.swing.JTextField();
+        userLabel = new javax.swing.JLabel();
+        passwordLabel = new javax.swing.JLabel();
+        passwordTxt = new javax.swing.JPasswordField();
         jPanel7 = new javax.swing.JPanel();
         saveRepository = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
@@ -252,42 +254,51 @@ public class TemplateGUI extends javax.swing.JFrame {
 
         jLabel5.setText("Clone Address:");
 
-        jLabel6.setText("Origin URL:");
-
         binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, repositoryBean1, org.jdesktop.beansbinding.ELProperty.create("${name}"), repositoryNameTxt, org.jdesktop.beansbinding.BeanProperty.create("text"));
         bindingGroup.addBinding(binding);
 
         binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, repositoryBean1, org.jdesktop.beansbinding.ELProperty.create("${cloneAddress}"), cloneAddresTxt, org.jdesktop.beansbinding.BeanProperty.create("text"));
         bindingGroup.addBinding(binding);
 
-        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, repositoryBean1, org.jdesktop.beansbinding.ELProperty.create("${originUrl}"), originURLTxt, org.jdesktop.beansbinding.BeanProperty.create("text"));
-        bindingGroup.addBinding(binding);
-
         cloneAddressExploreButton.setText("Explore");
 
-        originURLExploreButton.setText("Explore");
+        needsAuthenticationCheckBox.setText("Needs authentication");
+        needsAuthenticationCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                needsAuthenticationCheckBoxActionPerformed(evt);
+            }
+        });
+
+        userLabel.setText("User:");
+
+        passwordLabel.setText("Password:");
+
+        passwordTxt.setText("jPasswordField1");
 
         javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel5Layout.createSequentialGroup()
-                .addContainerGap()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel5, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.TRAILING))
+                    .addComponent(userLabel, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(passwordLabel, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(repositoryNameTxt)
-                    .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addComponent(originURLExploreButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(originURLTxt, javax.swing.GroupLayout.DEFAULT_SIZE, 317, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
-                        .addComponent(cloneAddressExploreButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cloneAddresTxt)))
+                    .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(passwordTxt, javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(userTxt, javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(needsAuthenticationCheckBox, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 392, Short.MAX_VALUE))
+                    .addComponent(repositoryNameTxt, javax.swing.GroupLayout.PREFERRED_SIZE, 394, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
+                .addGap(103, 103, 103)
+                .addComponent(cloneAddressExploreButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(cloneAddresTxt)
                 .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
@@ -303,10 +314,15 @@ public class TemplateGUI extends javax.swing.JFrame {
                     .addComponent(cloneAddresTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(cloneAddressExploreButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(needsAuthenticationCheckBox)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel6)
-                    .addComponent(originURLTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(originURLExploreButton))
+                    .addComponent(userTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(userLabel))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(passwordTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(passwordLabel))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -335,8 +351,8 @@ public class TemplateGUI extends javax.swing.JFrame {
         addRepositoryWindowLayout.setVerticalGroup(
             addRepositoryWindowLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(addRepositoryWindowLayout.createSequentialGroup()
-                .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, Short.MAX_VALUE)
                 .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
@@ -516,6 +532,10 @@ public class TemplateGUI extends javax.swing.JFrame {
         addRepositoryWindow.dispose();
     }//GEN-LAST:event_jButton1ActionPerformed
 
+    private void needsAuthenticationCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_needsAuthenticationCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_needsAuthenticationCheckBoxActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -563,7 +583,6 @@ public class TemplateGUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
@@ -578,8 +597,9 @@ public class TemplateGUI extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextArea jTextArea1;
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean1;
-    private javax.swing.JButton originURLExploreButton;
-    private javax.swing.JTextField originURLTxt;
+    private javax.swing.JCheckBox needsAuthenticationCheckBox;
+    private javax.swing.JLabel passwordLabel;
+    private javax.swing.JPasswordField passwordTxt;
     private javax.swing.JTextField refreshRate;
     private javax.swing.JList repoList;
     private br.uff.ic.dyevc.model.MonitoredRepository repositoryBean1;
@@ -588,6 +608,8 @@ public class TemplateGUI extends javax.swing.JFrame {
     private javax.swing.JButton saveRepository;
     private javax.swing.JMenuItem settingsMnuItem;
     private javax.swing.JFrame settingsWindow;
+    private javax.swing.JLabel userLabel;
+    private javax.swing.JTextField userTxt;
     private javax.swing.JTextField workingPath;
     private javax.swing.JFileChooser workingPathFileChooser;
     private org.jdesktop.beansbinding.BindingGroup bindingGroup;

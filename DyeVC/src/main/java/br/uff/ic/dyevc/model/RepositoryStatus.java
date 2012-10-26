@@ -1,6 +1,6 @@
 package br.uff.ic.dyevc.model;
 
-public class RepositoryRelationship {
+public class RepositoryStatus {
 
     private int ahead;
     private int behind;
@@ -56,8 +56,7 @@ public class RepositoryRelationship {
     public void setReferencedRepositoryBranch(String referencedRepositoryBranch) {
         this.referencedRepositoryBranch = referencedRepositoryBranch;
     }
-
- 
+    
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();

@@ -22,6 +22,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.UIManager;
+import javax.swing.text.DefaultCaret;
 
 /**
  *
@@ -103,6 +104,9 @@ public class MainWindow extends javax.swing.JFrame {
         jTextAreaMessages = new javax.swing.JTextArea();
         jTextAreaMessages.setColumns(20);
         jTextAreaMessages.setRows(5);
+        //this is to scroll messages automatically
+        DefaultCaret caret = (DefaultCaret)jTextAreaMessages.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
         jTextAreaMessages.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -468,7 +472,11 @@ public class MainWindow extends javax.swing.JFrame {
      * Starts the repository monitor.
      */
     private void startMonitor() {
-        monitor = new RepositoryMonitor();
+        monitor = new RepositoryMonitor(this);
+    }
+    
+    public void notifyMessage(String message) {
+            trayIcon.displayMessage("DyeVC", message, TrayIcon.MessageType.WARNING);
     }
     // </editor-fold>
 

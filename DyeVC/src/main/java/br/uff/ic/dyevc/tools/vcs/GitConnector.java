@@ -2,7 +2,7 @@ package br.uff.ic.dyevc.tools.vcs;
 
 import br.uff.ic.dyevc.model.git.TrackedBranch;
 import br.uff.ic.dyevc.exception.VCSException;
-import br.uff.ic.dyevc.model.RepositoryRelationship;
+import br.uff.ic.dyevc.model.RepositoryStatus;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -42,6 +42,7 @@ import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.RemoteConfig;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 /**
  * Connects to a git repository, providing a way to invoke commands upon it
@@ -50,11 +51,11 @@ import org.eclipse.jgit.transport.RemoteConfig;
  */
 public class GitConnector {
 
-    private static final String GIT_DIR = "/.git";
+    private static final String GIT_DIR = ".git";
     private Repository repository;
     private Git git;
-
     private String name;
+    private UsernamePasswordCredentialsProvider credentialsProvider;
 
     /**
      * Gets the reference to the repository connected to this connector
@@ -114,7 +115,9 @@ public class GitConnector {
     }
 
     /**
-     * Returns the names of the configured remote repositories for the connected repository.
+     * Returns the names of the configured remote repositories for the connected
+     * repository.
+     *
      * @return the list of known remotes for the connected repository
      */
     public Set<String> getRemoteNames() {
@@ -123,7 +126,23 @@ public class GitConnector {
     }
 
     /**
+     * Gets the remote name for the specified branch
+     * @param branchName branch to get the remote name
+     * @return 
+     */
+    public String getRemoteForBranch(String branchName) {
+        String remoteName = repository.getConfig().getString(
+                "branch", branchName, "remote");
+        if (remoteName == null) {
+            return "origin";
+        } else {
+            return remoteName;
+        }
+    }
+
+    /**
      * Returns the url of a existing remote repository
+     *
      * @return the url of the repository specified by the giving remoteName
      */
     public String getRemoteUrl(String remoteName) {
@@ -137,22 +156,17 @@ public class GitConnector {
      * @return
      */
     public List<TrackedBranch> getTrackedBranches() {
-        List<TrackedBranch> result = new ArrayList <TrackedBranch>();
+        List<TrackedBranch> result = new ArrayList<TrackedBranch>();
         Config storedConfig = repository.getConfig();
         Set<String> trackedBranches = storedConfig.getSubsections("branch");
         for (Iterator<String> it = trackedBranches.iterator(); it.hasNext();) {
             String branchName = it.next();
             TrackedBranch trackedBranch = new TrackedBranch();
             trackedBranch.setName(branchName);
-            trackedBranch.setRemoteName(storedConfig.getString("branch", branchName, "remote"));
-            try {
-                RemoteConfig cfg = new RemoteConfig(storedConfig, storedConfig.getString("branch", branchName, "remote"));
-                System.out.println("");
-            } catch (URISyntaxException ex) {
-                Logger.getLogger(GitConnector.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            trackedBranch.setRemoteName(getRemoteForBranch(branchName));
+
             result.add(trackedBranch);
-                    
+
         }
         return result;
     }
@@ -194,6 +208,9 @@ public class GitConnector {
      */
     public boolean pull() throws GitAPIException {
         PullCommand pull = git.pull();
+        if (credentialsProvider != null) {
+            pull.setCredentialsProvider(credentialsProvider);
+        }
         PullResult result = pull.call();
         return result.isSuccessful();
     }
@@ -205,7 +222,11 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public void fetch() throws GitAPIException {
-        git.fetch().call();
+        FetchCommand fetch = git.fetch();
+        if (credentialsProvider != null) {
+            fetch.setCredentialsProvider(credentialsProvider);
+        }
+        fetch.call();
     }
 
     /**
@@ -218,9 +239,13 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public void fetch(String remoteAddress, String refSpec) throws GitAPIException {
+        remoteAddress = getGitPath(remoteAddress);
         FetchCommand fetch = git.fetch();
         fetch.setRemote(remoteAddress);
         fetch.setRefSpecs(new RefSpec(refSpec));
+        if (credentialsProvider != null) {
+            fetch.setCredentialsProvider(credentialsProvider);
+        }
         fetch.call();
     }
 
@@ -232,6 +257,9 @@ public class GitConnector {
      */
     public void push() throws GitAPIException {
         PushCommand push = git.push();
+        if (credentialsProvider != null) {
+            push.setCredentialsProvider(credentialsProvider);
+        }
         Iterator<PushResult> it = push.call().iterator();
     }
 
@@ -271,12 +299,15 @@ public class GitConnector {
      */
     public GitConnector cloneRepository(String source, File target, String id) throws GitAPIException {
         CloneCommand cloneCmd = Git.cloneRepository().setURI(source).setDirectory(target);
+        if (credentialsProvider != null) {
+            cloneCmd.setCredentialsProvider(credentialsProvider);
+        }
         Git result = cloneCmd.call();
 
         if (!id.endsWith("Clone")) {
             id.concat("Clone");
         }
-        
+
         return new GitConnector(result.getRepository(), id);
     }
 
@@ -310,24 +341,24 @@ public class GitConnector {
     public void close() {
         repository.close();
     }
-    
-    public List<RepositoryRelationship> testAhead() throws VCSException {
+
+    public List<RepositoryStatus> testAhead() throws VCSException {
         //TODO não está funcionando direito
-        List<RepositoryRelationship> result = new ArrayList<RepositoryRelationship>();
+        List<RepositoryStatus> result = new ArrayList<RepositoryStatus>();
         List<TrackedBranch> branches = getTrackedBranches();
         for (Iterator<TrackedBranch> it = branches.iterator(); it.hasNext();) {
             try {
                 TrackedBranch trackedBranch = it.next();
                 BranchTrackingStatus status = BranchTrackingStatus.of(repository, trackedBranch.getName());
 
-                RepositoryRelationship relationship = new RepositoryRelationship();
+                RepositoryStatus relationship = new RepositoryStatus();
                 relationship.setAhead(status.getAheadCount());
                 relationship.setBehind(status.getBehindCount());
                 relationship.setRepositoryBranch(trackedBranch.getName());
                 relationship.setRepositoryUrl(repository.getDirectory().getAbsolutePath());
-                relationship.setReferencedRepositoryBranch(status.getRemoteTrackingBranch());
+                relationship.setReferencedRepositoryBranch(trackedBranch.getRemoteName());
                 relationship.setReferencedRepositoryUrl(getRemoteUrl(trackedBranch.getRemoteName()));
-                
+
                 result.add(relationship);
 
             } catch (IOException ex) {
@@ -382,20 +413,25 @@ public class GitConnector {
         }
 
     }
-    
+
     /**
      * Checks if specified path ends with "/.git" and appends it if it doesn't
+     *
      * @param path the path to be checked
      * @return a path to a git repository
      */
     private static final String getGitPath(String path) {
+        
         return (path.endsWith(GIT_DIR))
                 ? path
-                : path + GIT_DIR;
+                : (path.startsWith("http") ? path + GIT_DIR : path + "/" + GIT_DIR);
     }
-    
+
     public String getName() {
         return name;
     }
-
+    
+    public void setCredentials(String user, String password) {
+        credentialsProvider = new UsernamePasswordCredentialsProvider(user, password);
+    }
 }

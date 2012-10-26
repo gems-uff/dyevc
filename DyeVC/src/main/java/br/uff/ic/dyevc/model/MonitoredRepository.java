@@ -16,7 +16,9 @@ public class MonitoredRepository implements Serializable {
     private static final long serialVersionUID = -8604175800390199323L;
     private String name;
     private String cloneAddress;
-    private List<RepositoryRelationship> origins;
+    private boolean needsAuthentication;
+    private String user;
+    private String password;
     public static final String PROP_CLONEADDRESS = "cloneAddress";
 
     /**
@@ -44,6 +46,9 @@ public class MonitoredRepository implements Serializable {
         this.name = "";
         this.cloneAddress = "";
         this.originUrl = "";
+        this.user = "";
+        this.password = "";
+        this.needsAuthentication = false;
         propertySupport = new PropertyChangeSupport(this);
     }
 
@@ -69,6 +74,30 @@ public class MonitoredRepository implements Serializable {
     @Override
     public String toString() {
         return "Repository{" + "name=" + name + ", cloneAddress=" + cloneAddress + '}';
+    }
+
+    public boolean needsAuthentication() {
+        return needsAuthentication;
+    }
+
+    public void setNeedsAuthentication(boolean needsAuthentication) {
+        this.needsAuthentication = needsAuthentication;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     
