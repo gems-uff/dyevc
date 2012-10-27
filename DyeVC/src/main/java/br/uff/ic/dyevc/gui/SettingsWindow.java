@@ -25,7 +25,7 @@ public class SettingsWindow extends javax.swing.JFrame {
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("DyeVC Settings");
-        setSize(new java.awt.Dimension(506, 144));
+        setSize(new java.awt.Dimension(400, 120));
         setResizable(false);
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
@@ -34,11 +34,8 @@ public class SettingsWindow extends javax.swing.JFrame {
         applicationSettingsBean = PreferencesUtils.loadPreferences();
         jPanel3 = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
-        lblWorkingPath = new javax.swing.JLabel();
         lblRefreshRate = new javax.swing.JLabel();
-        txtWorkingPath = new javax.swing.JTextField();
         txtRefreshRate = new javax.swing.JTextField();
-        btnExploreWorkingPath = new javax.swing.JButton();
         btnSave = new javax.swing.JButton();
         btnCancel = new javax.swing.JButton();
         workingPathFileChooser = new javax.swing.JFileChooser();
@@ -52,47 +49,27 @@ public class SettingsWindow extends javax.swing.JFrame {
                 .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(lblRefreshRate, javax.swing.GroupLayout.Alignment.TRAILING)
-                .addComponent(lblWorkingPath, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addComponent(lblRefreshRate, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel3Layout.createSequentialGroup()
-                .addComponent(btnExploreWorkingPath)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtWorkingPath, javax.swing.GroupLayout.PREFERRED_SIZE, 323, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 76, Short.MAX_VALUE))
+                .addGroup(jPanel3Layout.createSequentialGroup())
                 .addComponent(txtRefreshRate))
                 .addContainerGap()));
         jPanel3Layout.setVerticalGroup(
                 jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(lblWorkingPath)
-                .addComponent(txtWorkingPath, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addComponent(btnExploreWorkingPath))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                 .addComponent(lblRefreshRate)
                 .addComponent(txtRefreshRate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
-        lblWorkingPath.setText("Working Path:");
-        lblWorkingPath.setToolTipText("Click on the button to set a different path to be used to store temporary files.");
         lblRefreshRate.setText("Refresh Rate (s):");
         lblRefreshRate.setToolTipText("Enter the time in seconds between new checks.");
 
-        txtWorkingPath.setText(applicationSettingsBean.getWorkingPath());
-        txtWorkingPath.setEditable(false);
         txtRefreshRate.setText(Integer.valueOf(applicationSettingsBean.getRefreshInterval()).toString());
 
-        btnExploreWorkingPath.setText("Explore");
-        btnExploreWorkingPath.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                exploreWPathButtonActionPerformed(evt);
-            }
-        });
         btnSave.setText("Save");
         btnSave.setSelected(true);
         btnSave.addActionListener(new java.awt.event.ActionListener() {
@@ -164,19 +141,6 @@ public class SettingsWindow extends javax.swing.JFrame {
     }
     //</editor-fold>
 
-    private void exploreWPathButtonActionPerformed(java.awt.event.ActionEvent evt) {                                                   
-        workingPathFileChooser.setCurrentDirectory(null);
-        workingPathFileChooser.setDialogTitle("Select a working directory for DyeVC");
-        workingPathFileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
-        
-        int returnVal = workingPathFileChooser.showOpenDialog(this);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            File file = workingPathFileChooser.getSelectedFile();
-            // What to do with the file, e.g. display it in a TextArea
-            txtWorkingPath.setText(file.getAbsolutePath());
-        }
-    }
-
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {
         dispose();
     }
@@ -184,7 +148,6 @@ public class SettingsWindow extends javax.swing.JFrame {
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {
         //TODO acrescentar validação dos valores
         applicationSettingsBean.setRefreshInterval(new Integer(txtRefreshRate.getText()).intValue());
-        applicationSettingsBean.setWorkingPath(txtWorkingPath.getText());
         
         PreferencesUtils.storePreferences(applicationSettingsBean);
         dispose();
@@ -195,10 +158,7 @@ public class SettingsWindow extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel4;
     private javax.swing.JButton btnSave;
     private javax.swing.JButton btnCancel;
-    private javax.swing.JButton btnExploreWorkingPath;
-    private javax.swing.JLabel lblWorkingPath;
     private javax.swing.JLabel lblRefreshRate;
     private javax.swing.JTextField txtRefreshRate;
-    private javax.swing.JTextField txtWorkingPath;
     private javax.swing.JFileChooser workingPathFileChooser;
 }

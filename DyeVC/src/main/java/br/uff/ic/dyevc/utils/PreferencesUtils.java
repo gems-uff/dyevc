@@ -25,7 +25,6 @@ public final class PreferencesUtils {
     private static final String NODE_GENERAL_SETTINGS = "generalsettings";
     private static final String NODE_MONITORED_REPOSITORIES = "monitoredrepositories";
     private static final int DEFAULT_CHECK_INTERVAL = 300;
-    private static final String DEFAULT_WORKING_PATH = System.getProperty("user.home") + IConstants.DIR_SEPARATOR + ".dyevc";
     private static Preferences pref;
     private static ApplicationSettingsBean settingsBean;
 
@@ -35,7 +34,6 @@ public final class PreferencesUtils {
 
     public static void storePreferences(ApplicationSettingsBean bean) {
         Preferences nodeToStore = pref.node(NODE_GENERAL_SETTINGS);
-        nodeToStore.put(ApplicationSettingsBean.PROP_WORKING_PATH, bean.getWorkingPath());
         nodeToStore.putInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL, bean.getRefreshInterval());
         settingsBean = bean;
     }
@@ -44,7 +42,6 @@ public final class PreferencesUtils {
         if (settingsBean == null) {
             Preferences nodeToLoad = pref.node(NODE_GENERAL_SETTINGS);
             ApplicationSettingsBean bean = new ApplicationSettingsBean();
-            bean.setWorkingPath(nodeToLoad.get(ApplicationSettingsBean.PROP_WORKING_PATH, DEFAULT_WORKING_PATH));
             bean.setRefreshInterval(nodeToLoad.getInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL, DEFAULT_CHECK_INTERVAL));
             settingsBean = bean;
         }

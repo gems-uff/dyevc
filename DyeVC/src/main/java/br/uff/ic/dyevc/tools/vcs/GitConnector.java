@@ -5,10 +5,7 @@ import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.model.RepositoryStatus;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -19,29 +16,22 @@ import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.CommitCommand;
 import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
-import org.eclipse.jgit.lib.BranchConfig;
 import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.eclipse.jgit.lib.Config;
-import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.eclipse.jgit.transport.CredentialsProvider;
-import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RefSpec;
-import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 /**
@@ -302,11 +292,9 @@ public class GitConnector {
         if (credentialsProvider != null) {
             cloneCmd.setCredentialsProvider(credentialsProvider);
         }
+        cloneCmd.setCloneAllBranches(true);
+        cloneCmd.setCloneSubmodules(true);
         Git result = cloneCmd.call();
-
-        if (!id.endsWith("Clone")) {
-            id.concat("Clone");
-        }
 
         return new GitConnector(result.getRepository(), id);
     }
@@ -322,7 +310,7 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public GitConnector cloneRepository(String source, String target, String id) throws GitAPIException {
-        return cloneRepository(source, new File(target), id + "Clone");
+        return cloneRepository(source, new File(target), id);
     }
 
     /**
@@ -335,7 +323,7 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public GitConnector cloneThis(String target) throws GitAPIException {
-        return cloneRepository(repository.getDirectory().getAbsolutePath(), new File(target), this.getName() + "Clone");
+        return cloneRepository(repository.getDirectory().getAbsolutePath(), new File(target), this.getName());
     }
 
     public void close() {

@@ -4,6 +4,7 @@
  */
 package br.uff.ic.dyevc.beans;
 
+import br.uff.ic.dyevc.application.IConstants;
 import java.beans.*;
 import java.io.Serializable;
 
@@ -15,7 +16,7 @@ public class ApplicationSettingsBean implements Serializable {
     
     private static final long serialVersionUID = 6840556021845882092L;
     private PropertyChangeSupport propertySupport;
-    private String workingPath;
+    private static final String WORKING_PATH = System.getProperty("user.home") + IConstants.DIR_SEPARATOR + ".dyevc";;
     public static final String PROP_WORKING_PATH = "workingpath";
 
     /**
@@ -24,19 +25,9 @@ public class ApplicationSettingsBean implements Serializable {
      * @return the value of workingPath
      */
     public String getWorkingPath() {
-        return workingPath;
+        return WORKING_PATH;
     }
 
-    /**
-     * Set the value of workingPath
-     *
-     * @param workingPath new value of workingPath
-     */
-    public void setWorkingPath(String workingPath) {
-        String oldWorkingPath = this.workingPath;
-        this.workingPath = workingPath;
-        propertySupport.firePropertyChange(PROP_WORKING_PATH, oldWorkingPath, workingPath);
-    }
     private int refreshInterval;
     public static final String PROP_REFRESHINTERVAL = "refreshinterval";
 
