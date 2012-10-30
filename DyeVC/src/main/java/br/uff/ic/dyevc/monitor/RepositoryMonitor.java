@@ -59,7 +59,7 @@ public class RepositoryMonitor extends Thread {
                 Thread.sleep(settings.getRefreshInterval() * 1000);
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping.", sleepTime);
             } catch (InterruptedException ex) {
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up due to interruption received.");
+                LoggerFactory.getLogger(RepositoryMonitor.class).info("Waking up due to interruption received.");
             }
         }
     }

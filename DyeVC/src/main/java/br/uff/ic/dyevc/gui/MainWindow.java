@@ -38,7 +38,6 @@ public class MainWindow extends javax.swing.JFrame {
         minizeToTray();
         startMonitor();
     }
-
     // <editor-fold defaultstate="collapsed" desc="private variables">      
     private javax.swing.JDialog dlgAbout;
     private javax.swing.JFrame frameSettings;
@@ -71,7 +70,7 @@ public class MainWindow extends javax.swing.JFrame {
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
         setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
-        
+
         stdOutWindow = new StdOutErrWindow();
 
         bindingGroup = new org.jdesktop.beansbinding.BindingGroup();
@@ -106,7 +105,7 @@ public class MainWindow extends javax.swing.JFrame {
         jTextAreaMessages.setColumns(20);
         jTextAreaMessages.setRows(5);
         //this is to scroll messages automatically
-        DefaultCaret caret = (DefaultCaret)jTextAreaMessages.getCaret();
+        DefaultCaret caret = (DefaultCaret) jTextAreaMessages.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
         jTextAreaMessages.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -273,7 +272,6 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
-    
     // <editor-fold defaultstate="collapsed" desc="main menu">                          
     /**
      * This method creates the menu bar
@@ -306,6 +304,20 @@ public class MainWindow extends javax.swing.JFrame {
         });
         mnuFile.add(mntSettings);
 
+        mnuFile.addSeparator();
+
+        javax.swing.JMenuItem mntCheckAllNow = new javax.swing.JMenuItem();
+        mntCheckAllNow.setText("Check All Repositories Now.");
+        mntCheckAllNow.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntCheckAllNowActionPerformed(evt);
+            }
+        });
+        mnuFile.add(mntCheckAllNow);
+
+        mnuFile.addSeparator();
+
         javax.swing.JMenuItem mntExit = new javax.swing.JMenuItem();
         mntExit.setText("Exit");
         mntExit.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
@@ -335,7 +347,7 @@ public class MainWindow extends javax.swing.JFrame {
 
         jMenuBar.add(mnuView);
         //</editor-fold>                          
-        
+
         // <editor-fold defaultstate="collapsed" desc="help">                          
         javax.swing.JMenu mnuHelp = new javax.swing.JMenu();
         mnuHelp.setText("Help");
@@ -352,12 +364,11 @@ public class MainWindow extends javax.swing.JFrame {
 
         jMenuBar.add(mnuHelp);
         //</editor-fold>                          
-        
+
         setJMenuBar(jMenuBar);
     }
 
     // </editor-fold>
-    
     // <editor-fold defaultstate="collapsed" desc="main menu events">                          
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
@@ -394,6 +405,14 @@ public class MainWindow extends javax.swing.JFrame {
         }
     }
 
+    private void mntCheckAllNowActionPerformed(ActionEvent evt) {
+        if (monitor.getState().equals(Thread.State.TIMED_WAITING)) {
+            monitor.interrupt();
+        } else {
+            JOptionPane.showMessageDialog(repoList, "Monitor is busy now. Please tray again later.", "Information", JOptionPane.OK_OPTION);
+        }
+    }
+
     private void mntExitActionPerformed(java.awt.event.ActionEvent evt) {
         System.exit(0);
     }
@@ -416,7 +435,7 @@ public class MainWindow extends javax.swing.JFrame {
         frameSettings.setVisible(true);
     }
     // </editor-fold>
-    
+
     // <editor-fold defaultstate="collapsed" desc="repoList menu">  
     private void buildRepoListPopup() {
         jPopupRepoList = new JPopupMenu();
@@ -440,8 +459,8 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jPopupRepoList.add(mntRemoveProject);
     }
-    
-        /**
+
+    /**
      * Shows up a popup menu when the user clicks with the right button
      *
      * @param evt
@@ -468,8 +487,8 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jPopupTextAreaMessages.add(mntClear);
     }
-    
-   /**
+
+    /**
      * Shows up a popup menu when the user clicks with the right button
      *
      * @param evt
@@ -480,7 +499,7 @@ public class MainWindow extends javax.swing.JFrame {
         }
     }
     // </editor-fold>
-    
+
     // <editor-fold defaultstate="collapsed" desc="other stuff">   
     /**
      * Gets the name of selected repository in Jlist
@@ -499,9 +518,9 @@ public class MainWindow extends javax.swing.JFrame {
     private void startMonitor() {
         monitor = new RepositoryMonitor(this);
     }
-    
+
     public void notifyMessage(String message) {
-            trayIcon.displayMessage("DyeVC", message, TrayIcon.MessageType.WARNING);
+        trayIcon.displayMessage("DyeVC", message, TrayIcon.MessageType.WARNING);
     }
     // </editor-fold>
 }
