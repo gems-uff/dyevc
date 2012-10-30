@@ -30,6 +30,7 @@ public final class PreferencesUtils {
     public static void storePreferences(ApplicationSettingsBean bean) {
         Preferences nodeToStore = pref.node(NODE_GENERAL_SETTINGS);
         nodeToStore.putInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL, bean.getRefreshInterval());
+        nodeToStore.put(ApplicationSettingsBean.PROP_LAST_USED_PATH, bean.getLastUsedPath());
         settingsBean = bean;
     }
 
@@ -38,6 +39,7 @@ public final class PreferencesUtils {
             Preferences nodeToLoad = pref.node(NODE_GENERAL_SETTINGS);
             ApplicationSettingsBean bean = new ApplicationSettingsBean();
             bean.setRefreshInterval(nodeToLoad.getInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL, DEFAULT_CHECK_INTERVAL));
+            bean.setLastUsedPath(nodeToLoad.get(ApplicationSettingsBean.PROP_LAST_USED_PATH, ""));
             settingsBean = bean;
         }
         return settingsBean;

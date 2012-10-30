@@ -4,6 +4,7 @@
  */
 package br.uff.ic.dyevc.gui;
 
+import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.exception.DyeVCException;
@@ -23,6 +24,7 @@ import org.slf4j.LoggerFactory;
 public class RepositoryConfigWindow extends javax.swing.JFrame {
 
     private static final long serialVersionUID = -5327813882224088396L;
+    private ApplicationSettingsBean settings;
 
     /**
      * Creates new form RepositoryConfigWindow
@@ -46,6 +48,8 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="initComponents">
     private void initComponents() {
+        settings = PreferencesUtils.loadPreferences();
+
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         if (create) {
             setTitle("Creating a new monitoring configuration");
@@ -141,17 +145,20 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         }
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
         PreferencesUtils.persistRepositories(monitoredRepositoriesBean);
+        PreferencesUtils.storePreferences(settings);
         dispose();
     }
 
-    @SuppressWarnings("empty-statement")
     private void exploreAddressButtonActionPerformed(java.awt.event.ActionEvent evt, JTextField field) {
-        JFileChooser fileChooser = new javax.swing.JFileChooser();;
+        JFileChooser fileChooser = new javax.swing.JFileChooser();
         if (field.getText() != null && !"".equals(field.getText())) {
             fileChooser.setCurrentDirectory(new File(field.getText()));
         } else {
-            fileChooser.setCurrentDirectory(null);
-
+            if (settings.getLastUsedPath() != null && !"".equals(settings.getLastUsedPath())) {
+                fileChooser.setCurrentDirectory(new File(settings.getLastUsedPath()));
+            } else {
+                fileChooser.setCurrentDirectory(null);
+            }
         }
         fileChooser.setDialogTitle("Select path to repository.");
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
@@ -161,6 +168,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
             pathChosen = file.getAbsolutePath();
+            settings.setLastUsedPath(pathChosen);
             if (!GitConnector.isValidRepository(pathChosen)) {
                 JOptionPane.showMessageDialog(txtCloneAddres, "The specified path does not contain a valid git repository.", "Message", JOptionPane.ERROR_MESSAGE);
             } else {
@@ -176,7 +184,6 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         txtPassword.setEnabled(needsAuthenticationCheckBox.isSelected());
     }
     //</editor-fold>
-
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean;
     private br.uff.ic.dyevc.model.MonitoredRepository repositoryBean;
     /**

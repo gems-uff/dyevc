@@ -64,5 +64,15 @@ public class ApplicationSettingsBean implements Serializable {
         propertySupport.removePropertyChangeListener(listener);
     }
     
+    private String lastUsedPath;
+    public static final String PROP_LAST_USED_PATH = "lastusedpath";
+
+    public String getLastUsedPath() {
+        return lastUsedPath;
+    }
+
+    public void setLastUsedPath(String lastUsedPath) {
+        this.lastUsedPath = lastUsedPath;
+    }
     
 }
