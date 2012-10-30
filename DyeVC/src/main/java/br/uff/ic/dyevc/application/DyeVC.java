@@ -2,12 +2,14 @@ package br.uff.ic.dyevc.application;
 
 import br.uff.ic.dyevc.gui.MainWindow;
 import javax.swing.UIManager;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Cristiano
  */
 public class DyeVC {
+
     /**
      * @param args the command line arguments
      */
@@ -16,14 +18,8 @@ public class DyeVC {
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            LoggerFactory.getLogger(DyeVC.class).error("Error starting DyeVC", ex);
         }
         //</editor-fold>
 

@@ -1,20 +1,15 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.utils;
 
 import br.uff.ic.dyevc.application.DyeVC;
-import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
+import br.uff.ic.dyevc.gui.MessageManager;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -58,7 +53,8 @@ public final class PreferencesUtils {
                     pref.flush();
                 }
             } catch (BackingStoreException ex) {
-                Logger.getLogger(PreferencesUtils.class.getName()).log(Level.SEVERE, null, ex);
+                LoggerFactory.getLogger(PreferencesUtils.class).error("Error saving repository into preferences store.", ex);
+                MessageManager.getInstance().addMessage("Error saving repository into preferences store.");
             }
             Preferences nodeToStore = pref.node(NODE_MONITORED_REPOSITORIES);
             for (Iterator<MonitoredRepository> it = reps.iterator(); it.hasNext();) {
@@ -86,7 +82,7 @@ public final class PreferencesUtils {
                     MonitoredRepository bean = new MonitoredRepository();
                     bean.setName(nodeToStore.node(rep).get("name", "no name"));
                     bean.setCloneAddress(nodeToStore.node(rep).get("cloneaddress", "no cloneaddress"));
-                    bean.setNeedsAuthentication(new Boolean(nodeToStore.node(rep).get("needsauthentication", "false")));
+                    bean.setNeedsAuthentication(Boolean.valueOf(nodeToStore.node(rep).get("needsauthentication", "false")));
                     if (bean.needsAuthentication()) {
                         bean.setUser(nodeToStore.node(rep).get("user", "user not set"));
                         bean.setPassword(nodeToStore.node(rep).get("password", "password not set"));
@@ -96,7 +92,8 @@ public final class PreferencesUtils {
             }
 
         } catch (BackingStoreException ex) {
-            Logger.getLogger(PreferencesUtils.class.getName()).log(Level.SEVERE, null, ex);
+                LoggerFactory.getLogger(PreferencesUtils.class).error("Error reading repository info from preferences store.", ex);
+                MessageManager.getInstance().addMessage("Error saving repository infro from preferences store.");
         }
         return monBean;
     }

@@ -11,11 +11,10 @@ import br.uff.ic.dyevc.tools.vcs.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -30,7 +29,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
      */
     public RepositoryConfigWindow(MonitoredRepositories monBean, String name) throws DyeVCException {
         if (monBean == null) {
-            Logger.getLogger(RepositoryConfigWindow.class.getName()).log(Level.SEVERE, "Received a null list of monitored repositories");
+            LoggerFactory.getLogger(RepositoryConfigWindow.class).error("Received a null list of monitored repositories");
             throw new DyeVCException("Received a null list of monitored repositories");
         }
         monitoredRepositoriesBean = monBean;
@@ -178,45 +177,6 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     }
     //</editor-fold>
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(RepositoryConfigWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(RepositoryConfigWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(RepositoryConfigWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(RepositoryConfigWindow.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    new RepositoryConfigWindow(null, null).setVisible(true);
-                } catch (DyeVCException ex) {
-                    Logger.getLogger(RepositoryConfigWindow.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-    }
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean;
     private br.uff.ic.dyevc.model.MonitoredRepository repositoryBean;
     /**

@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.utils;
 
 import java.text.DateFormat;
@@ -11,17 +7,21 @@ import java.util.Date;
 
 /**
  *
- * @author DanCastellani
+ * @author Cristiano
  */
 public class DateUtil {
 
-    private static final DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy - HH:mm:ss");
+    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-    public static synchronized String format(Date date) {
+    public static String getFormattedCurrentDate() {
+        return dateFormat.format(new Date(System.currentTimeMillis()));
+    }
+
+    public static String format(Date date) {
         return dateFormat.format(date);
     }
 
-    public static synchronized String format(Calendar calendar) {
+    public static String format(Calendar calendar) {
         return dateFormat.format(calendar.getTime());
     }
 

@@ -6,11 +6,11 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Reads application version from manifest file and publishes it as a property.
+ *
  * @author Cristiano
  */
 public class ApplicationVersionBean implements Serializable {
@@ -52,7 +52,7 @@ public class ApplicationVersionBean implements Serializable {
                 Attributes attr = manifest.getMainAttributes();
                 out = "DieVC Version: " + attr.getValue("Implementation-Version");
             } catch (IOException ex) {
-                Logger.getLogger(ApplicationVersionBean.class.getName()).log(Level.WARNING, "Error reading manifest file.", ex);
+                LoggerFactory.getLogger(ApplicationVersionBean.class).warn("Error reading manifest file.", ex);
             }
         }
         return out;

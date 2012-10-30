@@ -15,14 +15,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
-import javax.swing.UIManager;
 import javax.swing.text.DefaultCaret;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -44,6 +42,7 @@ public class MainWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="private variables">      
     private javax.swing.JDialog dlgAbout;
     private javax.swing.JFrame frameSettings;
+    private StdOutErrWindow stdOutWindow;
     private javax.swing.JPanel pnlMain;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPaneMessages;
@@ -72,6 +71,8 @@ public class MainWindow extends javax.swing.JFrame {
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
         setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
+        
+        stdOutWindow = new StdOutErrWindow();
 
         bindingGroup = new org.jdesktop.beansbinding.BindingGroup();
         dlgAbout = new AboutDialog(this, rootPaneCheckingEnabled);
@@ -117,7 +118,8 @@ public class MainWindow extends javax.swing.JFrame {
 
         jScrollPaneMessages.setViewportView(jTextAreaMessages);
         MessageManager manager = MessageManager.initialize(jTextAreaMessages);
-        manager.addMessage("DyeVC started");
+        manager.addMessage("DyeVC started.");
+        manager.addMessage("To see console windows, click on View -> Console Window.");
 
         javax.swing.GroupLayout pnlMainLayout = new javax.swing.GroupLayout(pnlMain);
         pnlMain.setLayout(pnlMainLayout);
@@ -179,7 +181,7 @@ public class MainWindow extends javax.swing.JFrame {
     private void showTrayIcon() {
         //Check the SystemTray is supported
         if (!SystemTray.isSupported()) {
-            System.out.println("SystemTray is not supported");
+            LoggerFactory.getLogger(MainWindow.class).warn("Your system does not support tray icons.");
             setVisible(true);
             return;
         }
@@ -238,7 +240,7 @@ public class MainWindow extends javax.swing.JFrame {
             tray.add(trayIcon);
             trayIcon.displayMessage("DyeVC", "DyeVC is running in background.\nClick on the icon to view application's console\nand configure settings.", TrayIcon.MessageType.INFO);
         } catch (AWTException e) {
-            System.out.println("TrayIcon could not be added.");
+            LoggerFactory.getLogger(MainWindow.class).warn("TrayIcon could not be added.", e);
         }
     }
 
@@ -280,6 +282,7 @@ public class MainWindow extends javax.swing.JFrame {
     private void buildMainMenu() {
         jMenuBar = new javax.swing.JMenuBar();
 
+        //<editor-fold defaultstate="collapsed" desc="file">                          
         javax.swing.JMenu mnuFile = new javax.swing.JMenu();
         mnuFile.setText("File");
 
@@ -314,8 +317,26 @@ public class MainWindow extends javax.swing.JFrame {
         });
         mnuFile.add(mntExit);
         jMenuBar.add(mnuFile);
+        //</editor-fold>                          
 
+        // <editor-fold defaultstate="collapsed" desc="view">                          
+        javax.swing.JMenu mnuView = new javax.swing.JMenu();
+        mnuView.setText("View");
 
+        javax.swing.JMenuItem mntConsole = new javax.swing.JMenuItem();
+        mntConsole.setText("Console Window");
+        mntConsole.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntConsoleActionPerformed(evt);
+            }
+        });
+        mnuView.add(mntConsole);
+
+        jMenuBar.add(mnuView);
+        //</editor-fold>                          
+        
+        // <editor-fold defaultstate="collapsed" desc="help">                          
         javax.swing.JMenu mnuHelp = new javax.swing.JMenu();
         mnuHelp.setText("Help");
 
@@ -330,6 +351,8 @@ public class MainWindow extends javax.swing.JFrame {
         mnuHelp.add(mntAbout);
 
         jMenuBar.add(mnuHelp);
+        //</editor-fold>                          
+        
         setJMenuBar(jMenuBar);
     }
 
@@ -343,8 +366,7 @@ public class MainWindow extends javax.swing.JFrame {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
                 public void uncaughtException(Thread t, Throwable ex) {
-                    Logger.getLogger(MainWindow.class
-                            .getName()).log(Level.SEVERE, null, ex);
+                    LoggerFactory.getLogger(MainWindow.class).error("Error creating RepositoryConfigWindow.", ex);
                 }
             });
         }
@@ -357,8 +379,7 @@ public class MainWindow extends javax.swing.JFrame {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
                 public void uncaughtException(Thread t, Throwable ex) {
-                    Logger.getLogger(MainWindow.class
-                            .getName()).log(Level.SEVERE, null, ex);
+                    LoggerFactory.getLogger(MainWindow.class).error(null, ex);
                 }
             });
         }
@@ -379,6 +400,10 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntAboutActionPerformed(java.awt.event.ActionEvent evt) {
         dlgAbout.setVisible(true);
+    }
+
+    private void mntConsoleActionPerformed(java.awt.event.ActionEvent evt) {
+        stdOutWindow.setVisible(true);
     }
 
     private void mntshowMainWindowActionPerformed() {
@@ -444,7 +469,7 @@ public class MainWindow extends javax.swing.JFrame {
         jPopupTextAreaMessages.add(mntClear);
     }
     
-        /**
+   /**
      * Shows up a popup menu when the user clicks with the right button
      *
      * @param evt
@@ -477,42 +502,6 @@ public class MainWindow extends javax.swing.JFrame {
     
     public void notifyMessage(String message) {
             trayIcon.displayMessage("DyeVC", message, TrayIcon.MessageType.WARNING);
-    }
-    // </editor-fold>
-
-    // <editor-fold defaultstate="collapsed" desc="main method">                          
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the System look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
-
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(MainWindow.class
-                    .getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new MainWindow().setVisible(true);
-            }
-        });
     }
     // </editor-fold>
 }
