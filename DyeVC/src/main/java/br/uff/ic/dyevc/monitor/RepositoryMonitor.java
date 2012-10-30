@@ -34,7 +34,6 @@ public class RepositoryMonitor extends Thread {
     public RepositoryMonitor(MainWindow container) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
         settings = PreferencesUtils.loadPreferences();
-        repos = PreferencesUtils.loadMonitoredRepositories().getMonitoredProjects();
         statusList = new RepositoryStatusMessages();
         this.container = container;
         this.start();
@@ -47,8 +46,10 @@ public class RepositoryMonitor extends Thread {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Repository monitor is running.");
         while (true) {
             try {
-                checkWorkingFolder();
+                statusList.clearMessages();
+                repos = PreferencesUtils.loadMonitoredRepositories().getMonitoredProjects();
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.size());
+                checkWorkingFolder();
                 for (Iterator<MonitoredRepository> it = repos.iterator(); it.hasNext();) {
                     MonitoredRepository monitoredRepository = it.next();
                     checkRepository(monitoredRepository);

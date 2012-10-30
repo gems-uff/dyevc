@@ -272,6 +272,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
+    
     // <editor-fold defaultstate="collapsed" desc="main menu">                          
     /**
      * This method creates the menu bar
@@ -369,6 +370,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
+    
     // <editor-fold defaultstate="collapsed" desc="main menu events">                          
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {

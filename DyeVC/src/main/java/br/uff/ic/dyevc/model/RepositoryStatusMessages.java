@@ -1,11 +1,6 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.model;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -52,7 +47,10 @@ public class RepositoryStatusMessages {
         
         return result;
     }
-    
+
+    public void clearMessages() {
+        statuses.clear();
+    }
     private String processMessage(MonitoredRepository repository, RepositoryStatus status) {
         StringBuilder message = new StringBuilder("Branch ").append(status.getRepositoryBranch())
                 .append(" on repository ").append(repository.getName());
