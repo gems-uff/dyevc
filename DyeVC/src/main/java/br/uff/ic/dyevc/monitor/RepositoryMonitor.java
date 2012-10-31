@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.LoggerFactory;
 
@@ -78,10 +80,32 @@ public class RepositoryMonitor extends Thread {
                     .debug("Repository {} has {} remotes.",
                     monitoredRepository.getName(), remotes.size());
 
-            GitConnector temp = git.cloneThis(settings.getWorkingPath()
-                    + IConstants.DIR_SEPARATOR + monitoredRepository.getName());
-            LoggerFactory.getLogger(RepositoryMonitor.class).debug("Created temp clone for {}.", monitoredRepository.getName());
+            String pathTemp = settings.getWorkingPath()
+                    + IConstants.DIR_SEPARATOR + monitoredRepository.getName();
 
+            GitConnector temp = null;
+            if (!GitConnector.isValidRepository(pathTemp)) {
+                LoggerFactory.getLogger(RepositoryMonitor.class)
+                        .debug("There is no temp repository at {}. Will create a temp by cloning {}.",
+                        pathTemp, monitoredRepository.getName());
+                try {
+                    if (new File(pathTemp).exists()) {
+                        FileUtils.cleanDirectory(new File(pathTemp));
+                        LoggerFactory.getLogger(RepositoryMonitor.class)
+                                .debug("Removed existing content at {}. ",
+                                pathTemp);
+                    }
+                    temp = git.cloneThis(pathTemp);
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Created temp clone for {}.", monitoredRepository.getName());
+                } catch (IOException ex) {
+                    LoggerFactory.getLogger(RepositoryMonitor.class).error("Error cleaning existing temp folder at" + pathTemp + ".", ex);
+                }
+            } else {
+                LoggerFactory.getLogger(RepositoryMonitor.class)
+                        .debug("There is a valid repository at {}. Creating a git connector to it.",
+                        pathTemp);
+                temp = new GitConnector(pathTemp, monitoredRepository.getName());
+            }
             checkAuthentication(monitoredRepository, temp);
 
             for (Iterator<String> it = remotes.iterator(); it.hasNext();) {

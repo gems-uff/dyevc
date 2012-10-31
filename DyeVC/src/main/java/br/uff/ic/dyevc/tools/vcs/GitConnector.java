@@ -83,10 +83,15 @@ public class GitConnector {
      */
     public static boolean isValidRepository(String path) {
         boolean result;
-        try {
-            result = new FileRepository(getGitPath(path)).getObjectDatabase().exists();
-        } catch (IOException e) {
+        File file = new File(path);
+        if (!file.exists()) {
             result = false;
+        } else {
+            try {
+                result = new FileRepository(getGitPath(path)).getObjectDatabase().exists();
+            } catch (IOException e) {
+                result = false;
+            }
         }
         return result;
     }
