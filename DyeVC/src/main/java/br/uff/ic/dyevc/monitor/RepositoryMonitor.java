@@ -42,10 +42,10 @@ public class RepositoryMonitor extends Thread {
 
     @Override
     public void run() {
-        MessageManager.getInstance().addMessage("Repository monitor is running.");
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Repository monitor is running.");
         while (true) {
             try {
+                MessageManager.getInstance().addMessage("Repository monitor is running.");
                 statusList.clearMessages();
                 repos = PreferencesUtils.loadMonitoredRepositories().getMonitoredProjects();
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.size());
@@ -57,6 +57,7 @@ public class RepositoryMonitor extends Thread {
                 notifyMessages();
                 int sleepTime = settings.getRefreshInterval() * 1000;
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Will now sleep for {} seconds.", sleepTime);
+                MessageManager.getInstance().addMessage("Repository monitor is sleeping.");
                 Thread.sleep(settings.getRefreshInterval() * 1000);
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping.", sleepTime);
             } catch (InterruptedException ex) {
@@ -110,21 +111,22 @@ public class RepositoryMonitor extends Thread {
         File workingFolder = new File(settings.getWorkingPath());
         LoggerFactory.getLogger(RepositoryMonitor.class).info("checkWorkingFolder -> Working folder is at {}.", workingFolder.getAbsoluteFile());
         if (workingFolder.exists()) {
+            //TODO verificar se o folder é um clone de um repositório que está sendo monitorado antes de apagar a pasta
             LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder already exists.");
-            if (!workingFolder.canWrite()) {
-                LoggerFactory.getLogger(RepositoryMonitor.class).error("Working folder is not writable.");
-                MessageManager.getInstance()
-                        .addMessage("Working folder is not writable. Please check folder permissions at "
-                        + workingFolder.getAbsolutePath());
-            }
-            try {
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Beginning working folder clean up process.");
-                FileUtils.cleanDirectory(workingFolder);
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder clean up complete.");
-            } catch (IOException ex) {
-                LoggerFactory.getLogger(RepositoryMonitor.class).error("Error during working folder clean up.", ex);
-                MessageManager.getInstance().addMessage(ex.getMessage());
-            }
+//            if (!workingFolder.canWrite()) {
+//                LoggerFactory.getLogger(RepositoryMonitor.class).error("Working folder is not writable.");
+//                MessageManager.getInstance()
+//                        .addMessage("Working folder is not writable. Please check folder permissions at "
+//                        + workingFolder.getAbsolutePath());
+//            }
+//            try {
+//                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Beginning working folder clean up process.");
+//                FileUtils.cleanDirectory(workingFolder);
+//                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder clean up complete.");
+//            } catch (IOException ex) {
+//                LoggerFactory.getLogger(RepositoryMonitor.class).error("Error during working folder clean up.", ex);
+//                MessageManager.getInstance().addMessage(ex.getMessage());
+//            }
         } else {
             workingFolder.mkdir();
             LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder does not exist. A brand new one was created.");
