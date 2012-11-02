@@ -70,24 +70,27 @@ public class RepositoryMonitor extends Thread {
 
     private void checkRepository(MonitoredRepository monitoredRepository) {
         try {
-            LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Entry. Repository: {}", monitoredRepository.getName());
-            GitConnector git = new GitConnector(monitoredRepository.getCloneAddress(), monitoredRepository.getName());
-            LoggerFactory.getLogger(RepositoryMonitor.class).debug("checkRepository -> created gitConnector");
+            LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Entry. Repository: {}, id:{}"
+                    , monitoredRepository.getName(), monitoredRepository.getId());
+            GitConnector git = new GitConnector(monitoredRepository.getCloneAddress(), monitoredRepository.getId());
+            LoggerFactory.getLogger(RepositoryMonitor.class)
+                    .debug("checkRepository -> created gitConnector for repository {}, id={}"
+                    , monitoredRepository.getName(), monitoredRepository.getId());
             checkAuthentication(monitoredRepository, git);
 
             Set<String> remotes = git.getRemoteNames();
             LoggerFactory.getLogger(RepositoryMonitor.class)
                     .debug("Repository {} has {} remotes.",
-                    monitoredRepository.getName(), remotes.size());
+                    monitoredRepository.getId(), remotes.size());
 
             String pathTemp = settings.getWorkingPath()
-                    + IConstants.DIR_SEPARATOR + monitoredRepository.getName();
+                    + IConstants.DIR_SEPARATOR + monitoredRepository.getId();
 
             GitConnector temp = null;
             if (!GitConnector.isValidRepository(pathTemp)) {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("There is no temp repository at {}. Will create a temp by cloning {}.",
-                        pathTemp, monitoredRepository.getName());
+                        pathTemp, monitoredRepository.getId());
                 try {
                     if (new File(pathTemp).exists()) {
                         FileUtils.cleanDirectory(new File(pathTemp));
@@ -96,7 +99,7 @@ public class RepositoryMonitor extends Thread {
                                 pathTemp);
                     }
                     temp = git.cloneThis(pathTemp);
-                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Created temp clone for {}.", monitoredRepository.getName());
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Created temp clone for {}.", monitoredRepository.getId());
                 } catch (IOException ex) {
                     LoggerFactory.getLogger(RepositoryMonitor.class).error("Error cleaning existing temp folder at" + pathTemp + ".", ex);
                 }
@@ -104,7 +107,7 @@ public class RepositoryMonitor extends Thread {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("There is a valid repository at {}. Creating a git connector to it.",
                         pathTemp);
-                temp = new GitConnector(pathTemp, monitoredRepository.getName());
+                temp = new GitConnector(pathTemp, monitoredRepository.getId());
             }
             checkAuthentication(monitoredRepository, temp);
 
@@ -119,15 +122,15 @@ public class RepositoryMonitor extends Thread {
 
             List<RepositoryStatus> result = temp.testAhead();
             temp.close();
-            LoggerFactory.getLogger(RepositoryMonitor.class).debug("Closing temp clone repository connection.", monitoredRepository.getName(), remotes.size());
+            LoggerFactory.getLogger(RepositoryMonitor.class).debug("Closing temp clone repository connection.");
 
             statusList.addMessages(monitoredRepository, result);
         } catch (VCSException ex) {
             LoggerFactory.getLogger(RepositoryMonitor.class)
                     .error("It was not possible to finish monitoring of repository <{}>",
-                    monitoredRepository.getName());
+                    monitoredRepository.getId());
         }
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Exit. Repository: {}", monitoredRepository.getName());
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Exit. Repository: {}", monitoredRepository.getId());
     }
 
     private void checkWorkingFolder() {
@@ -175,7 +178,7 @@ public class RepositoryMonitor extends Thread {
     private void checkAuthentication(MonitoredRepository monitoredRepository, GitConnector git) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkAuthentication -> Entry");
         if (monitoredRepository.needsAuthentication()) {
-            LoggerFactory.getLogger(RepositoryMonitor.class).debug("checkAuthentication -> repository {} needs authentication.", monitoredRepository.getName());
+            LoggerFactory.getLogger(RepositoryMonitor.class).debug("checkAuthentication -> repository {} needs authentication.", monitoredRepository.getId());
             git.setCredentials(monitoredRepository.getUser(), monitoredRepository.getPassword());
         }
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkAuthentication -> Exit");

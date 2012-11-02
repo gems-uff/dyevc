@@ -5,9 +5,9 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
+import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
-import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.tools.vcs.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.event.ActionEvent;
@@ -37,10 +37,11 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         monitoredRepositoriesBean = monBean;
         if (name != null && !"".equals(name)) {
             create = false;
-            repositoryBean = monitoredRepositoriesBean.getMonitoredProjectByName(name);
+            repositoryBean = monitoredRepositoriesBean.getMonitoredProjectById(name);
         } else {
             create = true;
             repositoryBean = new MonitoredRepository();
+            repositoryBean.setId("rep" + System.currentTimeMillis());
         }
         initComponents();
     }
@@ -81,6 +82,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         needsAuthenticationCheckBox.setText("Needs authentication");
         needsAuthenticationCheckBox.setSelected(repositoryBean.needsAuthentication());
         needsAuthenticationCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 needsAuthenticationCheckBoxActionPerformed(evt);
             }
@@ -95,7 +97,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         txtUser.setText(repositoryBean.getUser());
         txtUser.setEnabled(needsAuthenticationCheckBox.isSelected());
         txtPassword = new javax.swing.JPasswordField();
-        txtPassword.setText(new String(repositoryBean.getPassword()));
+        txtPassword.setText(repositoryBean.getPassword());
         txtPassword.setEnabled(needsAuthenticationCheckBox.isSelected());
 
         btnExploreCloneAddress = new javax.swing.JButton();

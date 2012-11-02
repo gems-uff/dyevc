@@ -15,6 +15,7 @@ public class MonitoredRepository implements Serializable {
     public static final String NAME = "name";
     private static final long serialVersionUID = -8604175800390199323L;
     private String name;
+    private String id;
     private String cloneAddress;
     private boolean needsAuthentication;
     private String user;
@@ -45,9 +46,9 @@ public class MonitoredRepository implements Serializable {
     public MonitoredRepository() {
         this.name = "";
         this.cloneAddress = "";
-        this.originUrl = "";
         this.user = "";
         this.password = "";
+        this.id = "";
         this.needsAuthentication = false;
         propertySupport = new PropertyChangeSupport(this);
     }
@@ -69,11 +70,13 @@ public class MonitoredRepository implements Serializable {
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         propertySupport.removePropertyChangeListener(listener);
     }
-    private String originUrl;
-
     @Override
     public String toString() {
-        return "Repository{" + "name=" + name + ", cloneAddress=" + cloneAddress + '}';
+        return new StringBuilder("Repository{name=").append(name)
+                .append(", id=").append(id)
+                .append(", cloneAddress=").append(cloneAddress)
+                .append(", needsAuthentication=").append(needsAuthentication)
+                .append("}").toString();
     }
 
     public boolean needsAuthentication() {
@@ -100,5 +103,12 @@ public class MonitoredRepository implements Serializable {
         this.password = password;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
     
 }

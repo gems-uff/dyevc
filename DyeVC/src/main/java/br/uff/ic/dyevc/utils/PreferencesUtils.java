@@ -48,27 +48,25 @@ public final class PreferencesUtils {
     public static void persistRepositories(MonitoredRepositories listBeans) {
         List<MonitoredRepository> reps = listBeans.getMonitoredProjects();
         if (!reps.isEmpty()) {
-            int i = 0;
             try {
                 if (pref.nodeExists(NODE_MONITORED_REPOSITORIES)) {
                     pref.node(NODE_MONITORED_REPOSITORIES).removeNode();
                     pref.flush();
                 }
             } catch (BackingStoreException ex) {
-                LoggerFactory.getLogger(PreferencesUtils.class).error("Error saving repository into preferences store.", ex);
-                MessageManager.getInstance().addMessage("Error saving repository into preferences store.");
+                LoggerFactory.getLogger(PreferencesUtils.class).error("Error saving repository to preferences store.", ex);
+                MessageManager.getInstance().addMessage("Error saving repository to preferences store.");
             }
             Preferences nodeToStore = pref.node(NODE_MONITORED_REPOSITORIES);
             for (Iterator<MonitoredRepository> it = reps.iterator(); it.hasNext();) {
                 MonitoredRepository repositoryBean = it.next();
-                nodeToStore.node("rep." + i).put("name", repositoryBean.getName());
-                nodeToStore.node("rep." + i).put("cloneaddress", repositoryBean.getCloneAddress());
-                nodeToStore.node("rep." + i).put("needsauthentication", Boolean.toString(repositoryBean.needsAuthentication()));
+                nodeToStore.node(repositoryBean.getId()).put("name", repositoryBean.getName());
+                nodeToStore.node(repositoryBean.getId()).put("cloneaddress", repositoryBean.getCloneAddress());
+                nodeToStore.node(repositoryBean.getId()).put("needsauthentication", Boolean.toString(repositoryBean.needsAuthentication()));
                 if (repositoryBean.needsAuthentication()) {
-                    nodeToStore.node("rep." + i).put("user", repositoryBean.getUser());
-                    nodeToStore.node("rep." + i).put("password", repositoryBean.getPassword());
+                    nodeToStore.node(repositoryBean.getId()).put("user", repositoryBean.getUser());
+                    nodeToStore.node(repositoryBean.getId()).put("password", repositoryBean.getPassword());
                 }
-                i++;
             }
         }
     }
@@ -80,22 +78,22 @@ public final class PreferencesUtils {
                 Preferences nodeToStore = pref.node(NODE_MONITORED_REPOSITORIES);
                 String[] reps = nodeToStore.childrenNames();
                 for (int i = 0; i < reps.length; i++) {
-                    String rep = reps[i];
+                    Preferences repNode = nodeToStore.node(reps[i]);
                     MonitoredRepository bean = new MonitoredRepository();
-                    bean.setName(nodeToStore.node(rep).get("name", "no name"));
-                    bean.setCloneAddress(nodeToStore.node(rep).get("cloneaddress", "no cloneaddress"));
-                    bean.setNeedsAuthentication(Boolean.valueOf(nodeToStore.node(rep).get("needsauthentication", "false")));
+                    bean.setId(repNode.name());
+                    bean.setName(repNode.get("name", "no name"));
+                    bean.setCloneAddress(repNode.get("cloneaddress", "no cloneaddress"));
+                    bean.setNeedsAuthentication(Boolean.valueOf(repNode.get("needsauthentication", "false")));
                     if (bean.needsAuthentication()) {
-                        bean.setUser(nodeToStore.node(rep).get("user", "user not set"));
-                        bean.setPassword(nodeToStore.node(rep).get("password", "password not set"));
+                        bean.setUser(repNode.get("user", "user not set"));
+                        bean.setPassword(repNode.get("password", "password not set"));
                     }
                     monBean.addMonitoredRepository(bean);
                 }
             }
-
         } catch (BackingStoreException ex) {
                 LoggerFactory.getLogger(PreferencesUtils.class).error("Error reading repository info from preferences store.", ex);
-                MessageManager.getInstance().addMessage("Error saving repository infro from preferences store.");
+                MessageManager.getInstance().addMessage("Error loading repository info from preferences store.");
         }
         return monBean;
     }

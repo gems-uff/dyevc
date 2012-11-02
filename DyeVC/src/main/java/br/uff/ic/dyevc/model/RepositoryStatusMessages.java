@@ -28,12 +28,12 @@ public class RepositoryStatusMessages {
                 messages.add(message);
             }
         }
-        statuses.remove(repository.getName());
-        statuses.put(repository.getName(), messages);
+        statuses.remove(repository.getId());
+        statuses.put(repository.getId(), messages);
     }
     
-    public List<String> getRepositoryMessages(String repositoryName) {
-        return (statuses.get(repositoryName) != null) ? statuses.get(repositoryName) : Collections.EMPTY_LIST;
+    public List<String> getRepositoryMessages(String repositoryId) {
+        return (statuses.get(repositoryId) != null) ? statuses.get(repositoryId) : Collections.EMPTY_LIST;
     }
     
     public List<String> getAllMessages() {

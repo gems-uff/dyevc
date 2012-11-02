@@ -34,14 +34,14 @@ public final class MonitoredRepositories implements Serializable {
     
     /**
      * Get an instance of a monitored repository by name
-     * @param name Name of the desired monitored repository
+     * @param id Name of the desired monitored repository
      *
      * @return the required monitored repository
      */
-    public MonitoredRepository getMonitoredProjectByName(String name) {
+    public MonitoredRepository getMonitoredProjectById(String id) {
         MonitoredRepository output = null;
         if (monitoredRepositories != null) {
-            output = (MonitoredRepository)monitoredRepositories.get(name);
+            output = (MonitoredRepository)monitoredRepositories.get(id);
         }
         return output;
     }
@@ -51,36 +51,24 @@ public final class MonitoredRepositories implements Serializable {
             monitoredRepositories= new HashMap();
         }
         List<MonitoredRepository> oldValue = getMonitoredProjects();
-        this.monitoredRepositories.put(repository.getName(), repository);
+        this.monitoredRepositories.put(repository.getId(), repository);
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
 
     public void removeMonitoredRepository(MonitoredRepository repository) {
         List<MonitoredRepository> oldValue = getMonitoredProjects();
-        this.monitoredRepositories.remove(repository.getName());
+        this.monitoredRepositories.remove(repository.getId());
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
 
-    public void removeMonitoredRepository(String repositoryName) {
+    public void removeMonitoredRepository(String repositoryId) {
         List<MonitoredRepository> oldValue = getMonitoredProjects();
-        this.monitoredRepositories.remove(repositoryName);
+        this.monitoredRepositories.remove(repositoryId);
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
 
     public MonitoredRepositories() {
         propertySupport = new PropertyChangeSupport(this);
-        
-//        MonitoredRepository bean = new MonitoredRepository();
-//        bean.setName("repo name");
-//        bean.setCloneAddress("http://algum.endereco");
-//        
-//        MonitoredRepository bean2 = new MonitoredRepository();
-//        bean2.setName("repo name 2");
-//        bean2.setCloneAddress("http://algum.endereco2");
-//        
-//        addMonitoredRepository(bean);
-//        addMonitoredRepository(bean2);
-
     }
 
     public void addPropertyChangeListener(PropertyChangeListener listener) {
