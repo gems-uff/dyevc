@@ -19,6 +19,7 @@ import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
+import javax.swing.WindowConstants;
 import javax.swing.text.DefaultCaret;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,8 @@ public class MainWindow extends javax.swing.JFrame {
      */
     public MainWindow() {
         initComponents();
-        minizeToTray();
+        addListeners();
+        minimizeToTray();
         startMonitor();
     }
     // <editor-fold defaultstate="collapsed" desc="private variables">      
@@ -61,7 +63,7 @@ public class MainWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="initComponents">                          
     @SuppressWarnings("unchecked")
     private void initComponents() {
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setTitle("DyeVC");
         setSize(new java.awt.Dimension(400, 400));
         setMinimumSize(new java.awt.Dimension(400, 400));
@@ -91,12 +93,6 @@ public class MainWindow extends javax.swing.JFrame {
         jListBinding.setDetailBinding(org.jdesktop.beansbinding.ELProperty.create("${name}@${cloneAddress}"));
         bindingGroup.addBinding(jListBinding);
 
-        repoList.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                repoListMouseClicked(evt);
-            }
-        });
         jScrollPane1.setViewportView(repoList);
 
         jScrollPaneMessages = new javax.swing.JScrollPane();
@@ -107,13 +103,6 @@ public class MainWindow extends javax.swing.JFrame {
         //this is to scroll messages automatically
         DefaultCaret caret = (DefaultCaret) jTextAreaMessages.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-
-        jTextAreaMessages.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jTextAreaMessagesMouseClicked(evt);
-            }
-        });
 
         jScrollPaneMessages.setViewportView(jTextAreaMessages);
         MessageManager manager = MessageManager.initialize(jTextAreaMessages);
@@ -156,12 +145,7 @@ public class MainWindow extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))));
 
         bindingGroup.bind();
-        addWindowStateListener(new java.awt.event.WindowStateListener() {
-            @Override
-            public void windowStateChanged(WindowEvent evt) {
-                handleWindowStateChanged(evt);
-            }
-        });
+        
         pack();
     }// </editor-fold>                        
 
@@ -169,7 +153,7 @@ public class MainWindow extends javax.swing.JFrame {
     /**
      * Minimizes the application to system tray
      */
-    private void minizeToTray() {
+    private void minimizeToTray() {
         WindowEvent ev = new WindowEvent(this, WindowEvent.WINDOW_STATE_CHANGED, NORMAL, ICONIFIED);
         Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(ev);
     }
@@ -191,13 +175,6 @@ public class MainWindow extends javax.swing.JFrame {
 
 
         // Create a pop-up menu components
-        MenuItem aboutItem = new MenuItem("About");
-        aboutItem.addActionListener(new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mntAboutActionPerformed(evt);
-            }
-        });
         MenuItem showMainWindowItem = new MenuItem("Show Main Window");
         showMainWindowItem.addActionListener(new java.awt.event.ActionListener() {
             @Override
@@ -206,10 +183,28 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
 
+        MenuItem aboutItem = new MenuItem("About");
+        aboutItem.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntAboutActionPerformed(evt);
+            }
+        });
+        
+        MenuItem mntExitItem = new MenuItem("Exit Application");
+        mntExitItem.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntExitActionPerformed(evt);
+            }
+        });
+        
         //Add components to pop-up menu
         trayPopup.add(showMainWindowItem);
         trayPopup.addSeparator();
         trayPopup.add(aboutItem);
+        trayPopup.addSeparator();
+        trayPopup.add(mntExitItem);
 
         trayIcon.setPopupMenu(trayPopup);
         trayIcon.setToolTip("DyeVC Application");
@@ -535,4 +530,64 @@ public class MainWindow extends javax.swing.JFrame {
         trayIcon.displayMessage("DyeVC", message, TrayIcon.MessageType.WARNING);
     }
     // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="addListeners">  
+    /**
+     * Adds listeners to window components.
+     */
+    private void addListeners() {
+        addWindowStateListener(new java.awt.event.WindowStateListener() {
+            @Override
+            public void windowStateChanged(WindowEvent evt) {
+                handleWindowStateChanged(evt);
+            }
+        });
+        
+        addWindowListener(new java.awt.event.WindowListener() {
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                minimizeToTray();
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+            }
+        });
+
+        repoList.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                repoListMouseClicked(evt);
+            }
+        });
+
+        jTextAreaMessages.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTextAreaMessagesMouseClicked(evt);
+            }
+        });
+    }
+    //</editor-fold>
 }
