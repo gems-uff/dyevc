@@ -1,7 +1,7 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.exception.DyeVCException;
-import br.uff.ic.dyevc.model.MonitoredRepositories;
+import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.AWTException;
@@ -40,6 +40,7 @@ public class MainWindow extends javax.swing.JFrame {
         minimizeToTray();
         startMonitor();
     }
+    
     // <editor-fold defaultstate="collapsed" desc="private variables">      
     private javax.swing.JDialog dlgAbout;
     private javax.swing.JFrame frameSettings;
@@ -50,7 +51,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JTextArea jTextAreaMessages;
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean1;
     private javax.swing.JList repoList;
-    private org.jdesktop.beansbinding.BindingGroup bindingGroup;
+
     //Variáveis de menu
     private javax.swing.JMenuBar jMenuBar;
     private JPopupMenu jPopupRepoList;
@@ -75,7 +76,6 @@ public class MainWindow extends javax.swing.JFrame {
 
         stdOutWindow = new StdOutErrWindow();
 
-        bindingGroup = new org.jdesktop.beansbinding.BindingGroup();
         dlgAbout = new AboutDialog(this, rootPaneCheckingEnabled);
         frameSettings = new SettingsWindow();
         monitoredRepositoriesBean1 = PreferencesUtils.loadMonitoredRepositories();
@@ -85,13 +85,9 @@ public class MainWindow extends javax.swing.JFrame {
 
         jScrollPane1 = new javax.swing.JScrollPane();
 
-        repoList = new javax.swing.JList();
+        repoList = new javax.swing.JList(monitoredRepositoriesBean1);
         repoList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-
-        org.jdesktop.beansbinding.ELProperty eLProperty = org.jdesktop.beansbinding.ELProperty.create("${monitoredProjects}");
-        org.jdesktop.swingbinding.JListBinding jListBinding = org.jdesktop.swingbinding.SwingBindings.createJListBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, monitoredRepositoriesBean1, eLProperty, repoList, MonitoredRepositories.MONITORED_PROJECTS);
-        jListBinding.setDetailBinding(org.jdesktop.beansbinding.ELProperty.create("${name}@${cloneAddress}"));
-        bindingGroup.addBinding(jListBinding);
+        repoList.setCellRenderer(new RepositoryRenderer(true));
 
         jScrollPane1.setViewportView(repoList);
 
@@ -144,8 +140,6 @@ public class MainWindow extends javax.swing.JFrame {
                 .addContainerGap()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))));
 
-        bindingGroup.bind();
-        
         pack();
     }// </editor-fold>                        
 
@@ -190,7 +184,7 @@ public class MainWindow extends javax.swing.JFrame {
                 mntAboutActionPerformed(evt);
             }
         });
-        
+
         MenuItem mntExitItem = new MenuItem("Exit Application");
         mntExitItem.addActionListener(new java.awt.event.ActionListener() {
             @Override
@@ -198,7 +192,7 @@ public class MainWindow extends javax.swing.JFrame {
                 mntExitActionPerformed(evt);
             }
         });
-        
+
         //Add components to pop-up menu
         trayPopup.add(showMainWindowItem);
         trayPopup.addSeparator();
@@ -281,7 +275,7 @@ public class MainWindow extends javax.swing.JFrame {
         mnuFile.setText("File");
 
         javax.swing.JMenuItem mntAddProject = new javax.swing.JMenuItem();
-        mntAddProject.setText(" Add Project");
+        mntAddProject.setText("Add Project");
         mntAddProject.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -382,7 +376,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntEditProjectActionPerformed(ActionEvent evt) {
         try {
-            new RepositoryConfigWindow(monitoredRepositoriesBean1, getSelectedRepName()).setVisible(true);
+            new RepositoryConfigWindow(monitoredRepositoriesBean1, getSelectedRepository()).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -394,11 +388,10 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     private void mntRemoveProjectActionPerformed(ActionEvent evt) {
-        String repName = getSelectedRepName();
-        String repId = getSelectedRepId();
-        int n = JOptionPane.showConfirmDialog(repoList, "Do you really want to stop monitoring " + repName + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        MonitoredRepository rep = getSelectedRepository();
+        int n = JOptionPane.showConfirmDialog(repoList, "Do you really want to stop monitoring " + rep.getName() + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (n == JOptionPane.YES_OPTION) {
-            monitoredRepositoriesBean1.removeMonitoredRepository(repId);
+            monitoredRepositoriesBean1.removeMonitoredRepository(rep);
             PreferencesUtils.persistRepositories(monitoredRepositoriesBean1);
         }
     }
@@ -500,23 +493,12 @@ public class MainWindow extends javax.swing.JFrame {
 
     // <editor-fold defaultstate="collapsed" desc="other stuff">   
     /**
-     * Gets the id of selected repository in Jlist
+     * Gets the selected repository in Jlist
      *
      * @return name of the selected repository
      */
-    private String getSelectedRepId() {
-        int index = repoList.getSelectedIndex();
-        return monitoredRepositoriesBean1.getMonitoredProjects().get(index).getId();
-    }
-
-    /**
-     * Gets the name of selected repository in Jlist
-     *
-     * @return name of the selected repository
-     */
-    private String getSelectedRepName() {
-        int index = repoList.getSelectedIndex();
-        return monitoredRepositoriesBean1.getMonitoredProjects().get(index).getName();
+    private MonitoredRepository getSelectedRepository() {
+        return (MonitoredRepository) repoList.getSelectedValue();
     }
 
     /**
@@ -542,9 +524,8 @@ public class MainWindow extends javax.swing.JFrame {
                 handleWindowStateChanged(evt);
             }
         });
-        
-        addWindowListener(new java.awt.event.WindowListener() {
 
+        addWindowListener(new java.awt.event.WindowListener() {
             @Override
             public void windowOpened(WindowEvent e) {
             }
@@ -590,4 +571,5 @@ public class MainWindow extends javax.swing.JFrame {
         });
     }
     //</editor-fold>
+
 }

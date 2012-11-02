@@ -1,21 +1,18 @@
 package br.uff.ic.dyevc.model;
 
-import java.beans.*;
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import javax.swing.AbstractListModel;
+import javax.swing.DefaultListModel;
 
 /**
  *
  * @author Cristiano
  */
-public final class MonitoredRepositories implements Serializable {
+public final class MonitoredRepositories extends AbstractListModel<MonitoredRepository> {
 
     private static final long serialVersionUID = -7567721142354738718L;
-    private PropertyChangeSupport propertySupport;
-    private HashMap monitoredRepositories;
+    private List<MonitoredRepository> monitoredRepositories = new ArrayList<MonitoredRepository>();
     public static final String MONITORED_PROJECTS = "monitoredProjects";
 
     /**
@@ -24,62 +21,55 @@ public final class MonitoredRepositories implements Serializable {
      * @return the value of monitoredProjects
      */
     public List<MonitoredRepository> getMonitoredProjects() {
-        List<MonitoredRepository> output = Collections.EMPTY_LIST;
-
-        if (monitoredRepositories != null) {
-            output = new ArrayList(monitoredRepositories.values());
-        }
-        return output;
+        return monitoredRepositories;
     }
-    
+
     /**
      * Get an instance of a monitored repository by name
+     *
      * @param id Name of the desired monitored repository
      *
      * @return the required monitored repository
      */
     public MonitoredRepository getMonitoredProjectById(String id) {
-        MonitoredRepository output = null;
-        if (monitoredRepositories != null) {
-            output = (MonitoredRepository)monitoredRepositories.get(id);
+        for (MonitoredRepository monitoredRepository : monitoredRepositories) {
+            if (monitoredRepository.getId().equals(id)) {
+                return monitoredRepository;
+            }
         }
-        return output;
+
+        return null;
     }
-    
+
     public void addMonitoredRepository(MonitoredRepository repository) {
-        if (monitoredRepositories == null) {
-            monitoredRepositories= new HashMap();
+        int index = monitoredRepositories.indexOf(repository);
+        if (index >= 0) {
+            monitoredRepositories.set(index, repository);
+            fireContentsChanged(this, index, index);
+        } else {
+            index = monitoredRepositories.size();
+            monitoredRepositories.add(repository);
+            fireIntervalAdded(this, index, index);
         }
-        List<MonitoredRepository> oldValue = getMonitoredProjects();
-        this.monitoredRepositories.put(repository.getId(), repository);
-        propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
 
-    public void removeMonitoredRepository(MonitoredRepository repository) {
-        List<MonitoredRepository> oldValue = getMonitoredProjects();
-        this.monitoredRepositories.remove(repository.getId());
-        propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
+    public boolean removeMonitoredRepository(MonitoredRepository repository) {
+        int index = monitoredRepositories.indexOf(repository);
+        boolean rv = monitoredRepositories.remove(repository);
+        if (index >= 0) {
+            fireIntervalRemoved(this, index, index);
+        }
+        return rv;
     }
 
-    public void removeMonitoredRepository(String repositoryId) {
-        List<MonitoredRepository> oldValue = getMonitoredProjects();
-        this.monitoredRepositories.remove(repositoryId);
-        propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
-    }
-    
-    public int getNumberOfMonitoredProjects() {
+    @Override
+    public int getSize() {
         return monitoredRepositories.size();
     }
 
-    public MonitoredRepositories() {
-        propertySupport = new PropertyChangeSupport(this);
-    }
-
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        propertySupport.addPropertyChangeListener(listener);
-    }
-
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        propertySupport.removePropertyChangeListener(listener);
+    @Override
+    public MonitoredRepository getElementAt(int index) {
+        List<MonitoredRepository> values = getMonitoredProjects();
+        return values.get(index);
     }
 }

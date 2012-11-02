@@ -29,15 +29,15 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     /**
      * Creates new form RepositoryConfigWindow
      */
-    public RepositoryConfigWindow(MonitoredRepositories monBean, String name) throws DyeVCException {
+    public RepositoryConfigWindow(MonitoredRepositories monBean, MonitoredRepository repository) throws DyeVCException {
         if (monBean == null) {
             LoggerFactory.getLogger(RepositoryConfigWindow.class).error("Received a null list of monitored repositories");
             throw new DyeVCException("Received a null list of monitored repositories");
         }
         monitoredRepositoriesBean = monBean;
-        if (name != null && !"".equals(name)) {
+        if (repository != null) {
             create = false;
-            repositoryBean = monitoredRepositoriesBean.getMonitoredProjectById(name);
+            repositoryBean = repository;
         } else {
             create = true;
             repositoryBean = new MonitoredRepository();
@@ -127,7 +127,6 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             }
         });
 
-
         buildUI();
 
     }
@@ -186,6 +185,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         txtPassword.setEnabled(needsAuthenticationCheckBox.isSelected());
     }
     //</editor-fold>
+    
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean;
     private br.uff.ic.dyevc.model.MonitoredRepository repositoryBean;
     /**

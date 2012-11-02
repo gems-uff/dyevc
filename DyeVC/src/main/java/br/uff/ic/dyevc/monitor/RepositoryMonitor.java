@@ -50,7 +50,7 @@ public class RepositoryMonitor extends Thread {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
                 statusList.clearMessages();
                 repos = PreferencesUtils.loadMonitoredRepositories();
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.getNumberOfMonitoredProjects());
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.getSize());
                 checkWorkingFolder();
                 for (Iterator<MonitoredRepository> it = repos.getMonitoredProjects().iterator(); it.hasNext();) {
                     MonitoredRepository monitoredRepository = it.next();

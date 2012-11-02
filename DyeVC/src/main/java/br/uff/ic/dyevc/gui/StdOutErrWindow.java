@@ -155,6 +155,7 @@ public class StdOutErrWindow extends JFrame {
     }
 
     // </editor-fold>
+    
     // <editor-fold defaultstate="collapsed" desc="JTextAreaOutputStream">
     public class JTextAreaOutputStream extends OutputStream {
 
