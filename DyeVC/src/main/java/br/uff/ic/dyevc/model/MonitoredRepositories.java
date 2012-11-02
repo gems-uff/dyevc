@@ -66,6 +66,10 @@ public final class MonitoredRepositories implements Serializable {
         this.monitoredRepositories.remove(repositoryId);
         propertySupport.firePropertyChange(MONITORED_PROJECTS, oldValue, getMonitoredProjects());
     }
+    
+    public int getNumberOfMonitoredProjects() {
+        return monitoredRepositories.size();
+    }
 
     public MonitoredRepositories() {
         propertySupport = new PropertyChangeSupport(this);

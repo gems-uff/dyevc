@@ -400,9 +400,10 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntRemoveProjectActionPerformed(ActionEvent evt) {
         String repName = getSelectedRepName();
+        String repId = getSelectedRepId();
         int n = JOptionPane.showConfirmDialog(repoList, "Do you really want to stop monitoring " + repName + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (n == JOptionPane.YES_OPTION) {
-            monitoredRepositoriesBean1.removeMonitoredRepository(repName);
+            monitoredRepositoriesBean1.removeMonitoredRepository(repId);
             PreferencesUtils.persistRepositories(monitoredRepositoriesBean1);
         }
     }
@@ -504,14 +505,23 @@ public class MainWindow extends javax.swing.JFrame {
 
     // <editor-fold defaultstate="collapsed" desc="other stuff">   
     /**
+     * Gets the id of selected repository in Jlist
+     *
+     * @return name of the selected repository
+     */
+    private String getSelectedRepId() {
+        int index = repoList.getSelectedIndex();
+        return monitoredRepositoriesBean1.getMonitoredProjects().get(index).getId();
+    }
+
+    /**
      * Gets the name of selected repository in Jlist
      *
      * @return name of the selected repository
      */
     private String getSelectedRepName() {
-        String selectedRep = (String) repoList.getSelectedValue();
-        String repName = selectedRep.substring(0, selectedRep.indexOf("@"));
-        return repName;
+        int index = repoList.getSelectedIndex();
+        return monitoredRepositoriesBean1.getMonitoredProjects().get(index).getName();
     }
 
     /**
