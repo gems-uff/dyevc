@@ -1,14 +1,12 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.application.IConstants;
-import br.uff.ic.dyevc.monitor.RepositoryMonitor;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
 import java.awt.event.MouseEvent;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -18,13 +16,13 @@ import javax.swing.WindowConstants;
 import javax.swing.text.DefaultCaret;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
-import org.slf4j.LoggerFactory;
 
 public class StdOutErrWindow extends JFrame {
 
     private static final long serialVersionUID = 5080471850955743986L;
     private JTextArea jTextAreaOut;
     private JPopupMenu jPopupTextAreaOut;
+    private boolean autoScroll = true;
 
     public StdOutErrWindow() {
         initComponents();
@@ -34,22 +32,13 @@ public class StdOutErrWindow extends JFrame {
 
     private void initComponents() {
         this.setTitle("Console Messages");
-        setSize(700, 600);
-        setMinimumSize(new Dimension(700, 600));
+        setSize(800, 600);
+        setMinimumSize(new Dimension(800, 600));
         setVisible(false);
         jTextAreaOut = new JTextArea(20, 50);
         jTextAreaOut.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        DefaultCaret caretOut = (DefaultCaret) jTextAreaOut.getCaret();
-        caretOut.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
         JScrollPane outPane = new JScrollPane(jTextAreaOut);
-        
-        //moves vertical scroll to the end of the messages
-        outPane.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener() {
-            @Override
-            public void adjustmentValueChanged(AdjustmentEvent e) {
-                e.getAdjustable().setValue(e.getAdjustable().getMaximum());
-            }
-        });
+        setAutoScrolling();
         
         getContentPane().add(outPane);
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
@@ -65,7 +54,7 @@ public class StdOutErrWindow extends JFrame {
 
     // <editor-fold defaultstate="collapsed" desc="textArea menu">  
     private void buildTextAreaPopup() {
-                
+
         jPopupTextAreaOut = new JPopupMenu();
         JMenuItem mntClear = new javax.swing.JMenuItem();
         mntClear.setText("Clear Messages");
@@ -75,8 +64,19 @@ public class StdOutErrWindow extends JFrame {
                 jTextAreaOut.setText(null);
             }
         });
-        jPopupTextAreaOut.add(mntClear);
-        
+
+        JCheckBoxMenuItem mntScrolling = new JCheckBoxMenuItem();
+        mntScrolling.setText("Auto-scroll window");
+        mntScrolling.setSelected(autoScroll);
+        mntScrolling.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                JCheckBoxMenuItem source = (JCheckBoxMenuItem) evt.getSource();
+                autoScroll = source.isSelected();
+                setAutoScrolling();
+            }
+        });
+
         JMenuItem mntLogTrace = new javax.swing.JMenuItem();
         mntLogTrace.setText("Log Level -> Trace");
         mntLogTrace.addActionListener(new java.awt.event.ActionListener() {
@@ -85,8 +85,7 @@ public class StdOutErrWindow extends JFrame {
                 LogManager.getLogger(IConstants.APPLICATION_PACKAGE).setLevel(Level.TRACE);
             }
         });
-        jPopupTextAreaOut.add(mntLogTrace);
-        
+
         JMenuItem mntLogDebug = new javax.swing.JMenuItem();
         mntLogDebug.setText("Log Level -> Debug");
         mntLogDebug.addActionListener(new java.awt.event.ActionListener() {
@@ -95,8 +94,7 @@ public class StdOutErrWindow extends JFrame {
                 LogManager.getLogger(IConstants.APPLICATION_PACKAGE).setLevel(Level.DEBUG);
             }
         });
-        jPopupTextAreaOut.add(mntLogDebug);
-        
+
         JMenuItem mntLogInfo = new javax.swing.JMenuItem();
         mntLogInfo.setText("Log Level -> Info");
         mntLogInfo.addActionListener(new java.awt.event.ActionListener() {
@@ -105,8 +103,7 @@ public class StdOutErrWindow extends JFrame {
                 LogManager.getLogger(IConstants.APPLICATION_PACKAGE).setLevel(Level.INFO);
             }
         });
-        jPopupTextAreaOut.add(mntLogInfo);
-        
+
         JMenuItem mntLogWarn = new javax.swing.JMenuItem();
         mntLogWarn.setText("Log Level -> Warning");
         mntLogWarn.addActionListener(new java.awt.event.ActionListener() {
@@ -115,8 +112,7 @@ public class StdOutErrWindow extends JFrame {
                 LogManager.getLogger(IConstants.APPLICATION_PACKAGE).setLevel(Level.WARN);
             }
         });
-        jPopupTextAreaOut.add(mntLogWarn);
-        
+
         JMenuItem mntLogError = new javax.swing.JMenuItem();
         mntLogError.setText("Log Level -> Error");
         mntLogError.addActionListener(new java.awt.event.ActionListener() {
@@ -125,6 +121,14 @@ public class StdOutErrWindow extends JFrame {
                 LogManager.getLogger(IConstants.APPLICATION_PACKAGE).setLevel(Level.ERROR);
             }
         });
+
+        jPopupTextAreaOut.add(mntScrolling);
+        jPopupTextAreaOut.addSeparator();
+        jPopupTextAreaOut.add(mntClear);
+        jPopupTextAreaOut.add(mntLogTrace);
+        jPopupTextAreaOut.add(mntLogDebug);
+        jPopupTextAreaOut.add(mntLogInfo);
+        jPopupTextAreaOut.add(mntLogWarn);
         jPopupTextAreaOut.add(mntLogError);
     }
 
@@ -139,8 +143,18 @@ public class StdOutErrWindow extends JFrame {
         }
     }
 
+    private void setAutoScrolling() {
+        if (autoScroll) {
+            jTextAreaOut.setCaretPosition(jTextAreaOut.getDocument().getLength());
+            DefaultCaret caretOut = (DefaultCaret) jTextAreaOut.getCaret();
+            caretOut.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        } else {
+            DefaultCaret caretOut = (DefaultCaret) jTextAreaOut.getCaret();
+            caretOut.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        }
+    }
+
     // </editor-fold>
-    
     // <editor-fold defaultstate="collapsed" desc="JTextAreaOutputStream">
     public class JTextAreaOutputStream extends OutputStream {
 

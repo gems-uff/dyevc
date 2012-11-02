@@ -303,7 +303,7 @@ public class MainWindow extends javax.swing.JFrame {
         mnuFile.addSeparator();
 
         javax.swing.JMenuItem mntCheckAllNow = new javax.swing.JMenuItem();
-        mntCheckAllNow.setText("Check All Repositories Now.");
+        mntCheckAllNow.setText("Check All Repositories Now");
         mntCheckAllNow.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
