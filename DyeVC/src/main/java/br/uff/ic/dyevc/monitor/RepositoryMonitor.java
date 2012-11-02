@@ -2,9 +2,11 @@ package br.uff.ic.dyevc.monitor;
 
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
+import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.gui.MainWindow;
 import br.uff.ic.dyevc.gui.MessageManager;
+import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.model.RepositoryStatusMessages;
@@ -15,8 +17,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 public class RepositoryMonitor extends Thread {
 
     private ApplicationSettingsBean settings;
-    private List<MonitoredRepository> repos;
+    private MonitoredRepositories repos;
     private RepositoryStatusMessages statusList;
     private MainWindow container;
 
@@ -49,10 +49,10 @@ public class RepositoryMonitor extends Thread {
             try {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
                 statusList.clearMessages();
-                repos = PreferencesUtils.loadMonitoredRepositories().getMonitoredProjects();
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.size());
+                repos = PreferencesUtils.loadMonitoredRepositories();
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.getNumberOfMonitoredProjects());
                 checkWorkingFolder();
-                for (Iterator<MonitoredRepository> it = repos.iterator(); it.hasNext();) {
+                for (Iterator<MonitoredRepository> it = repos.getMonitoredProjects().iterator(); it.hasNext();) {
                     MonitoredRepository monitoredRepository = it.next();
                     checkRepository(monitoredRepository);
                 }
@@ -64,10 +64,17 @@ public class RepositoryMonitor extends Thread {
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping.", sleepTime);
             } catch (InterruptedException ex) {
                 LoggerFactory.getLogger(RepositoryMonitor.class).info("Waking up due to interruption received.");
+            } catch (DyeVCException dex) {
+                MessageManager.getInstance().addMessage(dex.getMessage());
             }
         }
     }
 
+    /**
+     * Checks if a given repository is behind and/or ahead its remotes, pupulating
+     * a status list according to the results.
+     * @param monitoredRepository the repository to be checked
+     */
     private void checkRepository(MonitoredRepository monitoredRepository) {
         try {
             LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Entry. Repository: {}, id:{}"
@@ -133,27 +140,25 @@ public class RepositoryMonitor extends Thread {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Exit. Repository: {}", monitoredRepository.getId());
     }
 
-    private void checkWorkingFolder() {
+    /**
+     * Verifies whether the working folder exists or not. If false, create it, 
+     * otherwise, look for orphaned folders related to projects not monitored anymore.
+     * @throws DyeVCException 
+     */
+    private void checkWorkingFolder() throws DyeVCException {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkWorkingFolder -> Entry.");
         File workingFolder = new File(settings.getWorkingPath());
         LoggerFactory.getLogger(RepositoryMonitor.class).info("checkWorkingFolder -> Working folder is at {}.", workingFolder.getAbsoluteFile());
         if (workingFolder.exists()) {
-            //TODO verificar se o folder é um clone de um repositório que está sendo monitorado antes de apagar a pasta
             LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder already exists.");
-//            if (!workingFolder.canWrite()) {
-//                LoggerFactory.getLogger(RepositoryMonitor.class).error("Working folder is not writable.");
-//                MessageManager.getInstance()
-//                        .addMessage("Working folder is not writable. Please check folder permissions at "
-//                        + workingFolder.getAbsolutePath());
-//            }
-//            try {
-//                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Beginning working folder clean up process.");
-//                FileUtils.cleanDirectory(workingFolder);
-//                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder clean up complete.");
-//            } catch (IOException ex) {
-//                LoggerFactory.getLogger(RepositoryMonitor.class).error("Error during working folder clean up.", ex);
-//                MessageManager.getInstance().addMessage(ex.getMessage());
-//            }
+            checkOrphanedFolders(workingFolder);
+            if (!workingFolder.canWrite()) {
+                LoggerFactory.getLogger(RepositoryMonitor.class).error("Working folder is not writable.");
+                MessageManager.getInstance()
+                        .addMessage("Working folder is not writable. Please check folder permissions at "
+                        + workingFolder.getAbsolutePath());
+                throw new DyeVCException("Temp folder located at " + workingFolder.getAbsolutePath() + " is not writable.");
+            }
         } else {
             workingFolder.mkdir();
             LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder does not exist. A brand new one was created.");
@@ -161,6 +166,9 @@ public class RepositoryMonitor extends Thread {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkWorkingFolder -> Exit.");
     }
 
+    /**
+     * Notifies messages from the status list as a balloon in tray icon.
+     */
     private void notifyMessages() {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Entry");
         List<String> messages = statusList.getAllMessages();
@@ -175,6 +183,13 @@ public class RepositoryMonitor extends Thread {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Exit");
     }
 
+    /**
+     * Checks if a given repository needs authentication to connect to. If true,
+     * sets the credentials according to the configuration parameters provided by
+     * the user.
+     * @param monitoredRepository the repository to be checked
+     * @param git the connector to the given repository
+     */
     private void checkAuthentication(MonitoredRepository monitoredRepository, GitConnector git) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkAuthentication -> Entry");
         if (monitoredRepository.needsAuthentication()) {
@@ -182,5 +197,34 @@ public class RepositoryMonitor extends Thread {
             git.setCredentials(monitoredRepository.getUser(), monitoredRepository.getPassword());
         }
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkAuthentication -> Exit");
+    }
+
+    /**
+     * Deletes folders with clones related to projects that are not
+     * monitored anymore.
+     * @param pointer to the working folder
+     */
+    private void checkOrphanedFolders(File workingFolder) {
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkOrphanedFolders -> Entry.");
+        String[] tmpFolders = workingFolder.list();
+        for (int i = 0; i < tmpFolders.length; i++) {
+            String tmpFolder = tmpFolders[i];
+            if (repos.getMonitoredProjectById(tmpFolder) == null) {
+                LoggerFactory.getLogger(RepositoryMonitor.class)
+                        .debug("Repository with id={} is not being monitored anymore. Temp folder will be deleted."
+                        , tmpFolder);
+                try {
+                    FileUtils.deleteDirectory(new File(workingFolder, tmpFolder));
+                LoggerFactory.getLogger(RepositoryMonitor.class)
+                        .debug("Temp folder for repository with id={} was successfully deleted."
+                        , tmpFolder);
+                } catch (IOException ex) {
+                LoggerFactory.getLogger(RepositoryMonitor.class)
+                        .error("It was not possible to delete temp folder for repository id=" + tmpFolder
+                        , ex);
+                }
+            }
+        }
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkOrphanedFolders -> Exit.");
     }
 }
