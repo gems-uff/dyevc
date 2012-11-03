@@ -1,71 +1,68 @@
 package br.uff.ic.dyevc.model;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
+/**
+ *
+ * @author Cristiano
+ */
 public class RepositoryStatus {
 
-    private int ahead;
-    private int behind;
-    private String referencedRepositoryUrl;
-    private String repositoryUrl;
-    private String repositoryBranch;
-    private String referencedRepositoryBranch;
-
-    public int getAhead() {
-        return ahead;
+    private static final long serialVersionUID = 1735605826498282433L;
+    private String repositoryId;
+    private Date lastCheckedTime;
+    
+    private List<BranchStatus> syncedList;
+    private List<BranchStatus> nonSyncedList;
+    
+    public RepositoryStatus(String repId) {
+        this.repositoryId = repId;
+        syncedList = new ArrayList<BranchStatus>();
+        nonSyncedList = new ArrayList<BranchStatus>();
+        if (!"".equals(repId)) {
+            lastCheckedTime = new Date(System.currentTimeMillis());
+        }
     }
 
-    public void setAhead(int ahead) {
-        this.ahead = ahead;
-    }
-
-    public int getBehind() {
-        return behind;
-    }
-
-    public void setBehind(int behind) {
-        this.behind = behind;
-    }
-
-    public String getReferencedRepositoryUrl() {
-        return referencedRepositoryUrl;
-    }
-
-    public void setReferencedRepositoryUrl(String referencedRepositoryUrl) {
-        this.referencedRepositoryUrl = referencedRepositoryUrl;
-    }
-
-    public String getRepositoryUrl() {
-        return repositoryUrl;
-    }
-
-    public void setRepositoryUrl(String repositoryUrl) {
-        this.repositoryUrl = repositoryUrl;
-    }
-
-    public String getRepositoryBranch() {
-        return repositoryBranch;
-    }
-
-    public void setRepositoryBranch(String repositoryBranch) {
-        this.repositoryBranch = repositoryBranch;
-    }
-
-    public String getReferencedRepositoryBranch() {
-        return referencedRepositoryBranch;
-    }
-
-    public void setReferencedRepositoryBranch(String referencedRepositoryBranch) {
-        this.referencedRepositoryBranch = referencedRepositoryBranch;
+    public void addStatus(List<BranchStatus> status) {
+        for (Iterator<BranchStatus> it = status.iterator(); it.hasNext();) {
+            BranchStatus branchStatus = it.next();
+            if (branchStatus.getStatus() == BranchStatus.STATUS_OK) {
+                syncedList.add(branchStatus);
+            } else {
+                nonSyncedList.add(branchStatus);
+            }
+        }
     }
     
-    @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-        result.append("RepositoryRelationship");
-        result.append("\n\tURL: ").append(getRepositoryUrl());
-        result.append("\n\tBranch: ").append(getRepositoryBranch());
-        result.append("\tRemote URL: ").append(getReferencedRepositoryUrl());
-        result.append("\tRemote Branch: ").append(getReferencedRepositoryBranch());
-        result.append("\tAhead: ").append(getAhead()).append("\tBehind: ").append(getBehind());
-        return result.toString();
+    public List<BranchStatus> getSyncedRepositoryBranches() {
+        return syncedList;
+    }
+    
+    public List<BranchStatus> getNonSyncedRepositoryBranches() {
+        return nonSyncedList;
+    }
+
+    public String getRepositoryId() {
+        return repositoryId;
+    }
+
+    public Date getLastCheckedTime() {
+        return lastCheckedTime;
+    }
+    
+    public int getNonSyncedBranchesCount() {
+        return nonSyncedList.size();
+    }
+    
+    public int getSyncedBranchesCount() {
+        return syncedList.size();
+    }
+    
+    public int getTotalBranchesCount() {
+        return nonSyncedList.size() + syncedList.size();
     }
 }

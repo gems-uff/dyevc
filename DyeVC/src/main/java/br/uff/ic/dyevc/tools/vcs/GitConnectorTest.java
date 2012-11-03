@@ -1,7 +1,7 @@
 package br.uff.ic.dyevc.tools.vcs;
 
 import br.uff.ic.dyevc.exception.VCSException;
-import br.uff.ic.dyevc.model.RepositoryStatus;
+import br.uff.ic.dyevc.model.BranchStatus;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Iterator;
@@ -35,16 +35,16 @@ public class GitConnectorTest {
 //            cmd.getRemoteNames();
 //            cmd.getTrackedBranches();
             GitConnector clone = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgcclone", "labgccloneClone");
-            List<RepositoryStatus> relClone = clone.testAhead();
-            for (Iterator<RepositoryStatus> it = relClone.iterator(); it.hasNext();) {
-                RepositoryStatus rel = it.next();
+            List<BranchStatus> relClone = clone.testAhead();
+            for (Iterator<BranchStatus> it = relClone.iterator(); it.hasNext();) {
+                BranchStatus rel = it.next();
                 System.out.println(rel);
             }
             GitConnector cloneteste = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgccloneteste", "labgccloneteste");
             cloneteste.fetch("https://github.com/leomurta/labgc-2012.2.git", "+refs/heads/*:refs/remotes/origin/*");
             relClone = cloneteste.testAhead();
-            for (Iterator<RepositoryStatus> it = relClone.iterator(); it.hasNext();) {
-                RepositoryStatus rel = it.next();
+            for (Iterator<BranchStatus> it = relClone.iterator(); it.hasNext();) {
+                BranchStatus rel = it.next();
                 System.out.println(rel);
             }
 
@@ -52,15 +52,15 @@ public class GitConnectorTest {
             outroclone.fetch("https://github.com/leomurta/labgc-2012.2.git", "+refs/heads/*:refs/remotes/origin/*");
 //            outroclone.fetch("F:\\mybackups\\Educacao\\Mestrado-UFF\\Git\\labgc-2012.2", "+refs/heads/*:refs/remotes/origin/*");
             relClone = outroclone.testAhead();
-            for (Iterator<RepositoryStatus> it = relClone.iterator(); it.hasNext();) {
-                RepositoryStatus rel = it.next();
+            for (Iterator<BranchStatus> it = relClone.iterator(); it.hasNext();) {
+                BranchStatus rel = it.next();
                 System.out.println(rel);
             }
             
             GitConnector dyevc2 = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/dyevc2", "dyevc2");
             relClone = dyevc2.testAhead();
-            for (Iterator<RepositoryStatus> it = relClone.iterator(); it.hasNext();) {
-                RepositoryStatus rel = it.next();
+            for (Iterator<BranchStatus> it = relClone.iterator(); it.hasNext();) {
+                BranchStatus rel = it.next();
                 System.out.println(rel);
             }
         } catch (GitAPIException ex) {

@@ -6,14 +6,15 @@ import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.gui.MainWindow;
 import br.uff.ic.dyevc.gui.MessageManager;
+import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
-import br.uff.ic.dyevc.model.RepositoryStatusMessages;
 import br.uff.ic.dyevc.tools.vcs.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -30,14 +31,14 @@ public class RepositoryMonitor extends Thread {
 
     private ApplicationSettingsBean settings;
     private MonitoredRepositories repos;
-    private RepositoryStatusMessages statusList;
+    private List<RepositoryStatus> statusList;
     private MainWindow container;
 
-    public RepositoryMonitor(MainWindow container) {
+    public RepositoryMonitor(MainWindow container, MonitoredRepositories mr) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
         settings = PreferencesUtils.loadPreferences();
-        statusList = new RepositoryStatusMessages();
         this.container = container;
+        repos = mr;
         this.start();
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Exit.");
     }
@@ -48,15 +49,14 @@ public class RepositoryMonitor extends Thread {
         while (true) {
             try {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
-                statusList.clearMessages();
-                repos = PreferencesUtils.loadMonitoredRepositories();
+                statusList = new ArrayList <RepositoryStatus>();
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.getSize());
                 checkWorkingFolder();
                 for (Iterator<MonitoredRepository> it = repos.getMonitoredProjects().iterator(); it.hasNext();) {
                     MonitoredRepository monitoredRepository = it.next();
                     checkRepository(monitoredRepository);
                 }
-                notifyMessages();
+                container.notifyMessages(statusList);
                 int sleepTime = settings.getRefreshInterval() * 1000;
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Will now sleep for {} seconds.", sleepTime);
                 MessageManager.getInstance().addMessage("Repository monitor is sleeping.");
@@ -127,11 +127,15 @@ public class RepositoryMonitor extends Thread {
                 temp.fetch(remoteUrl, IConstants.FETCH_SPECS);
             }
 
-            List<RepositoryStatus> result = temp.testAhead();
+            List<BranchStatus> result = temp.testAhead();
+            
             temp.close();
             LoggerFactory.getLogger(RepositoryMonitor.class).debug("Closing temp clone repository connection.");
 
-            statusList.addMessages(monitoredRepository, result);
+            RepositoryStatus repStatus = new RepositoryStatus(monitoredRepository.getId());
+            repStatus.addStatus(result);
+            monitoredRepository.setRepStatus(repStatus);
+            statusList.add(repStatus);
         } catch (VCSException ex) {
             LoggerFactory.getLogger(RepositoryMonitor.class)
                     .error("It was not possible to finish monitoring of repository <{}>",
@@ -164,23 +168,6 @@ public class RepositoryMonitor extends Thread {
             LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder does not exist. A brand new one was created.");
         }
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkWorkingFolder -> Exit.");
-    }
-
-    /**
-     * Notifies messages from the status list as a balloon in tray icon.
-     */
-    private void notifyMessages() {
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Entry");
-        List<String> messages = statusList.getAllMessages();
-        if (messages.size() > 0) {
-            StringBuilder message = new StringBuilder();
-            for (Iterator<String> it = messages.iterator(); it.hasNext();) {
-                message.append(it.next()).append("\n");
-            }
-            MessageManager.getInstance().addMessage(message.toString());
-            container.notifyMessage(message.toString());
-        }
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Exit");
     }
 
     /**
