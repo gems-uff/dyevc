@@ -1,7 +1,7 @@
 package br.uff.ic.dyevc.tools.vcs;
 
 import br.uff.ic.dyevc.exception.VCSException;
-import br.uff.ic.dyevc.model.RepositoryStatus;
+import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.git.TrackedBranch;
 import java.io.File;
 import java.io.IOException;
@@ -345,16 +345,16 @@ public class GitConnector {
         repository.close();
     }
 
-    public List<RepositoryStatus> testAhead() throws VCSException {
+    public List<BranchStatus> testAhead() throws VCSException {
         //TODO não está funcionando direito
-        List<RepositoryStatus> result = new ArrayList<RepositoryStatus>();
+        List<BranchStatus> result = new ArrayList<BranchStatus>();
         List<TrackedBranch> branches = getTrackedBranches();
         for (Iterator<TrackedBranch> it = branches.iterator(); it.hasNext();) {
             try {
                 TrackedBranch trackedBranch = it.next();
                 BranchTrackingStatus status = BranchTrackingStatus.of(repository, trackedBranch.getName());
 
-                RepositoryStatus relationship = new RepositoryStatus();
+                BranchStatus relationship = new BranchStatus();
                 relationship.setAhead(status.getAheadCount());
                 relationship.setBehind(status.getBehindCount());
                 relationship.setRepositoryBranch(trackedBranch.getName());

@@ -1,10 +1,8 @@
 package br.uff.ic.dyevc.model;
 
-import br.uff.ic.dyevc.tools.vcs.GitConnector;
 import java.beans.*;
 import java.io.Serializable;
 import java.util.List;
-import org.eclipse.jgit.lib.Repository;
 
 /**
  *
@@ -20,6 +18,7 @@ public class MonitoredRepository implements Serializable {
     private boolean needsAuthentication;
     private String user;
     private String password;
+    private RepositoryStatus repStatus;
     public static final String PROP_CLONEADDRESS = "cloneAddress";
 
     /**
@@ -50,6 +49,7 @@ public class MonitoredRepository implements Serializable {
         this.password = "";
         this.id = "";
         this.needsAuthentication = false;
+        this.repStatus = new RepositoryStatus("");
         propertySupport = new PropertyChangeSupport(this);
     }
 
@@ -109,6 +109,14 @@ public class MonitoredRepository implements Serializable {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public RepositoryStatus getRepStatus() {
+        return repStatus;
+    }
+
+    public void setRepStatus(RepositoryStatus repStatus) {
+        this.repStatus = repStatus;
     }
     
 }

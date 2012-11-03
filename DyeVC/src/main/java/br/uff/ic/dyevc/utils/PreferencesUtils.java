@@ -26,6 +26,10 @@ public final class PreferencesUtils {
     static {
         pref = Preferences.userNodeForPackage(DyeVC.class);
     }
+    
+    private PreferencesUtils () {
+        
+    }
 
     public static void storePreferences(ApplicationSettingsBean bean) {
         Preferences nodeToStore = pref.node(NODE_GENERAL_SETTINGS);

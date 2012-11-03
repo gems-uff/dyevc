@@ -1,8 +1,11 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
+import br.uff.ic.dyevc.utils.ImageUtils;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.AWTException;
 import java.awt.Image;
@@ -15,6 +18,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -49,7 +55,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPaneMessages;
     private javax.swing.JTextArea jTextAreaMessages;
-    private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean1;
+    private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositories;
     private javax.swing.JList repoList;
 
     //Variáveis de menu
@@ -59,6 +65,7 @@ public class MainWindow extends javax.swing.JFrame {
     private PopupMenu trayPopup;
     private TrayIcon trayIcon;
     private RepositoryMonitor monitor;
+    private int lastMessagesCount = 0;
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">                          
@@ -69,7 +76,7 @@ public class MainWindow extends javax.swing.JFrame {
         setSize(new java.awt.Dimension(400, 400));
         setMinimumSize(new java.awt.Dimension(400, 400));
         setName("MainWindow"); // NOI18N
-        setIconImage(getDyeVCImage());
+        setIconImages(getDyeVCImages());
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
         setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
@@ -78,14 +85,14 @@ public class MainWindow extends javax.swing.JFrame {
 
         dlgAbout = new AboutDialog(this, rootPaneCheckingEnabled);
         frameSettings = new SettingsWindow();
-        monitoredRepositoriesBean1 = PreferencesUtils.loadMonitoredRepositories();
+        monitoredRepositories = PreferencesUtils.loadMonitoredRepositories();
 
         pnlMain = new javax.swing.JPanel();
         pnlMain.setBorder(javax.swing.BorderFactory.createTitledBorder("Monitored repositories"));
 
         jScrollPane1 = new javax.swing.JScrollPane();
 
-        repoList = new javax.swing.JList(monitoredRepositoriesBean1);
+        repoList = new javax.swing.JList(monitoredRepositories);
         repoList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         repoList.setCellRenderer(new RepositoryRenderer(true));
 
@@ -252,12 +259,23 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     /**
+     * Gets application images and returns it as list.
+     *
+     * @return
+     */
+    private List<Image> getDyeVCImages() {
+        List<Image> images = new ArrayList<Image>();
+        images.add(getDyeVCImage());
+        return images;
+    }
+
+    /**
      * Gets application image and returns it as an Image object.
      *
      * @return
      */
     private Image getDyeVCImage() {
-        return Toolkit.getDefaultToolkit().getImage(getClass().getResource("/br/uff/ic/dyevc/images/DyeVCIcon.png"));
+        return ImageUtils.getInstance().getImage("DyeVCIcon_16.png");
     }
 
     // </editor-fold>
@@ -363,7 +381,7 @@ public class MainWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="main menu events">                          
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
-            new RepositoryConfigWindow(monitoredRepositoriesBean1, null).setVisible(true);
+            new RepositoryConfigWindow(monitoredRepositories, null).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -376,7 +394,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntEditProjectActionPerformed(ActionEvent evt) {
         try {
-            new RepositoryConfigWindow(monitoredRepositoriesBean1, getSelectedRepository()).setVisible(true);
+            new RepositoryConfigWindow(monitoredRepositories, getSelectedRepository()).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -391,8 +409,8 @@ public class MainWindow extends javax.swing.JFrame {
         MonitoredRepository rep = getSelectedRepository();
         int n = JOptionPane.showConfirmDialog(repoList, "Do you really want to stop monitoring " + rep.getName() + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (n == JOptionPane.YES_OPTION) {
-            monitoredRepositoriesBean1.removeMonitoredRepository(rep);
-            PreferencesUtils.persistRepositories(monitoredRepositoriesBean1);
+            monitoredRepositories.removeMonitoredRepository(rep);
+            PreferencesUtils.persistRepositories(monitoredRepositories);
         }
     }
 
@@ -505,7 +523,7 @@ public class MainWindow extends javax.swing.JFrame {
      * Starts the repository monitor.
      */
     private void startMonitor() {
-        monitor = new RepositoryMonitor(this);
+        monitor = new RepositoryMonitor(this, monitoredRepositories);
     }
 
     public void notifyMessage(String message) {
@@ -572,4 +590,29 @@ public class MainWindow extends javax.swing.JFrame {
     }
     //</editor-fold>
 
+    /**
+     * Notifies messages from the status list as a balloon in tray icon.
+     */
+    public void notifyMessages(List<RepositoryStatus> repStatusList) {
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Entry");
+        
+        int countTotal = 0;
+        for (Iterator<RepositoryStatus> it = repStatusList.iterator(); it.hasNext();) {
+            int countRepo = 0;
+            RepositoryStatus repositoryStatus = it.next();
+            for (Iterator<BranchStatus> it1 = repositoryStatus.getNonSyncedRepositoryBranches().iterator(); it1.hasNext();) {
+                countRepo++;
+                BranchStatus nonSyncedStatus = it1.next();
+            }
+            countTotal += countRepo;
+        }
+        
+        if (countTotal != lastMessagesCount) {
+            notifyMessage("There are " + countTotal + " messages. Click on this balloon if you want to see details.");
+            repoList.repaint();
+            lastMessagesCount = countTotal;
+        }
+        
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Exit");
+    }
 }

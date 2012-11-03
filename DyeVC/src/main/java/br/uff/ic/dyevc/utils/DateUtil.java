@@ -21,6 +21,10 @@ public class DateUtil {
         return dateFormat.format(date);
     }
 
+    public static String format(Date date, String format) {
+        return new SimpleDateFormat(format).format(date);
+    }
+
     public static String format(Calendar calendar) {
         return dateFormat.format(calendar.getTime());
     }
