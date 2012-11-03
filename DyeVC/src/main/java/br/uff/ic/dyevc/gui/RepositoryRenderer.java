@@ -53,15 +53,20 @@ class RepositoryRenderer extends DefaultListCellRenderer {
             listItem.setIcon(ImageUtils.getInstance().getIcon("question_32.png"));
         } else {
             tooltip.append(DateUtil.format(repStatus.getLastCheckedTime(), "yyyy-MM-dd HH:mm:ss"));
-            if (repStatus.getNonSyncedBranchesCount() == 0) {
-                listItem.setIcon(ImageUtils.getInstance().getIcon("check_32.png"));
-                tooltip.append("<br><br>Repository is in sync with all remotes.");
+            if (repStatus.isInvalid()) {
+                listItem.setIcon(ImageUtils.getInstance().getIcon("nocheck_32.png"));
+                tooltip.append("<br><br>Repository location is invalid. Please check or remove it from the configured repositories list.");
             } else {
-                listItem.setIcon(ImageUtils.getInstance().getIcon("aheadbehind_ylw_32.png"));
-                appendNonSyncedMessages(repStatus.getNonSyncedRepositoryBranches(), tooltip);
+                if (repStatus.getNonSyncedBranchesCount() == 0) {
+                    listItem.setIcon(ImageUtils.getInstance().getIcon("check_32.png"));
+                    tooltip.append("<br><br>Repository is in sync with all remotes.");
+                } else {
+                    listItem.setIcon(ImageUtils.getInstance().getIcon("aheadbehind_ylw_32.png"));
+                    appendNonSyncedMessages(repStatus.getNonSyncedRepositoryBranches(), tooltip);
+                }
             }
         }
-        
+
         tooltip.append("</html>");
         listItem.setToolTipText(tooltip.toString());
         ToolTipManager.sharedInstance().setDismissDelay(15000);
@@ -86,7 +91,7 @@ class RepositoryRenderer extends DefaultListCellRenderer {
             } else {
                 tooltip.append(RepositoryRenderer.class.getResource("/br/uff/ic/dyevc/images/aheadbehind_ylw_16.png"))
                         .append("'/> <b>ahead:</b> ").append(branchStatus.getAhead())
-                        .append("&nbsp;&nbsp;&nbsp;behind:</b> ").append(branchStatus.getBehind());
+                        .append("&nbsp;&nbsp;&nbsp;<b>behind:</b> ").append(branchStatus.getBehind());
             }
             tooltip.append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
                     .append("<b>local branch:</b> ").append(branchStatus.getRepositoryBranch())

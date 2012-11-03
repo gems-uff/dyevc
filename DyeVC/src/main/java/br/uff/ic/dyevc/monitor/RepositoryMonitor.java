@@ -11,13 +11,13 @@ import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.tools.vcs.GitConnector;
+import br.uff.ic.dyevc.tools.vcs.GitTools;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,7 @@ public class RepositoryMonitor extends Thread {
         while (true) {
             try {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
-                statusList = new ArrayList <RepositoryStatus>();
+                statusList = new ArrayList<RepositoryStatus>();
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.getSize());
                 checkWorkingFolder();
                 for (Iterator<MonitoredRepository> it = repos.getMonitoredProjects().iterator(); it.hasNext();) {
@@ -71,45 +71,56 @@ public class RepositoryMonitor extends Thread {
     }
 
     /**
-     * Checks if a given repository is behind and/or ahead its remotes, pupulating
-     * a status list according to the results.
+     * Checks if a given repository is behind and/or ahead its tracking remotes,
+     * populating a status list according to the results.
+     *
      * @param monitoredRepository the repository to be checked
      */
     private void checkRepository(MonitoredRepository monitoredRepository) {
-        try {
-            LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Entry. Repository: {}, id:{}"
-                    , monitoredRepository.getName(), monitoredRepository.getId());
-            GitConnector git = new GitConnector(monitoredRepository.getCloneAddress(), monitoredRepository.getId());
-            LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .debug("checkRepository -> created gitConnector for repository {}, id={}"
-                    , monitoredRepository.getName(), monitoredRepository.getId());
-            checkAuthentication(monitoredRepository, git);
+        LoggerFactory.getLogger(RepositoryMonitor.class)
+                .trace("checkRepository -> Entry. Repository: {}, id:{}", monitoredRepository.getName(), monitoredRepository.getId());
 
-            Set<String> remotes = git.getRemoteNames();
+        RepositoryStatus repStatus = new RepositoryStatus(monitoredRepository.getId());
+
+        if (!GitConnector.isValidRepository(monitoredRepository.getCloneAddress())) {
+           List<BranchStatus> status = markInvalidRepository(monitoredRepository);
+           repStatus.addStatus(status);
+        } else {
+            List<BranchStatus> status = processRepository(monitoredRepository);
+            repStatus.addStatus(status);
+        }
+        
+        monitoredRepository.setRepStatus(repStatus);
+        statusList.add(repStatus);
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Exit. Repository: {}", monitoredRepository.getName());
+    }
+
+    /**
+     * Process a valid repository to check its behind and ahead status
+     * @param monitoredRepository the repository to be processed
+     * @return a list of status for the given repository
+     */
+    private List<BranchStatus> processRepository(MonitoredRepository monitoredRepository) {
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Entry. Repository: {}", monitoredRepository.getName());
+        GitConnector sourceConnector = null;
+        GitConnector temp = null;
+        List<BranchStatus> result = null;
+        try {
+            sourceConnector = new GitConnector(monitoredRepository.getCloneAddress(), monitoredRepository.getId());
+            temp = null;
             LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .debug("Repository {} has {} remotes.",
-                    monitoredRepository.getId(), remotes.size());
+                    .debug("processRepository -> created gitConnector for repository {}, id={}", monitoredRepository.getName(), monitoredRepository.getId());
+            checkAuthentication(monitoredRepository, sourceConnector);
 
             String pathTemp = settings.getWorkingPath()
                     + IConstants.DIR_SEPARATOR + monitoredRepository.getId();
 
-            GitConnector temp = null;
             if (!GitConnector.isValidRepository(pathTemp)) {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("There is no temp repository at {}. Will create a temp by cloning {}.",
                         pathTemp, monitoredRepository.getId());
-                try {
-                    if (new File(pathTemp).exists()) {
-                        FileUtils.cleanDirectory(new File(pathTemp));
-                        LoggerFactory.getLogger(RepositoryMonitor.class)
-                                .debug("Removed existing content at {}. ",
-                                pathTemp);
-                    }
-                    temp = git.cloneThis(pathTemp);
-                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Created temp clone for {}.", monitoredRepository.getId());
-                } catch (IOException ex) {
-                    LoggerFactory.getLogger(RepositoryMonitor.class).error("Error cleaning existing temp folder at" + pathTemp + ".", ex);
-                }
+                temp = createWorkingClone(pathTemp, sourceConnector);
+                sourceConnector.close();
             } else {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("There is a valid repository at {}. Creating a git connector to it.",
@@ -118,36 +129,46 @@ public class RepositoryMonitor extends Thread {
             }
             checkAuthentication(monitoredRepository, temp);
 
-            for (Iterator<String> it = remotes.iterator(); it.hasNext();) {
-                String remoteName = it.next();
-                String remoteUrl = git.getRemoteUrl(remoteName);
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Fetching for remote {} on url {}.", remoteName, remoteUrl);
-
-
-                temp.fetch(remoteUrl, IConstants.FETCH_SPECS);
-            }
-
-            List<BranchStatus> result = temp.testAhead();
-            
-            temp.close();
-            LoggerFactory.getLogger(RepositoryMonitor.class).debug("Closing temp clone repository connection.");
-
-            RepositoryStatus repStatus = new RepositoryStatus(monitoredRepository.getId());
-            repStatus.addStatus(result);
-            monitoredRepository.setRepStatus(repStatus);
-            statusList.add(repStatus);
+            temp.fetchAllRemotes();
+            temp.merge(temp.getOriginRefFromSource());
+            result = temp.testAhead();
         } catch (VCSException ex) {
+            MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <{}>"
+                    + monitoredRepository.getName());
             LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .error("It was not possible to finish monitoring of repository <{}>",
-                    monitoredRepository.getId());
+                    .error("It was not possible to finish monitoring of repository <{}> with id <{}>",
+                    monitoredRepository.getName(), monitoredRepository.getId());
+        } finally {
+            if (sourceConnector != null) {
+                sourceConnector.close();
+            }
+            if (temp != null) {
+                temp.close();
+            }
         }
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Exit. Repository: {}", monitoredRepository.getId());
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Exit. Repository: {}", monitoredRepository.getName());
+        return result;
     }
 
+
     /**
-     * Verifies whether the working folder exists or not. If false, create it, 
-     * otherwise, look for orphaned folders related to projects not monitored anymore.
-     * @throws DyeVCException 
+     * Marks a monitored repository as invalid and deletes the related temp folder
+     * @param monitoredRepository the repository to be marked
+     */
+    private List<BranchStatus> markInvalidRepository(MonitoredRepository monitoredRepository) {
+        deleteDirectory(new File(settings.getWorkingPath()), monitoredRepository.getId());
+        List<BranchStatus> listStatus = new ArrayList<BranchStatus>();
+        BranchStatus status = new BranchStatus();
+        status.setInvalid();
+        listStatus.add(status);
+        return listStatus;
+    }
+    /**
+     * Verifies whether the working folder exists or not. If false, create it,
+     * otherwise, look for orphaned folders related to projects not monitored
+     * anymore.
+     *
+     * @throws DyeVCException
      */
     private void checkWorkingFolder() throws DyeVCException {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkWorkingFolder -> Entry.");
@@ -172,8 +193,9 @@ public class RepositoryMonitor extends Thread {
 
     /**
      * Checks if a given repository needs authentication to connect to. If true,
-     * sets the credentials according to the configuration parameters provided by
-     * the user.
+     * sets the credentials according to the configuration parameters provided
+     * by the user.
+     *
      * @param monitoredRepository the repository to be checked
      * @param git the connector to the given repository
      */
@@ -187,8 +209,9 @@ public class RepositoryMonitor extends Thread {
     }
 
     /**
-     * Deletes folders with clones related to projects that are not
-     * monitored anymore.
+     * Deletes folders with clones related to projects that are not monitored
+     * anymore.
+     *
      * @param pointer to the working folder
      */
     private void checkOrphanedFolders(File workingFolder) {
@@ -198,20 +221,57 @@ public class RepositoryMonitor extends Thread {
             String tmpFolder = tmpFolders[i];
             if (repos.getMonitoredProjectById(tmpFolder) == null) {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .debug("Repository with id={} is not being monitored anymore. Temp folder will be deleted."
-                        , tmpFolder);
-                try {
-                    FileUtils.deleteDirectory(new File(workingFolder, tmpFolder));
-                LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .debug("Temp folder for repository with id={} was successfully deleted."
-                        , tmpFolder);
-                } catch (IOException ex) {
-                LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .error("It was not possible to delete temp folder for repository id=" + tmpFolder
-                        , ex);
-                }
+                        .debug("Repository with id={} is not being monitored anymore. Temp folder will be deleted.", tmpFolder);
+                deleteDirectory(workingFolder, tmpFolder);
             }
         }
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkOrphanedFolders -> Exit.");
+    }
+
+    /**
+     * Creates a working clone for the repository and copies the source
+     * configuration to the clone
+     *
+     * @param pathTemp the path where the clone will be created
+     * @param source the source to be cloned
+     * @return a GitConnector pointing to temp clone
+     * @throws VCSException
+     */
+    private GitConnector createWorkingClone(String pathTemp, GitConnector source) throws VCSException {
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("createWorkingClone -> Entry.");
+        GitConnector target = null;
+        try {
+            if (new File(pathTemp).exists()) {
+                FileUtils.cleanDirectory(new File(pathTemp));
+                LoggerFactory.getLogger(RepositoryMonitor.class)
+                        .debug("Removed existing content at {}. ", pathTemp);
+            }
+            target = source.cloneThis(pathTemp);
+            GitTools.adjustTargetConfiguration(source, target);
+            LoggerFactory.getLogger(RepositoryMonitor.class).debug("Created temp clone.");
+        } catch (IOException ex) {
+            LoggerFactory.getLogger(RepositoryMonitor.class).error("Error cleaning existing temp folder at" + pathTemp + ".", ex);
+            throw new VCSException("Error cleaning existing temp folder at" + pathTemp + ".", ex);
+        }
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("createWorkingClone -> Entry.");
+        return target;
+    }
+
+    /**
+     * Removes pathToDelete from the specified parent folder.
+     *
+     * @param parentFolder Folder within path to delete resides.
+     * @param pathToDelete path to be deleted. Can be the name of a file or
+     * folder
+     */
+    private void deleteDirectory(File parentFolder, String pathToDelete) {
+        try {
+            FileUtils.deleteDirectory(new File(parentFolder, pathToDelete));
+            LoggerFactory.getLogger(RepositoryMonitor.class)
+                    .debug("Folder {} was successfully deleted.", pathToDelete);
+        } catch (IOException ex) {
+            LoggerFactory.getLogger(RepositoryMonitor.class)
+                    .error("It was not possible to delete folder " + pathToDelete, ex);
+        }
     }
 }

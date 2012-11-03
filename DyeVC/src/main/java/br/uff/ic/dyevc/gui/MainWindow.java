@@ -46,7 +46,6 @@ public class MainWindow extends javax.swing.JFrame {
         minimizeToTray();
         startMonitor();
     }
-    
     // <editor-fold defaultstate="collapsed" desc="private variables">      
     private javax.swing.JDialog dlgAbout;
     private javax.swing.JFrame frameSettings;
@@ -57,7 +56,6 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JTextArea jTextAreaMessages;
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositories;
     private javax.swing.JList repoList;
-
     //Variáveis de menu
     private javax.swing.JMenuBar jMenuBar;
     private JPopupMenu jPopupRepoList;
@@ -279,7 +277,6 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
-    
     // <editor-fold defaultstate="collapsed" desc="main menu">                          
     /**
      * This method creates the menu bar
@@ -377,7 +374,6 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
-    
     // <editor-fold defaultstate="collapsed" desc="main menu events">                          
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
@@ -595,24 +591,26 @@ public class MainWindow extends javax.swing.JFrame {
      */
     public void notifyMessages(List<RepositoryStatus> repStatusList) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Entry");
-        
-        int countTotal = 0;
+
+        int countRepsWithMessages = 0;
         for (Iterator<RepositoryStatus> it = repStatusList.iterator(); it.hasNext();) {
-            int countRepo = 0;
             RepositoryStatus repositoryStatus = it.next();
-            for (Iterator<BranchStatus> it1 = repositoryStatus.getNonSyncedRepositoryBranches().iterator(); it1.hasNext();) {
-                countRepo++;
-                BranchStatus nonSyncedStatus = it1.next();
+            if (repositoryStatus.isInvalid()) {
+                countRepsWithMessages++;
+            } else {
+                for (Iterator<BranchStatus> it1 = repositoryStatus.getNonSyncedRepositoryBranches().iterator(); it1.hasNext();) {
+                    countRepsWithMessages++;
+                    BranchStatus nonSyncedStatus = it1.next();
+                }
             }
-            countTotal += countRepo;
         }
-        
-        if (countTotal != lastMessagesCount) {
-            notifyMessage("There are " + countTotal + " messages. Click on this balloon if you want to see details.");
-            repoList.repaint();
-            lastMessagesCount = countTotal;
+
+        if (countRepsWithMessages != lastMessagesCount) {
+            notifyMessage("There are messages on " + countRepsWithMessages + " repositories. Click on this balloon if you want to see details.");
+            lastMessagesCount = countRepsWithMessages;
         }
-        
+        repoList.repaint();
+
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Exit");
     }
 }

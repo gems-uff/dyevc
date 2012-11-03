@@ -6,16 +6,16 @@ package br.uff.ic.dyevc.tools.vcs;
 
 import br.uff.ic.dyevc.model.git.TrackedBranch;
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -91,8 +91,8 @@ public class GitConnectorTest {
     public void testPull() throws Exception {
         System.out.println("pull");
         GitConnector instance = null;
-        boolean expResult = false;
-        boolean result = instance.pull();
+        PullResult expResult = null;
+        PullResult result = instance.pull();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");

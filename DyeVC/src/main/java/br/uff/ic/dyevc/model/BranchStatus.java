@@ -7,6 +7,7 @@ public class BranchStatus {
     public static int STATUS_AHEAD = 1;
     public static int STATUS_OK = 0;
     public static int STATUS_AHEAD_BEHIND = 4;
+    public static int STATUS_INVALID = -1;
 
     private int ahead;
     private int behind;
@@ -63,9 +64,17 @@ public class BranchStatus {
     public void setReferencedRepositoryBranch(String referencedRepositoryBranch) {
         this.referencedRepositoryBranch = referencedRepositoryBranch;
     }
+    
+    public void setInvalid() {
+        ahead = -1;
+        behind = -1;
+    }
 
     public int getStatus() {
         int rc;
+        if (getBehind() < 0 && getAhead() < 0) {
+            return STATUS_INVALID;
+        }
         if (getBehind() > 0) {
             if (getAhead() > 0 ) {
                 rc = STATUS_AHEAD_BEHIND;

@@ -14,6 +14,7 @@ public class RepositoryStatus {
     private static final long serialVersionUID = 1735605826498282433L;
     private String repositoryId;
     private Date lastCheckedTime;
+    private boolean invalid;
     
     private List<BranchStatus> syncedList;
     private List<BranchStatus> nonSyncedList;
@@ -32,6 +33,8 @@ public class RepositoryStatus {
             BranchStatus branchStatus = it.next();
             if (branchStatus.getStatus() == BranchStatus.STATUS_OK) {
                 syncedList.add(branchStatus);
+            } else if (branchStatus.getStatus() == BranchStatus.STATUS_INVALID) {
+                this.invalid = true;
             } else {
                 nonSyncedList.add(branchStatus);
             }
@@ -64,5 +67,9 @@ public class RepositoryStatus {
     
     public int getTotalBranchesCount() {
         return nonSyncedList.size() + syncedList.size();
+    }
+    
+    public boolean isInvalid() {
+        return invalid;
     }
 }

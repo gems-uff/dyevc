@@ -2,7 +2,6 @@ package br.uff.ic.dyevc.model;
 
 import java.beans.*;
 import java.io.Serializable;
-import java.util.List;
 
 /**
  *
