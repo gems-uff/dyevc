@@ -2,9 +2,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>br.uff.ic.dyevc</groupId>
+    <groupId>UFF</groupId>
     <artifactId>DyeVC</artifactId>
-    <version>0.1.12</version>
+    <version>0.1.13</version>
     <packaging>jar</packaging>
 
     <name>DyeVC</name>
@@ -46,7 +46,7 @@
                             <mainClass>br.uff.ic.dyevc.application.DyeVC</mainClass>
                         </jnlp>
                         <sign>
-                            <keystore>/F://mybackups/Educacao/Mestrado-UFF/Git/dyevc/keystore/dyevc.jks</keystore>
+                            <keystore>${project.basedir}/keystore/dyevc.jks</keystore>
                             <keypass>hijaack</keypass>
                             <storepass>hijaack</storepass>
                             <storetype>jks</storetype>
@@ -157,6 +157,31 @@
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.13</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-api</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-graph-impl</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-algorithms</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-io</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-visualization</artifactId>
+            <version>2.0.1</version>
         </dependency>
     </dependencies>
 </project>

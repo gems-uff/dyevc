@@ -401,6 +401,10 @@ public class MainWindow extends javax.swing.JFrame {
         }
     }
 
+    private void mntShowLogActionPerformed(ActionEvent evt) {
+        new CommitHistoryWindow(getSelectedRepository()).setVisible(true);
+    }
+
     private void mntRemoveProjectActionPerformed(ActionEvent evt) {
         MonitoredRepository rep = getSelectedRepository();
         int n = JOptionPane.showConfirmDialog(repoList, "Do you really want to stop monitoring " + rep.getName() + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
@@ -445,7 +449,7 @@ public class MainWindow extends javax.swing.JFrame {
     private void buildRepoListPopup() {
         jPopupRepoList = new JPopupMenu();
         JMenuItem mntEditProject = new javax.swing.JMenuItem();
-        mntEditProject.setText(" Edit Project");
+        mntEditProject.setText("Edit Project");
         mntEditProject.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -454,8 +458,19 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jPopupRepoList.add(mntEditProject);
 
+        JMenuItem mntShowLog = new javax.swing.JMenuItem();
+        mntShowLog.setText("Show log");
+        mntShowLog.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntShowLogActionPerformed(evt);
+            }
+        });
+        jPopupRepoList.add(mntShowLog);
+
+        jPopupRepoList.addSeparator();
         JMenuItem mntRemoveProject = new javax.swing.JMenuItem();
-        mntRemoveProject.setText(" Remove Project");
+        mntRemoveProject.setText("Remove Project");
         mntRemoveProject.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {

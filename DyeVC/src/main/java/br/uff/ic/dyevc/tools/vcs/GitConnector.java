@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +69,10 @@ public class GitConnector {
      */
     public Repository getRepository() {
         return repository;
+    }
+
+    public String getId() {
+        return id;
     }
 
     /**
@@ -482,35 +485,23 @@ public class GitConnector {
         return result;
     }
 
-    public void testRevCommit() {
-        //TODO teste, pega mensagens de log de todos os commits
+    /**
+     * Gets an iterator with all commits that happened to this repository.
+     * @return the commit history
+     */
+    public Iterator<RevCommit> getAllCommitsIterator() {
+        LoggerFactory.getLogger(GitConnector.class).trace("getAllCommitsIterator -> Entry.");
+        Iterator<RevCommit> result = new ArrayList<RevCommit>().iterator();
         try {
             RevWalk walk = new RevWalk(repository);
+            Iterable<RevCommit> logs = git.log().call(); 
+            result = logs.iterator();
 
-            RevCommit commit = null;
-
-            // Add all files
-            // AddCommand add = git.add();
-            // add.addFilepattern(".").call();
-
-            // Commit them
-            // CommitCommand commit = git.commit();
-            // commit.setMessage("Commiting from java").call();
-
-            Iterable<RevCommit> logs = git.log().call();
-            Iterator<RevCommit> i = logs.iterator();
-
-            while (i.hasNext()) {
-                commit = walk.parseCommit(i.next());
-                System.out.print(commit.abbreviate(10).name());
-                System.out.print(" " + new Date(commit.getCommitTime() * 1000L));
-                System.out.println(" " + commit.getCommitterIdent().getName());
-                System.out.println("\t" + commit.getShortMessage());
-            }
         } catch (Exception ex) {
-            LoggerFactory.getLogger(GitConnector.class).error("Error in testRevCommit.", ex);
+            LoggerFactory.getLogger(GitConnector.class).error("Error in getAllCommitsIterator.", ex);
         }
-
+        LoggerFactory.getLogger(GitConnector.class).trace("getAllCommitsIterator -> Exit.");
+        return result;
     }
 
     /**
@@ -538,10 +529,6 @@ public class GitConnector {
 
     public String getRepositoryPath() {
         return checkRepositoryPathName(getPath());
-    }
-
-    public String getId() {
-        return id;
     }
 
     public void setCredentials(String user, String password) {
