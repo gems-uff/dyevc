@@ -3,15 +3,31 @@ package br.uff.ic.dyevc.model;
 import java.io.Serializable;
 
 /**
+ * Models a user of the repository
  *
  * @author cristiano
  */
 public class RepositoryUser implements Serializable {
     private static final long serialVersionUID = 5011296979976191201L;
 
+    /**
+     * User id.
+     */
     private Long id;
+    
+    /**
+     * User login.
+     */
     private String login;
+    
+    /**
+     * User password.
+     */
     private String password;
+    
+    /**
+     * If true, then use anonymous user.
+     */
     private boolean anonymous = false;
     private MonitoredRepository repository;
 

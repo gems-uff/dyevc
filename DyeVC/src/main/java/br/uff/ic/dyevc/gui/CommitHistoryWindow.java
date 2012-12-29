@@ -84,23 +84,26 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     }// </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc="createLegendPanel">
+    /**
+     * Creates the legend panel.
+     */
     private void createLegendPanel() {
         JPanel pnlLegend = new javax.swing.JPanel();
         
         JPanel pnlLegendContents = new javax.swing.JPanel();
         pnlLegendContents.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-        pnlLegendContents.setLayout(new java.awt.GridLayout(7, 1));
         pnlLegendContents.setBackground(BACKGROUND_COLOR);
 
         JLabel lblLegend = new javax.swing.JLabel();
         JLabel lblRegular = new javax.swing.JLabel();
         JLabel lblHead = new javax.swing.JLabel();
         JLabel lblInitial = new javax.swing.JLabel();
+        JLabel lblBlank = new javax.swing.JLabel();
         JLabel lblMerge = new javax.swing.JLabel();
         JLabel lblSplit = new javax.swing.JLabel();
         JLabel lblMergeSplit = new javax.swing.JLabel();
 
-        GridLayout grid = new java.awt.GridLayout(7, 1);
+        GridLayout grid = new java.awt.GridLayout(4, 2);
         grid.setHgap(3);
         pnlLegendContents.setLayout(grid);
 
@@ -108,33 +111,37 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         lblLegend.setText("Legend:");
         pnlLegendContents.add(lblLegend);
 
+        lblBlank.setFont(LEGEND_FONT);
+        lblBlank.setText("");
+        pnlLegendContents.add(lblBlank);
+
         lblRegular.setFont(LEGEND_FONT);
-        lblRegular.setText("Represents a regular commit");
+        lblRegular.setText("Regular commit");
         lblRegular.setIcon(new ColorIcon(COLOR_REGULAR));
         pnlLegendContents.add(lblRegular);
 
         lblHead.setFont(LEGEND_FONT);
-        lblHead.setText("Represents a branch's head");
+        lblHead.setText("Branch's head");
         lblHead.setIcon(new ColorIcon(COLOR_HEAD));
         pnlLegendContents.add(lblHead);
 
         lblInitial.setFont(LEGEND_FONT);
-        lblInitial.setText("Represents the initial commit");
+        lblInitial.setText("Initial commit");
         lblInitial.setIcon(new ColorIcon(COLOR_FIRST));
         pnlLegendContents.add(lblInitial);
 
         lblMerge.setFont(LEGEND_FONT);
-        lblMerge.setText("Represents a merge commit");
+        lblMerge.setText("Merge commit");
         lblMerge.setIcon(new ColorIcon(COLOR_MERGE));
         pnlLegendContents.add(lblMerge);
 
         lblSplit.setFont(LEGEND_FONT);
-        lblSplit.setText("Represents a split commit");
+        lblSplit.setText("Split commit");
         lblSplit.setIcon(new ColorIcon(COLOR_SPLIT));
         pnlLegendContents.add(lblSplit);
 
         lblMergeSplit.setFont(LEGEND_FONT);
-        lblMergeSplit.setText("Represents a merge and split commit");
+        lblMergeSplit.setText("Merge and split commit");
         lblMergeSplit.setIcon(new ColorIcon(COLOR_MERGE_SPLIT));
         pnlLegendContents.add(lblMergeSplit);
         
@@ -151,7 +158,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(pnlLegendContents, javax.swing.GroupLayout.DEFAULT_SIZE, 140, Short.MAX_VALUE)
+                .addComponent(pnlLegendContents, javax.swing.GroupLayout.DEFAULT_SIZE, 90, Short.MAX_VALUE)
                 .addContainerGap())
         );
         

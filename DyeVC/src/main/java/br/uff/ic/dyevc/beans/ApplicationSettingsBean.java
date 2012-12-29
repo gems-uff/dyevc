@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.beans;
 
 import br.uff.ic.dyevc.application.IConstants;
@@ -51,6 +47,17 @@ public class ApplicationSettingsBean implements Serializable {
         propertySupport.firePropertyChange(PROP_REFRESHINTERVAL, oldRefreshInterval, refreshInterval);
     }
     
+    private String lastUsedPath;
+    public static final String PROP_LAST_USED_PATH = "lastusedpath";
+
+    public String getLastUsedPath() {
+        return lastUsedPath;
+    }
+
+    public void setLastUsedPath(String lastUsedPath) {
+        this.lastUsedPath = lastUsedPath;
+    }
+    
     public ApplicationSettingsBean() {
         propertySupport = new PropertyChangeSupport(this);
     }
@@ -63,16 +70,4 @@ public class ApplicationSettingsBean implements Serializable {
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         propertySupport.removePropertyChangeListener(listener);
     }
-    
-    private String lastUsedPath;
-    public static final String PROP_LAST_USED_PATH = "lastusedpath";
-
-    public String getLastUsedPath() {
-        return lastUsedPath;
-    }
-
-    public void setLastUsedPath(String lastUsedPath) {
-        this.lastUsedPath = lastUsedPath;
-    }
-    
 }

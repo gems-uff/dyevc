@@ -1,24 +1,52 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.model;
 
 import java.util.Date;
 
 /**
- *
+ * Stores information about a singular commit made to VCS.
+ * 
  * @author Cristiano
  */
 public class CommitInfo implements Comparable<CommitInfo> {
 
+    /**
+     * Commit's identification.
+     */
     private String id;
+    
+    /**
+     * Date the commit was done.
+     */
     private Date commitDate;
+    
+    /**
+     * Author of commit.
+     */
     private String author;
+    
+    /**
+     * Commiter (one's that effectively executed the commit action.
+     */
     private String committer;
+    
+    /**
+     * Short message written together with the commit.
+     */
     private String shortMessage;
+    
+    /**
+     * Number of parents this commit has. If greater than one, this was a merge. 
+     * If zero, this was the first commit.
+     */
     private int parentsCount = 0;
+    private final Integer parentsCountLock = new Integer(0);
+    
+    /**
+     * Number of children this commit has. If zero, this is a head. If greater 
+     * than one, there are branches after this commit.
+     */
     private int childrenCount = 0;
+    private final Integer childrenCountLock = new Integer(0);
 
     public CommitInfo(String id) {
         this.id = id;
@@ -65,11 +93,15 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
 
     public void incrementChildren() {
-        childrenCount++;
+        synchronized (childrenCountLock) {
+            childrenCount++;
+        }
     }
     
     public void incrementParents() {
-        parentsCount++;
+        synchronized (parentsCountLock) {
+            parentsCount++;
+        }
     }
 
     @Override
@@ -78,11 +110,15 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
 
     public int getParentsCount() {
-        return parentsCount;
+        synchronized (parentsCountLock) {
+            return parentsCount;
+        }
     }
 
     public int getChildrenCount() {
-        return childrenCount;
+        synchronized (childrenCountLock) {
+            return childrenCount;
+        }
     }
 
     @Override

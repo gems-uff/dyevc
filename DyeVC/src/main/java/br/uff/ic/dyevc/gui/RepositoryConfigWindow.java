@@ -71,7 +71,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         lblRepositoryName.setText("Repository Name:");
         lblRepositoryName.setToolTipText("Enter a name to recognize this repository.");
         lblCloneAddress = new javax.swing.JLabel();
-        lblCloneAddress.setText("Clone Address:");
+        lblCloneAddress.setText("Repository Address:");
         lblCloneAddress.setToolTipText("Click on the button to select the path to a local repository you want to monitor.");
         lblUser = new javax.swing.JLabel();
         lblUser.setText("User:");

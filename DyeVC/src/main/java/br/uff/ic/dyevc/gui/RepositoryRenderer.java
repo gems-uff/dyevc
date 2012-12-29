@@ -15,11 +15,17 @@ import javax.swing.ToolTipManager;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
+/**
+ * This class renders information about the monitored repositories. Information 
+ * is rendered as a List in a JList.
+ * 
+ * @author Cristiano
+ */
 class RepositoryRenderer extends DefaultListCellRenderer {
 
     private static final long serialVersionUID = -1767445271244335267L;
-    private boolean pad;
-    private Border padBorder = new EmptyBorder(3, 3, 3, 3);
+    private final boolean pad;
+    private final Border padBorder = new EmptyBorder(3, 3, 3, 3);
 
     RepositoryRenderer(boolean pad) {
         this.pad = pad;
@@ -77,6 +83,12 @@ class RepositoryRenderer extends DefaultListCellRenderer {
         return listItem;
     }
 
+    /**
+     * Appends information regarding non-synchronized branches as a tooltip.
+     * @param nonSyncedRepositoryBranches the list of non-synchronized branches 
+     * for which messages will be displayed.
+     * @param tooltip the StringBuilder that holds messages to be displayed.
+     */
     private void appendNonSyncedMessages(List<BranchStatus> nonSyncedRepositoryBranches, StringBuilder tooltip) {
         for (Iterator<BranchStatus> it = nonSyncedRepositoryBranches.iterator(); it.hasNext();) {
             BranchStatus branchStatus = it.next();

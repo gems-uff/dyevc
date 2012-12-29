@@ -15,6 +15,7 @@ import org.eclipse.jgit.lib.StoredConfig;
 import org.slf4j.LoggerFactory;
 
 /**
+ * This class provides several utilities to handle git repositories.
  *
  * @author Cristiano
  */
@@ -22,7 +23,7 @@ public final class GitTools {
     
     /**
      * Copies configuration from a repository to a working clone and includes a
-     * remote pointing to the source repository
+     * remote configuration pointing to the source repository
      * @param source the repository to copy configuration from
      * @param target the repository to copy configuration to
      * @throws IOException
@@ -31,7 +32,7 @@ public final class GitTools {
     public static void adjustTargetConfiguration(GitConnector source, GitConnector target) throws VCSException {
         try {
             LoggerFactory.getLogger(GitTools.class).trace("adjustTargetConfiguration -> Entry");
-            LoggerFactory.getLogger(GitTools.class).trace("Copying configuration from {} to {}"
+            LoggerFactory.getLogger(GitTools.class).debug("Copying configuration from {} to {}"
                     , source.getRepositoryPath(), target.getRepositoryPath());
             StoredConfig targetConfig = target.getRepository().getConfig();
             Set<String> names = targetConfig.getNames(GitConnector.DEFAULT_REMOTE
@@ -61,13 +62,15 @@ public final class GitTools {
                 targetConfig.setString(GitConnector.DEFAULT_REMOTE, target.getId(), key, value);
             }
             targetConfig.save();
-            LoggerFactory.getLogger(GitTools.class).trace("Finished copying configuration from {} to {}"
+            LoggerFactory.getLogger(GitTools.class).debug("Finished copying configuration from {} to {}"
                     , source.getRepositoryPath(), target.getRepositoryPath());
             LoggerFactory.getLogger(GitTools.class).trace("adjustTargetConfiguration -> Exit");
         } catch (ConfigInvalidException ex) {
-            Logger.getLogger(GitTools.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(GitTools.class.getName()).log(Level.SEVERE, "An error ocurred while copying configuration from " +
+                    source.getRepositoryPath() + " to " + target.getRepositoryPath() + ".", ex);
         } catch (IOException ex) {
-            Logger.getLogger(GitTools.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(GitTools.class.getName()).log(Level.SEVERE, "An error ocurred while copying configuration from " +
+                    source.getRepositoryPath() + " to " + target.getRepositoryPath() + ".", ex);
         }
     }
     

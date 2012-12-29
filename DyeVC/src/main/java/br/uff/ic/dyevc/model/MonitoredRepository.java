@@ -4,21 +4,61 @@ import java.beans.*;
 import java.io.Serializable;
 
 /**
+ * Models a monitored repository. A monitored repository is a repository 
+ * configured to be monitored from time to time.
  *
  * @author Cristiano
  */
 public class MonitoredRepository implements Serializable {
 
+    /**
+     * How the attribute "name" is called
+     */
     public static final String NAME = "name";
-    private static final long serialVersionUID = -8604175800390199323L;
-    private String name;
-    private String id;
-    private String cloneAddress;
-    private boolean needsAuthentication;
-    private String user;
-    private String password;
-    private RepositoryStatus repStatus;
+    
+    /**
+     * How the attribute "cloneAddress" is called
+     */
     public static final String PROP_CLONEADDRESS = "cloneAddress";
+    private static final long serialVersionUID = -8604175800390199323L;
+    
+    /**
+     * Name of the repository.
+     */
+    private String name;
+    
+    /**
+     * Identification of the repository.
+     */
+    private String id;
+    
+    /**
+     * Address where the monitored repository is located.
+     */
+    private String cloneAddress;
+    
+    /**
+     * Specifies if the monitored repository needs authentication. If true, user 
+     * and password attributes must be provided.
+     */
+    private boolean needsAuthentication;
+    
+    /**
+     * User to connect to the monitored repository.
+     */
+    private String user;
+    
+    /**
+     * Password to connect to the monitored repository.
+     */
+    private String password;
+    
+    /**
+     * Status of the monitored repository.
+     * 
+     * @see RepositoryStatus
+     */
+    private RepositoryStatus repStatus;
 
     /**
      * Get the value of cloneAddress

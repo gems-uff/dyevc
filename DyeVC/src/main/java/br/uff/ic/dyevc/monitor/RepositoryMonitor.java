@@ -34,6 +34,13 @@ public class RepositoryMonitor extends Thread {
     private List<RepositoryStatus> statusList;
     private MainWindow container;
 
+    /**
+     * Associates the specified window container and continuously monitors the 
+     * specified list of repositories.
+     * @param container the container for this monitor. It will be used to 
+     * send messages during monitoring.
+     * @param mr the model of monitored repositories to be checked.
+     */
     public RepositoryMonitor(MainWindow container, MonitoredRepositories mr) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
         settings = PreferencesUtils.loadPreferences();
@@ -43,6 +50,10 @@ public class RepositoryMonitor extends Thread {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Exit.");
     }
 
+    /**
+     * Runs the monitor. After running, monitor sleeps for the time specified by 
+     * the refresh interval application property.
+     */
     @Override
     public void run() {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Repository monitor is running.");
@@ -66,6 +77,9 @@ public class RepositoryMonitor extends Thread {
                 LoggerFactory.getLogger(RepositoryMonitor.class).info("Waking up due to interruption received.");
             } catch (DyeVCException dex) {
                 MessageManager.getInstance().addMessage(dex.getMessage());
+            } catch (RuntimeException re) {
+                MessageManager.getInstance().addMessage(re.getMessage());
+                LoggerFactory.getLogger(RepositoryMonitor.class).error("Error during monitoring.", re);
             }
         }
     }
@@ -84,10 +98,10 @@ public class RepositoryMonitor extends Thread {
 
         if (!GitConnector.isValidRepository(monitoredRepository.getCloneAddress())) {
            List<BranchStatus> status = markInvalidRepository(monitoredRepository);
-           repStatus.addStatus(status);
+           repStatus.addBranchStatusList(status);
         } else {
             List<BranchStatus> status = processRepository(monitoredRepository);
-            repStatus.addStatus(status);
+            repStatus.addBranchStatusList(status);
         }
         
         monitoredRepository.setRepStatus(repStatus);
@@ -103,13 +117,13 @@ public class RepositoryMonitor extends Thread {
     private List<BranchStatus> processRepository(MonitoredRepository monitoredRepository) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Entry. Repository: {}", monitoredRepository.getName());
         GitConnector sourceConnector = null;
-        GitConnector temp = null;
+        GitConnector tempConnector = null;
         List<BranchStatus> result = null;
         try {
             sourceConnector = new GitConnector(monitoredRepository.getCloneAddress(), monitoredRepository.getId());
-            temp = null;
             LoggerFactory.getLogger(RepositoryMonitor.class)
                     .debug("processRepository -> created gitConnector for repository {}, id={}", monitoredRepository.getName(), monitoredRepository.getId());
+            tempConnector = null;
             checkAuthentication(monitoredRepository, sourceConnector);
 
             String pathTemp = settings.getWorkingPath()
@@ -119,19 +133,19 @@ public class RepositoryMonitor extends Thread {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("There is no temp repository at {}. Will create a temp by cloning {}.",
                         pathTemp, monitoredRepository.getId());
-                temp = createWorkingClone(pathTemp, sourceConnector);
+                tempConnector = createWorkingClone(pathTemp, sourceConnector);
                 sourceConnector.close();
             } else {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("There is a valid repository at {}. Creating a git connector to it.",
                         pathTemp);
-                temp = new GitConnector(pathTemp, monitoredRepository.getId());
+                tempConnector = new GitConnector(pathTemp, monitoredRepository.getId());
             }
-            checkAuthentication(monitoredRepository, temp);
+            checkAuthentication(monitoredRepository, tempConnector);
 
-            temp.fetchAllRemotes();
-            temp.merge(temp.getOriginRefFromSource());
-            result = temp.testAhead();
+            tempConnector.fetchAllRemotes();
+            tempConnector.merge(tempConnector.getOriginRefFromSource());
+            result = tempConnector.testAhead();
         } catch (VCSException ex) {
             MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <{}>"
                     + monitoredRepository.getName());
@@ -142,8 +156,8 @@ public class RepositoryMonitor extends Thread {
             if (sourceConnector != null) {
                 sourceConnector.close();
             }
-            if (temp != null) {
-                temp.close();
+            if (tempConnector != null) {
+                tempConnector.close();
             }
         }
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Exit. Repository: {}", monitoredRepository.getName());
@@ -156,16 +170,18 @@ public class RepositoryMonitor extends Thread {
      * @param monitoredRepository the repository to be marked
      */
     private List<BranchStatus> markInvalidRepository(MonitoredRepository monitoredRepository) {
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("markInvalidRepository -> Entry.");
         deleteDirectory(new File(settings.getWorkingPath()), monitoredRepository.getId());
         List<BranchStatus> listStatus = new ArrayList<BranchStatus>();
         BranchStatus status = new BranchStatus();
         status.setInvalid();
         listStatus.add(status);
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("markInvalidRepository -> Entry.");
         return listStatus;
     }
     /**
-     * Verifies whether the working folder exists or not. If false, create it,
-     * otherwise, look for orphaned folders related to projects not monitored
+     * Verifies whether the working folder exists or not. If false, creates it,
+     * otherwise, looks for orphaned folders related to projects not monitored
      * anymore.
      *
      * @throws DyeVCException

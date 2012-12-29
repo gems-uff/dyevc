@@ -3,9 +3,9 @@ package br.uff.ic.dyevc.model;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.AbstractListModel;
-import javax.swing.DefaultListModel;
 
 /**
+ * Models a list of monitored repositories as an AbstractListModel
  *
  * @author Cristiano
  */
@@ -41,6 +41,11 @@ public final class MonitoredRepositories extends AbstractListModel<MonitoredRepo
         return null;
     }
 
+    /**
+     * Add an instance of a monitored repository
+     * 
+     * @param repository the instance to be added
+     */
     public void addMonitoredRepository(MonitoredRepository repository) {
         int index = monitoredRepositories.indexOf(repository);
         if (index >= 0) {
@@ -53,6 +58,13 @@ public final class MonitoredRepositories extends AbstractListModel<MonitoredRepo
         }
     }
 
+    /**
+     * Remove an instance of a monitored repository
+     * 
+     * @param repository the instance to be removed
+     * 
+     * @return true, if the instance existed and false otherwise
+     */
     public boolean removeMonitoredRepository(MonitoredRepository repository) {
         int index = monitoredRepositories.indexOf(repository);
         boolean rv = monitoredRepositories.remove(repository);
@@ -62,11 +74,23 @@ public final class MonitoredRepositories extends AbstractListModel<MonitoredRepo
         return rv;
     }
 
+    /**
+     * Returns the number of monitored repositories
+     * 
+     * @return the number of monitored repositories
+     */
     @Override
     public int getSize() {
         return monitoredRepositories.size();
     }
 
+    /**
+     * Returns the instance of monitored repository located at a specified position.
+     * 
+     * @param index the position to look at
+     * 
+     * @return the instance of monitored repository located at index.
+     */
     @Override
     public MonitoredRepository getElementAt(int index) {
         List<MonitoredRepository> values = getMonitoredProjects();

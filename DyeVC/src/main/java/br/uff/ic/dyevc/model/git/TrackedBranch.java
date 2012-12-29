@@ -1,15 +1,19 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.model.git;
 
 /**
+ * Models a tracked branch in Git VCS.
  *
  * @author Cristiano
  */
 public class TrackedBranch {
+    /**
+     * Name of branch.
+     */
     private String name;
+    
+    /**
+     * Remote name of branch.
+     */
     private String remoteName;
 
     public String getName() {

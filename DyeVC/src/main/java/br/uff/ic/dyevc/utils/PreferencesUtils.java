@@ -12,15 +12,35 @@ import java.util.prefs.Preferences;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Utilities to load and store application preferences using java Preferences API.
  *
  * @author Cristiano
  */
 public final class PreferencesUtils {
 
+    /**
+     * Name of node to store general settings.
+     */
     private static final String NODE_GENERAL_SETTINGS = "generalsettings";
+    
+    /**
+     * Name of node to store monitored repositories configuration.
+     */
     private static final String NODE_MONITORED_REPOSITORIES = "monitoredrepositories";
+    
+    /**
+     * Default interval between checks, in seconds.
+     */
     private static final int DEFAULT_CHECK_INTERVAL = 300;
+    
+    /**
+     * Object the points to a preferences instance.
+     */
     private static Preferences pref;
+    
+    /**
+     * Bean containing application general preferences.
+     */
     private static ApplicationSettingsBean settingsBean;
 
     static {
@@ -31,6 +51,11 @@ public final class PreferencesUtils {
         
     }
 
+    /**
+     * Stores general preferences using java Preferences API.
+     * 
+     * @param bean the bean to be stored.
+     */
     public static void storePreferences(ApplicationSettingsBean bean) {
         Preferences nodeToStore = pref.node(NODE_GENERAL_SETTINGS);
         nodeToStore.putInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL, bean.getRefreshInterval());
@@ -38,6 +63,11 @@ public final class PreferencesUtils {
         settingsBean = bean;
     }
 
+    /**
+     * Loads general preferences using java Preferences API.
+     * 
+     * @return the bean containing loaded general preferences.
+     */
     public static ApplicationSettingsBean loadPreferences() {
         if (settingsBean == null) {
             Preferences nodeToLoad = pref.node(NODE_GENERAL_SETTINGS);
@@ -49,6 +79,14 @@ public final class PreferencesUtils {
         return settingsBean;
     }
 
+    /**
+     * Stores the configuration for all monitored repositories in the provided list 
+     * into user preferences.
+     * 
+     * @param listBeans the list of monitored repositories.
+     * 
+     * @see MonitoredRepositories
+     */
     public static void persistRepositories(MonitoredRepositories listBeans) {
         List<MonitoredRepository> reps = listBeans.getMonitoredProjects();
         if (!reps.isEmpty()) {
@@ -75,6 +113,10 @@ public final class PreferencesUtils {
         }
     }
 
+    /**
+     * Loads a list of monitored repositories from user preferences.
+     * @return a list of monitored repositories configuration
+     */
     public static MonitoredRepositories loadMonitoredRepositories() {
         MonitoredRepositories monBean = new MonitoredRepositories();
         try {

@@ -50,7 +50,7 @@ public class ApplicationVersionBean implements Serializable {
             try {
                 manifest = new Manifest(new URL(manifestPath).openStream());
                 Attributes attr = manifest.getMainAttributes();
-                out = "DieVC Version: " + attr.getValue("Implementation-Version");
+                out = "DyeVC Version: " + attr.getValue("Implementation-Version");
             } catch (IOException ex) {
                 LoggerFactory.getLogger(ApplicationVersionBean.class).warn("Error reading manifest file.", ex);
             }

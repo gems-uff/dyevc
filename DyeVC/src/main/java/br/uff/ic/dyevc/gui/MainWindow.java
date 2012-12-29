@@ -30,6 +30,7 @@ import javax.swing.text.DefaultCaret;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Application's main window
  *
  * @author Cristiano
  */
@@ -277,6 +278,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
+    
     // <editor-fold defaultstate="collapsed" desc="main menu">                          
     /**
      * This method creates the menu bar
@@ -374,6 +376,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
+    
     // <editor-fold defaultstate="collapsed" desc="main menu events">                          
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
@@ -418,7 +421,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (monitor.getState().equals(Thread.State.TIMED_WAITING)) {
             monitor.interrupt();
         } else {
-            JOptionPane.showMessageDialog(repoList, "Monitor is busy now. Please tray again later.", "Information", JOptionPane.OK_OPTION);
+            JOptionPane.showMessageDialog(repoList, "Monitor is busy now. Please try again later.", "Information", JOptionPane.OK_OPTION);
         }
     }
 
@@ -488,7 +491,6 @@ public class MainWindow extends javax.swing.JFrame {
     private void repoListMouseClicked(java.awt.event.MouseEvent evt) {
         JList list = (JList) evt.getSource();
         if (evt.getButton() == MouseEvent.BUTTON3) {
-            list.setSelectedIndex(list.locationToIndex(evt.getPoint()));
             jPopupRepoList.show(evt.getComponent(), evt.getX(), evt.getY());
         }
     }
@@ -537,6 +539,11 @@ public class MainWindow extends javax.swing.JFrame {
         monitor = new RepositoryMonitor(this, monitoredRepositories);
     }
 
+    /**
+     * Displays the specified message as a ballon in tray icon.
+     * 
+     * @param message the message to be displayed.
+     */
     public void notifyMessage(String message) {
         trayIcon.displayMessage("DyeVC", message, TrayIcon.MessageType.WARNING);
     }
@@ -592,6 +599,13 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
 
+        repoList.addMouseMotionListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent evt) {
+               repoList.setSelectedIndex(repoList.locationToIndex(evt.getPoint()));
+            }
+        });
+
         jTextAreaMessages.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -602,7 +616,9 @@ public class MainWindow extends javax.swing.JFrame {
     //</editor-fold>
 
     /**
-     * Notifies messages from the status list as a balloon in tray icon.
+     * Displays messages from the status list as a balloon in tray icon.
+     * 
+     * @param repStatusList the list of messages to be displayed.
      */
     public void notifyMessages(List<RepositoryStatus> repStatusList) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Entry");

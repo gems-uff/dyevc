@@ -21,16 +21,16 @@ public boolean equals(Object aThat){
 * <em>Arrays are not handled by this class</em>.
 * This is because the <code>Arrays.equals</code> methods should be used for
 * array fields.
+* 
+* @author Cristiano
 */
 public final class EqualsUtil {
 
   static public boolean areEqual(boolean aThis, boolean aThat){
-    //System.out.println("boolean");
     return aThis == aThat;
   }
 
   static public boolean areEqual(char aThis, char aThat){
-    //System.out.println("char");
     return aThis == aThat;
   }
 
@@ -45,12 +45,10 @@ public final class EqualsUtil {
   }
 
   static public boolean areEqual(float aThis, float aThat){
-    //System.out.println("float");
     return Float.floatToIntBits(aThis) == Float.floatToIntBits(aThat);
   }
 
   static public boolean areEqual(double aThis, double aThat){
-    //System.out.println("double");
     return Double.doubleToLongBits(aThis) == Double.doubleToLongBits(aThat);
   }
 

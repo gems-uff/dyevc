@@ -83,6 +83,7 @@ public class GitConnector {
      * @throws IOException
      */
     public GitConnector(String path, String name) throws VCSException {
+        LoggerFactory.getLogger(GitConnector.class).trace("GitConnector constructor -> Entry.");
         try {
             repository = new FileRepositoryBuilder().setGitDir(new File(checkRepositoryPathName(path))).readEnvironment() // scan environment GIT_* variables
                     .findGitDir() // scan up the file system tree
@@ -94,6 +95,7 @@ public class GitConnector {
                     .error("Error initializing a GitConnector", ex);
             throw new VCSException("Error initializing a git repository.", ex);
         }
+        LoggerFactory.getLogger(GitConnector.class).trace("GitConnector constructor -> Exit.");
     }
 
     /**
@@ -104,6 +106,7 @@ public class GitConnector {
      * it's not.
      */
     public static boolean isValidRepository(String path) {
+        LoggerFactory.getLogger(GitConnector.class).trace("isValidRepository -> Entry.");
         boolean result;
         File file = new File(path);
         if (!file.exists()) {
@@ -115,6 +118,7 @@ public class GitConnector {
                 result = false;
             }
         }
+        LoggerFactory.getLogger(GitConnector.class).trace("isValidRepository -> Exit.");
         return result;
     }
 
@@ -124,9 +128,11 @@ public class GitConnector {
      * @param rep repository to connect to
      */
     public GitConnector(Repository rep, String name) {
+        LoggerFactory.getLogger(GitConnector.class).trace("GitConnector constructor  -> Entry.");
         repository = rep;
         git = new Git(repository);
         this.id = name;
+        LoggerFactory.getLogger(GitConnector.class).trace("GitConnector constructor  -> Exit.");
     }
 
     /**
@@ -136,8 +142,11 @@ public class GitConnector {
      * @return the list of known remotes for the connected repository
      */
     public Set<String> getRemoteNames() {
+        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteNames -> Entry.");
         Config storedConfig = repository.getConfig();
-        return storedConfig.getSubsections("remote");
+        Set<String> configs = storedConfig.getSubsections("remote");
+        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteNames -> Exit.");
+        return configs;
     }
 
     /**
@@ -147,7 +156,10 @@ public class GitConnector {
      * @throws URISyntaxException
      */
     public List<RemoteConfig> getRemoteConfigs() throws URISyntaxException {
-        return RemoteConfig.getAllRemoteConfigs(repository.getConfig());
+        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteConfigs -> Entry.");
+        List<RemoteConfig> remoteConfigs = RemoteConfig.getAllRemoteConfigs(repository.getConfig());
+        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteConfigs -> Exit.");
+        return remoteConfigs;
     }
 
     /**
@@ -157,13 +169,15 @@ public class GitConnector {
      * @return
      */
     public String getRemoteForBranch(String branchName) {
+        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteForBranch -> Entry.");
         String remoteName = repository.getConfig().getString(
                 "branch", branchName, "remote");
         if (remoteName == null) {
-            return "origin";
-        } else {
-            return remoteName;
+            remoteName = "origin";
         }
+        
+        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteForBranch -> Exit.");
+        return remoteName;
     }
 
     /**
@@ -172,8 +186,11 @@ public class GitConnector {
      * @return the url of the repository specified by the giving remoteName
      */
     public String getRemoteUrl(String remoteName) {
+        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteUrl -> Entry.");
         Config storedConfig = repository.getConfig();
-        return storedConfig.getString("remote", remoteName, "url");
+        String remoteUrl = storedConfig.getString("remote", remoteName, "url");
+        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteUrl -> Exit.");
+        return remoteUrl;
     }
 
     /**
@@ -182,6 +199,7 @@ public class GitConnector {
      * @return
      */
     public List<TrackedBranch> getTrackedBranches() {
+        LoggerFactory.getLogger(GitConnector.class).trace("getTrackedBranches -> Entry.");
         List<TrackedBranch> result = new ArrayList<TrackedBranch>();
         Config storedConfig = repository.getConfig();
         Set<String> trackedBranches = storedConfig.getSubsections("branch");
@@ -194,6 +212,7 @@ public class GitConnector {
             result.add(trackedBranch);
 
         }
+        LoggerFactory.getLogger(GitConnector.class).trace("getTrackedBranches -> Exit.");
         return result;
     }
 
@@ -203,6 +222,7 @@ public class GitConnector {
      * @return
      */
     public Set<String> getLocalBranches() {
+        LoggerFactory.getLogger(GitConnector.class).trace("getLocalBranches -> Entry.");
         //TODO ver se tem a opção --no-merged via jgit
         Set<String> result = new TreeSet<String>();
         try {
@@ -216,6 +236,7 @@ public class GitConnector {
         } catch (GitAPIException ex) {
             LoggerFactory.getLogger(GitConnector.class).error("Error retrieving local branches.", ex);
         }
+        LoggerFactory.getLogger(GitConnector.class).trace("getLocalBranches -> Exit.");
         return result;
     }
 
@@ -290,7 +311,8 @@ public class GitConnector {
             urish = urish.setUser(user);
             urish = urish.setPass(password);
         }
-        fetch.setRemote(checkRepositoryPathName(urish.toPrivateString()));
+        fetch.setRemote(checkRepositoryPathName(urish.toString()));
+        LoggerFactory.getLogger(GitConnector.class).debug("Fetch url: {}", fetch.getRemote());
         fetch.setRefSpecs(refSpec);
         try {
             result = fetch.call();
@@ -310,11 +332,13 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public void push() throws GitAPIException {
+        LoggerFactory.getLogger(GitConnector.class).trace("push -> Entry.");
         PushCommand push = git.push();
         if (credentialsProvider != null) {
             push.setCredentialsProvider(credentialsProvider);
         }
         Iterator<PushResult> it = push.call().iterator();
+        LoggerFactory.getLogger(GitConnector.class).trace("push -> Exit.");
     }
 
     /**
@@ -325,10 +349,12 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public void commit(String message) throws GitAPIException {
+        LoggerFactory.getLogger(GitConnector.class).trace("commit -> Entry.");
         CommitCommand commit = git.commit();
         commit.setAll(true);
         commit.setMessage(message);
         commit.call();
+        LoggerFactory.getLogger(GitConnector.class).trace("commit -> Exit.");
     }
 
     /**
@@ -393,8 +419,10 @@ public class GitConnector {
      * @throws IOException
      */
     public Repository createRepository(String path) throws IOException {
+        LoggerFactory.getLogger(GitConnector.class).trace("createRepository -> Entry.");
         Repository fileRepo = new FileRepository(checkRepositoryPathName(path));
         fileRepo.create();
+        LoggerFactory.getLogger(GitConnector.class).trace("createRepository -> Exit.");
         return fileRepo;
     }
 
@@ -407,6 +435,7 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public GitConnector cloneRepository(String source, File target, String id) throws VCSException {
+        LoggerFactory.getLogger(GitConnector.class).trace("cloneRepository -> Entry.");
         CloneCommand cloneCmd = Git.cloneRepository().setURI(source).setDirectory(target);
         if (credentialsProvider != null) {
             cloneCmd.setCredentialsProvider(credentialsProvider);
@@ -422,7 +451,9 @@ public class GitConnector {
             throw new VCSException("Error cloning repository.", ex);
         }
 
-        return new GitConnector(result.getRepository(), id);
+        GitConnector cloneConnector = new GitConnector(result.getRepository(), id);
+        LoggerFactory.getLogger(GitConnector.class).trace("cloneRepository -> Exit.");
+        return cloneConnector;
     }
 
     /**
@@ -436,7 +467,10 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public GitConnector cloneRepository(String source, String target, String id) throws VCSException {
-        return cloneRepository(source, new File(target), id);
+        LoggerFactory.getLogger(GitConnector.class).trace("cloneRepository -> Entry.");
+        GitConnector result = cloneRepository(source, new File(target), id);
+        LoggerFactory.getLogger(GitConnector.class).trace("cloneRepository -> Exit.");
+        return result;
     }
 
     /**
@@ -449,14 +483,20 @@ public class GitConnector {
      * @throws GitAPIException
      */
     public GitConnector cloneThis(String target) throws VCSException {
-        return cloneRepository(getPath(), new File(target), this.getId());
+        LoggerFactory.getLogger(GitConnector.class).trace("cloneThis -> Entry.");
+        GitConnector result = cloneRepository(getPath(), new File(target), this.getId());
+        LoggerFactory.getLogger(GitConnector.class).trace("cloneThis -> Exit.");
+        return result;
     }
 
     public void close() {
+        LoggerFactory.getLogger(GitConnector.class).trace("close -> Entry.");
         repository.close();
+        LoggerFactory.getLogger(GitConnector.class).trace("close -> Exit.");
     }
 
     public List<BranchStatus> testAhead() throws VCSException {
+        LoggerFactory.getLogger(GitConnector.class).trace("testAhead -> Entry.");
         //TODO não está funcionando direito
         List<BranchStatus> result = new ArrayList<BranchStatus>();
         List<TrackedBranch> branches = getTrackedBranches();
@@ -482,6 +522,7 @@ public class GitConnector {
                         "Error calculating ahead count.", ex);
             }
         }
+        LoggerFactory.getLogger(GitConnector.class).trace("testAhead -> Exit.");
         return result;
     }
 
@@ -510,8 +551,11 @@ public class GitConnector {
      * @return path to this repository
      */
     public String getPath() {
+        LoggerFactory.getLogger(GitConnector.class).trace("getPath -> Entry.");
 
-        return repository.getDirectory().getAbsolutePath();
+        String path = repository.getDirectory().getAbsolutePath();
+        LoggerFactory.getLogger(GitConnector.class).trace("getPath -> Exit.");
+        return path;
     }
 
     /**
@@ -521,19 +565,28 @@ public class GitConnector {
      * @return a path to a git repository
      */
     public static String checkRepositoryPathName(String path) {
+        LoggerFactory.getLogger(GitConnector.class).trace("checkRepositoryPathName -> Entry.");
 
-        return (path.endsWith(GIT_DIR))
+        String gitPath = (path.endsWith(GIT_DIR))
                 ? path
                 : (path.startsWith("http") ? path + GIT_DIR : path + "/" + GIT_DIR);
+        
+        LoggerFactory.getLogger(GitConnector.class).trace("checkRepositoryPathName -> Exit.");
+        return gitPath;
     }
 
     public String getRepositoryPath() {
-        return checkRepositoryPathName(getPath());
+        LoggerFactory.getLogger(GitConnector.class).trace("getRepositoryPath -> Entry.");
+        String gitPath = checkRepositoryPathName(getPath());
+        LoggerFactory.getLogger(GitConnector.class).trace("getRepositoryPath -> Exit.");
+        return gitPath;
     }
 
     public void setCredentials(String user, String password) {
+        LoggerFactory.getLogger(GitConnector.class).trace("setCredentials -> Entry.");
         credentialsProvider = new UsernamePasswordCredentialsProvider(user, password);
         this.user = user;
         this.password = password;
+        LoggerFactory.getLogger(GitConnector.class).trace("setCredentials -> Exit.");
     }
 }

@@ -17,6 +17,14 @@ import javax.swing.text.DefaultCaret;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 
+/**
+ * This class receives stdout and stderr messages and displays them. After being 
+ * initialized, all console messages are redirected to this window.<br>
+ * The class also allows the user to dynamically set the desired log level to 
+ * be displayed.
+ * 
+ * @author Cristiano
+ */
 public class StdOutErrWindow extends JFrame {
 
     private static final long serialVersionUID = 5080471850955743986L;

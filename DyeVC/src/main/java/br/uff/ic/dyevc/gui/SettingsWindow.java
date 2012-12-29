@@ -2,10 +2,10 @@ package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
-import java.io.File;
-import javax.swing.JFileChooser;
 
 /**
+ * This class presents a window where the user can set application general 
+ * settings and save them on the operating system.
  *
  * @author Cristiano
  */

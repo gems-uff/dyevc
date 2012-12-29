@@ -40,6 +40,7 @@ public class AboutDialog extends javax.swing.JDialog {
 
         AboutOK.setText("OK");
         AboutOK.addActionListener(new java.awt.event.ActionListener() {
+            @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 AboutOKActionPerformed(evt);
             }

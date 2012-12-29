@@ -1,13 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package br.uff.ic.dyevc.exception;
 
 /**
  *
- * @author Heliomar
+ * @author Cristiano
  */
 public class VCSException extends DyeVCException{
     private static final long serialVersionUID = 838156896036443991L;
