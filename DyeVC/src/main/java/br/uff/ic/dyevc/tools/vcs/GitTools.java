@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public final class GitTools {
     
     /**
-     * Copies configuration from a repository to a working clone and includes a
+     * Copies configuration from a source repository to a working clone and includes a
      * remote configuration pointing to the source repository
      * @param source the repository to copy configuration from
      * @param target the repository to copy configuration to

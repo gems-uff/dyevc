@@ -28,7 +28,7 @@ public class GitConnectorTest {
                 System.out.println(rel);
             }
             cloneteste = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgccloneteste", "labgccloneteste");
-            cloneteste.fetchAllRemotes();
+            cloneteste.fetchAllRemotes(false);
             relClone = cloneteste.testAhead();
             for (Iterator<BranchStatus> it = relClone.iterator(); it.hasNext();) {
                 BranchStatus rel = it.next();

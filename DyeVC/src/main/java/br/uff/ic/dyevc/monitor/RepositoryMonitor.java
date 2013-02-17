@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +59,7 @@ public class RepositoryMonitor extends Thread {
     @Override
     public void run() {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Repository monitor is running.");
+        int sleepTime = settings.getRefreshInterval() * 1000;
         while (true) {
             try {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
@@ -68,18 +71,29 @@ public class RepositoryMonitor extends Thread {
                     checkRepository(monitoredRepository);
                 }
                 container.notifyMessages(statusList);
-                int sleepTime = settings.getRefreshInterval() * 1000;
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Will now sleep for {} seconds.", sleepTime);
                 MessageManager.getInstance().addMessage("Repository monitor is sleeping.");
                 Thread.sleep(settings.getRefreshInterval() * 1000);
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping.", sleepTime);
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+            } catch (DyeVCException dex) {
+                try {
+                    MessageManager.getInstance().addMessage(dex.getMessage());
+                    Thread.sleep(settings.getRefreshInterval() * 1000);
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+                } catch (InterruptedException ex) {
+                    LoggerFactory.getLogger(RepositoryMonitor.class).info("Waking up due to interruption received.");
+                }
+            } catch (RuntimeException re) {
+                try {
+                    MessageManager.getInstance().addMessage(re.getMessage());
+                    LoggerFactory.getLogger(RepositoryMonitor.class).error("Error during monitoring.", re);
+                    Thread.sleep(settings.getRefreshInterval() * 1000);
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+                } catch (InterruptedException ex) {
+                    LoggerFactory.getLogger(RepositoryMonitor.class).info("Waking up due to interruption received.");
+                }
             } catch (InterruptedException ex) {
                 LoggerFactory.getLogger(RepositoryMonitor.class).info("Waking up due to interruption received.");
-            } catch (DyeVCException dex) {
-                MessageManager.getInstance().addMessage(dex.getMessage());
-            } catch (RuntimeException re) {
-                MessageManager.getInstance().addMessage(re.getMessage());
-                LoggerFactory.getLogger(RepositoryMonitor.class).error("Error during monitoring.", re);
             }
         }
     }
@@ -90,7 +104,7 @@ public class RepositoryMonitor extends Thread {
      *
      * @param monitoredRepository the repository to be checked
      */
-    private void checkRepository(MonitoredRepository monitoredRepository) {
+    private void checkRepository(MonitoredRepository monitoredRepository) throws VCSException {
         LoggerFactory.getLogger(RepositoryMonitor.class)
                 .trace("checkRepository -> Entry. Repository: {}, id:{}", monitoredRepository.getName(), monitoredRepository.getId());
 
@@ -114,7 +128,7 @@ public class RepositoryMonitor extends Thread {
      * @param monitoredRepository the repository to be processed
      * @return a list of status for the given repository
      */
-    private List<BranchStatus> processRepository(MonitoredRepository monitoredRepository) {
+    private List<BranchStatus> processRepository(MonitoredRepository monitoredRepository) throws VCSException {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Entry. Repository: {}", monitoredRepository.getName());
         GitConnector sourceConnector = null;
         GitConnector tempConnector = null;
@@ -134,7 +148,7 @@ public class RepositoryMonitor extends Thread {
                         .debug("There is no temp repository at {}. Will create a temp by cloning {}.",
                         pathTemp, monitoredRepository.getId());
                 tempConnector = createWorkingClone(pathTemp, sourceConnector);
-                sourceConnector.close();
+//                sourceConnector.close();
             } else {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("There is a valid repository at {}. Creating a git connector to it.",
@@ -143,20 +157,27 @@ public class RepositoryMonitor extends Thread {
             }
             checkAuthentication(monitoredRepository, tempConnector);
 
-            tempConnector.fetchAllRemotes();
+            tempConnector.fetchAllRemotes(true);
             tempConnector.merge(tempConnector.getOriginRefFromSource());
             result = tempConnector.testAhead();
         } catch (VCSException ex) {
-            MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <{}>"
-                    + monitoredRepository.getName());
+            MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <" +
+                    monitoredRepository.getName() + ">");
             LoggerFactory.getLogger(RepositoryMonitor.class)
                     .error("It was not possible to finish monitoring of repository <{}> with id <{}>",
                     monitoredRepository.getName(), monitoredRepository.getId());
+            throw ex;
         } finally {
             if (sourceConnector != null) {
+            LoggerFactory.getLogger(RepositoryMonitor.class)
+                    .debug("About to close connection with repository <{}> with id <{}>",
+                    monitoredRepository.getName(), monitoredRepository.getId());
                 sourceConnector.close();
             }
             if (tempConnector != null) {
+            LoggerFactory.getLogger(RepositoryMonitor.class)
+                    .debug("About to close connection with temp repository for <{}> with id <{}>",
+                    monitoredRepository.getName(), monitoredRepository.getId());
                 tempConnector.close();
             }
         }
@@ -171,12 +192,13 @@ public class RepositoryMonitor extends Thread {
      */
     private List<BranchStatus> markInvalidRepository(MonitoredRepository monitoredRepository) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("markInvalidRepository -> Entry.");
+        LoggerFactory.getLogger(RepositoryMonitor.class).debug("Marking <{}> as an invalid repository.", monitoredRepository.getName());
         deleteDirectory(new File(settings.getWorkingPath()), monitoredRepository.getId());
         List<BranchStatus> listStatus = new ArrayList<BranchStatus>();
         BranchStatus status = new BranchStatus();
         status.setInvalid();
         listStatus.add(status);
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("markInvalidRepository -> Entry.");
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("markInvalidRepository -> Exit.");
         return listStatus;
     }
     /**
