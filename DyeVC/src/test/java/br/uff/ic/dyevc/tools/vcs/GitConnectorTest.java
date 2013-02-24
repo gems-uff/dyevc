@@ -4,6 +4,7 @@
  */
 package br.uff.ic.dyevc.tools.vcs;
 
+import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.model.git.TrackedBranch;
 import java.io.File;
 import java.util.List;

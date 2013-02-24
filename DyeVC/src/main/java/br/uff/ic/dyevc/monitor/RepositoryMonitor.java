@@ -10,16 +10,14 @@ import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
-import br.uff.ic.dyevc.tools.vcs.GitConnector;
-import br.uff.ic.dyevc.tools.vcs.GitTools;
+import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
+import br.uff.ic.dyevc.tools.vcs.git.GitTools;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +102,7 @@ public class RepositoryMonitor extends Thread {
      *
      * @param monitoredRepository the repository to be checked
      */
-    private void checkRepository(MonitoredRepository monitoredRepository) throws VCSException {
+    private void checkRepository(MonitoredRepository monitoredRepository) {
         LoggerFactory.getLogger(RepositoryMonitor.class)
                 .trace("checkRepository -> Entry. Repository: {}, id:{}", monitoredRepository.getName(), monitoredRepository.getId());
 
@@ -114,8 +112,17 @@ public class RepositoryMonitor extends Thread {
            List<BranchStatus> status = markInvalidRepository(monitoredRepository);
            repStatus.addBranchStatusList(status);
         } else {
-            List<BranchStatus> status = processRepository(monitoredRepository);
-            repStatus.addBranchStatusList(status);
+            try {
+                List<BranchStatus> status = processRepository(monitoredRepository);
+                repStatus.addBranchStatusList(status);
+            } catch (VCSException ex) {
+                
+            MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <" +
+                    monitoredRepository.getName() + "> with id <" + monitoredRepository.getId() + ">.");
+            LoggerFactory.getLogger(RepositoryMonitor.class)
+                    .error("It was not possible to finish monitoring of repository <{}> with id <{}>",
+                    monitoredRepository.getName(), monitoredRepository.getId());
+            }
         }
         
         monitoredRepository.setRepStatus(repStatus);
@@ -137,7 +144,6 @@ public class RepositoryMonitor extends Thread {
             sourceConnector = new GitConnector(monitoredRepository.getCloneAddress(), monitoredRepository.getId());
             LoggerFactory.getLogger(RepositoryMonitor.class)
                     .debug("processRepository -> created gitConnector for repository {}, id={}", monitoredRepository.getName(), monitoredRepository.getId());
-            tempConnector = null;
             checkAuthentication(monitoredRepository, sourceConnector);
 
             String pathTemp = settings.getWorkingPath()
@@ -148,25 +154,17 @@ public class RepositoryMonitor extends Thread {
                         .debug("There is no temp repository at {}. Will create a temp by cloning {}.",
                         pathTemp, monitoredRepository.getId());
                 tempConnector = createWorkingClone(pathTemp, sourceConnector);
-//                sourceConnector.close();
             } else {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("There is a valid repository at {}. Creating a git connector to it.",
                         pathTemp);
                 tempConnector = new GitConnector(pathTemp, monitoredRepository.getId());
             }
+            GitTools.adjustTargetConfiguration(sourceConnector, tempConnector);
             checkAuthentication(monitoredRepository, tempConnector);
 
             tempConnector.fetchAllRemotes(true);
-            tempConnector.merge(tempConnector.getOriginRefFromSource());
             result = tempConnector.testAhead();
-        } catch (VCSException ex) {
-            MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <" +
-                    monitoredRepository.getName() + ">");
-            LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .error("It was not possible to finish monitoring of repository <{}> with id <{}>",
-                    monitoredRepository.getName(), monitoredRepository.getId());
-            throw ex;
         } finally {
             if (sourceConnector != null) {
             LoggerFactory.getLogger(RepositoryMonitor.class)

@@ -141,7 +141,7 @@
         <dependency>
             <groupId>org.eclipse.jgit</groupId>        
             <artifactId>org.eclipse.jgit</artifactId>
-            <version>2.1.0.201209190230-r</version>
+            <version>2.2.0.201212191850-r</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -182,6 +182,11 @@
             <groupId>net.sf.jung</groupId>
             <artifactId>jung-visualization</artifactId>
             <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit.junit</artifactId>
+            <version>2.2.0.201212191850-r</version>
         </dependency>
     </dependencies>
 </project>

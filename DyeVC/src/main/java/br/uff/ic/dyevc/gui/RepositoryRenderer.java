@@ -7,7 +7,6 @@ import br.uff.ic.dyevc.utils.DateUtil;
 import br.uff.ic.dyevc.utils.ImageUtils;
 import java.awt.Component;
 import java.util.Iterator;
-import java.util.List;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -63,12 +62,18 @@ class RepositoryRenderer extends DefaultListCellRenderer {
                 listItem.setIcon(ImageUtils.getInstance().getIcon("nocheck_32.png"));
                 tooltip.append("<br><br>Repository location is invalid. Please check or remove it from the configured repositories list.");
             } else {
-                if (repStatus.getNonSyncedBranchesCount() == 0) {
+                if ((repStatus.getNonSyncedBranchesCount() == 0) && (repStatus.getInvalidBranchesCount() == 0)) {
                     listItem.setIcon(ImageUtils.getInstance().getIcon("check_32.png"));
                     tooltip.append("<br><br>Repository is in sync with all remotes.");
                 } else {
-                    listItem.setIcon(ImageUtils.getInstance().getIcon("aheadbehind_ylw_32.png"));
-                    appendNonSyncedMessages(repStatus.getNonSyncedRepositoryBranches(), tooltip);
+                    if (repStatus.getAheadCount() > 0 && repStatus.getBehindCount() > 0) {
+                        listItem.setIcon(ImageUtils.getInstance().getIcon("aheadbehind_ylw_32.png"));
+                    } else if (repStatus.getAheadCount() > 0 ) {
+                        listItem.setIcon(ImageUtils.getInstance().getIcon("ahead_ylw_32.png"));
+                    } else {
+                        listItem.setIcon(ImageUtils.getInstance().getIcon("behind_ylw_32.png"));
+                    }
+                    appendMessages(repStatus, tooltip);
                 }
             }
         }
@@ -84,32 +89,45 @@ class RepositoryRenderer extends DefaultListCellRenderer {
     }
 
     /**
-     * Appends information regarding non-synchronized branches as a tooltip.
-     * @param nonSyncedRepositoryBranches the list of non-synchronized branches 
-     * for which messages will be displayed.
-     * @param tooltip the StringBuilder that holds messages to be displayed.
+     * Appends information regarding non-synchronized and invalid branches as a tooltip.
+     * @param status
+     *          status from which information will be appended.
+     * @param tooltip
+     *          the StringBuilder that holds messages to be displayed.
      */
-    private void appendNonSyncedMessages(List<BranchStatus> nonSyncedRepositoryBranches, StringBuilder tooltip) {
-        for (Iterator<BranchStatus> it = nonSyncedRepositoryBranches.iterator(); it.hasNext();) {
+    private void appendMessages(RepositoryStatus status, StringBuilder tooltip) {
+        for (Iterator<BranchStatus> it = status.getNonSyncedRepositoryBranches().iterator(); it.hasNext();) {
             BranchStatus branchStatus = it.next();
 
             tooltip.append("<br><br><img src='");
             if (branchStatus.getStatus() == BranchStatus.STATUS_AHEAD) {
                 tooltip.append(RepositoryRenderer.class.getResource("/br/uff/ic/dyevc/images/ahead_ylw_16.png"))
-                        .append("'/> <b>ahead:</b> ").append(branchStatus.getAhead());
+                        .append("'/> <b>Ahead:</b> ").append(branchStatus.getAhead());
             } else if (branchStatus.getStatus() == BranchStatus.STATUS_BEHIND) {
                 tooltip.append(RepositoryRenderer.class.getResource("/br/uff/ic/dyevc/images/behind_ylw_16.png"))
-                        .append("'/> <b>behind:</b> ").append(branchStatus.getBehind());
+                        .append("'/> <b>Behind:</b> ").append(branchStatus.getBehind());
             } else {
                 tooltip.append(RepositoryRenderer.class.getResource("/br/uff/ic/dyevc/images/aheadbehind_ylw_16.png"))
-                        .append("'/> <b>ahead:</b> ").append(branchStatus.getAhead())
-                        .append("&nbsp;&nbsp;&nbsp;<b>behind:</b> ").append(branchStatus.getBehind());
+                        .append("'/> <b>Ahead:</b> ").append(branchStatus.getAhead())
+                        .append("&nbsp;&nbsp;&nbsp;<b>Behind:</b> ").append(branchStatus.getBehind());
             }
             tooltip.append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
-                    .append("<b>local branch:</b> ").append(branchStatus.getRepositoryBranch())
-                    .append(" <b>remote branch:</b> ").append(branchStatus.getReferencedRepositoryBranch())
+                    .append("<bLocal branch:</b> ").append(branchStatus.getRepositoryBranch())
+                    .append(" <b>Remote branch:</b> ").append(branchStatus.getReferencedRepositoryBranch())
                     .append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
-                    .append("<b>remote url:</b> ").append(branchStatus.getReferencedRepositoryUrl());
+                    .append("<b>Remote url:</b> ").append(branchStatus.getReferencedRepositoryUrl());
+        }
+        for (Iterator<BranchStatus> it = status.getInvalidRepositoryBranches().iterator(); it.hasNext();) {
+            BranchStatus branchStatus = it.next();
+
+            tooltip.append("<br><br><img src='")
+                    .append(RepositoryRenderer.class.getResource("/br/uff/ic/dyevc/images/question_16.png"))
+                    .append("'/> <b>This branch could not be evaluated.</b>")
+                    .append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
+                    .append("<b>Local branch:</b> ").append(branchStatus.getRepositoryBranch())
+                    .append(" <b>Remote branch:</b> ").append(branchStatus.getReferencedRepositoryBranch())
+                    .append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
+                    .append("<b>Remote url:</b> ").append(branchStatus.getReferencedRepositoryUrl());
         }
     }
 }

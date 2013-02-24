@@ -65,6 +65,11 @@ public class BranchStatus {
      * Identification of this branch
      */
     private String repositoryBranch;
+    
+    public BranchStatus() {
+        ahead = -1;
+        behind = -1;
+    }
 
     /**
      * Identification of the referenced branch

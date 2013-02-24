@@ -40,10 +40,26 @@ public class RepositoryStatus {
      */
     private List<BranchStatus> nonSyncedList;
     
+    /**
+     * List of invalid branches
+     */
+    private List<BranchStatus> invalidList;
+    
+    /**
+     * Number of branches that are ahead
+     */
+    private int aheadCount = 0;
+    
+    /**
+     * Number of branches that are behind
+     */
+    private int behindCount = 0;
+    
     public RepositoryStatus(String repId) {
         this.repositoryId = repId;
         syncedList = new ArrayList<BranchStatus>();
         nonSyncedList = new ArrayList<BranchStatus>();
+        invalidList = new ArrayList<BranchStatus>();
         if (!"".equals(repId)) {
             lastCheckedTime = new Date(System.currentTimeMillis());
         }
@@ -59,15 +75,25 @@ public class RepositoryStatus {
             if (branchStatus.getStatus() == BranchStatus.STATUS_OK) {
                 syncedList.add(branchStatus);
             } else if (branchStatus.getStatus() == BranchStatus.STATUS_INVALID) {
-                this.invalid = true;
+                invalidList.add(branchStatus);
             } else {
                 nonSyncedList.add(branchStatus);
+                if (branchStatus.getAhead() > 0) {
+                    aheadCount++;
+                }
+                if (branchStatus.getBehind() > 0) {
+                    behindCount++;
+                }
             }
         }
     }
     
     public List<BranchStatus> getSyncedRepositoryBranches() {
         return syncedList;
+    }
+    
+    public List<BranchStatus> getInvalidRepositoryBranches() {
+        return invalidList;
     }
     
     public List<BranchStatus> getNonSyncedRepositoryBranches() {
@@ -86,15 +112,33 @@ public class RepositoryStatus {
         return nonSyncedList.size();
     }
     
+    public int getInvalidBranchesCount() {
+        return invalidList.size();
+    }
+    
     public int getSyncedBranchesCount() {
         return syncedList.size();
     }
     
     public int getTotalBranchesCount() {
-        return nonSyncedList.size() + syncedList.size();
+        return nonSyncedList.size() + syncedList.size() + invalidList.size();
     }
     
     public boolean isInvalid() {
         return invalid;
+    }
+
+    /**
+     * @return the aheadCount
+     */
+    public int getAheadCount() {
+        return aheadCount;
+    }
+
+    /**
+     * @return the behindCount
+     */
+    public int getBehindCount() {
+        return behindCount;
     }
 }

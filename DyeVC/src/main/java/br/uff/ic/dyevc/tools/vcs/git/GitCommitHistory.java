@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.tools.vcs;
+package br.uff.ic.dyevc.tools.vcs.git;
 
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;

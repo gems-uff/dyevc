@@ -631,7 +631,6 @@ public class MainWindow extends javax.swing.JFrame {
             } else {
                 for (Iterator<BranchStatus> it1 = repositoryStatus.getNonSyncedRepositoryBranches().iterator(); it1.hasNext();) {
                     countRepsWithMessages++;
-                    BranchStatus nonSyncedStatus = it1.next();
                 }
             }
         }
