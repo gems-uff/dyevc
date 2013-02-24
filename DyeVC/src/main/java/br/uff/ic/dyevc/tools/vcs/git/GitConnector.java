@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.tools.vcs;
+package br.uff.ic.dyevc.tools.vcs.git;
 
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.model.BranchStatus;
@@ -22,7 +22,6 @@ import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.eclipse.jgit.lib.Config;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
@@ -36,6 +35,7 @@ import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.RemoteConfig;
+import org.eclipse.jgit.transport.TrackingRefUpdate;
 import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.slf4j.LoggerFactory;
@@ -50,11 +50,12 @@ public class GitConnector {
     private static final String GIT_DIR = ".git";
     public static final String DEFAULT_REMOTE = "remote";
     public static final String REFS_REMOTES = "refs/remotes/";
+    public static final String FETCH_REFS_HEADS = "+refs/heads/*";
     public static final String DEFAULT_ORIGIN = "origin";
     public static final String CONFIG_FILE = "config";
     public static final String REFS_DEFAULT_BRANCH = "master";
-    public static final String COMMAND_FETCH = "fetch";
-    
+    public static final String KEY_FETCH = "fetch";
+    public static final String KEY_URL = "url";
     private Repository repository;
     private Git git;
     private String id;
@@ -178,7 +179,7 @@ public class GitConnector {
         if (remoteName == null) {
             remoteName = "origin";
         }
-        
+
         LoggerFactory.getLogger(GitConnector.class).trace("getRemoteForBranch -> Exit.");
         return remoteName;
     }
@@ -271,8 +272,8 @@ public class GitConnector {
     /**
      * Fetches modifications from the default origin to the repository this
      * connector is connected with.
-     * 
-     * @param pruneBranch If true, prune branches that do not exist anymore in 
+     *
+     * @param pruneBranch If true, prune branches that do not exist anymore in
      * the source repository which remote name is the same as this repository.
      *
      * @throws GitAPIException
@@ -304,16 +305,16 @@ public class GitConnector {
      *
      * @param urish urish representing the remote address
      * @param refSpec the ref spec to use in fetch command
-     * @param pruneBranch If true, prunes branches that does not exist in remote 
+     * @param pruneBranch If true, prunes branches that does not exist in remote
      * repository
      *
      * @throws GitAPIException
      */
-    public FetchResult fetch(URIish urish, RefSpec refSpec, boolean pruneBranch) throws VCSException {
+    private FetchResult fetch(URIish urish, RefSpec refSpec, boolean pruneBranch) throws VCSException {
         LoggerFactory.getLogger(GitConnector.class).trace("fetch -> Entry. Uri: {}", urish.toString());
         FetchResult result = null;
         FetchCommand fetch = git.fetch();
-        if ((credentialsProvider != null) && (urish.getScheme() != null) 
+        if ((credentialsProvider != null) && (urish.getScheme() != null)
                 && (urish.getHost() != null)) {
             LoggerFactory.getLogger(GitConnector.class).trace("Repository needs authentication. Setting credentials.");
             fetch.setCredentialsProvider(credentialsProvider);
@@ -326,7 +327,12 @@ public class GitConnector {
         fetch.setRemoveDeletedRefs(pruneBranch);
         try {
             result = fetch.call();
-            LoggerFactory.getLogger(GitConnector.class).debug("Fetch from {} finished. Result: \n {}", urish.toString(), result.getMessages());
+            StringBuilder msg = new StringBuilder();
+            for (TrackingRefUpdate update : result.getTrackingRefUpdates()) {
+                msg.append("\n").append(update.getRemoteName())
+                        .append(" : ").append(update.getResult());
+            }
+            LoggerFactory.getLogger(GitConnector.class).debug("Fetch from {} finished. Result:{}", urish.toString(), msg.toString());
         } catch (GitAPIException ex) {
             LoggerFactory.getLogger(GitConnector.class).error("Error during fetch from ." + urish.toString(), ex);
             throw new VCSException("Error during fetch from ." + urish.toString(), ex);
@@ -368,20 +374,24 @@ public class GitConnector {
     }
 
     /**
-     * Gets the reference string for the remote branch from where this
-     * repository was cloned.
+     * Gets the reference string for a specified branch in the specified remote
+     * name.
      *
+     * @param branchName branch to retrieve ref for
+     * @param remoteName remote name of the repository to look branch ref
      * @return the required reference object.
      */
-    public Ref getOriginRefFromSource() throws VCSException {
+    public Ref getBranchRemoteRef(String branchName, String remoteName) throws VCSException {
         LoggerFactory.getLogger(GitConnector.class).trace("getOriginRefFromSource -> Entry.");
         Ref ref = null;
         try {
-            String refToFind = REFS_REMOTES + getId() + "/" + REFS_DEFAULT_BRANCH;
+            String refToFind = REFS_REMOTES + remoteName + "/" + branchName;
             ref = repository.getRef(refToFind);
         } catch (IOException ex) {
-            LoggerFactory.getLogger(GitConnector.class).error("Error getting remote ref for repository.", ex);
-            throw new VCSException("Error getting remote ref for repository " + getId());
+            LoggerFactory.getLogger(GitConnector.class).error("Error getting remote ref for branch "
+                    + branchName + " in repository " + remoteName, ex);
+            throw new VCSException("Error getting remote ref for branch "
+                    + branchName + " in repository " + remoteName);
         }
         LoggerFactory.getLogger(GitConnector.class).trace("getOriginRefFromSource -> Exit.");
         return ref;
@@ -503,53 +513,46 @@ public class GitConnector {
 
     public void close() {
         LoggerFactory.getLogger(GitConnector.class).trace("close -> Entry.");
-        LoggerFactory.getLogger(GitConnector.class).debug("Closing connection with repository <{}>.", getPath() + "////////" + getId());
+        LoggerFactory.getLogger(GitConnector.class).debug("Closing connection with repository <{}>.", getId());
         repository.close();
         LoggerFactory.getLogger(GitConnector.class).trace("close -> Exit.");
     }
 
     public List<BranchStatus> testAhead() throws VCSException {
         LoggerFactory.getLogger(GitConnector.class).trace("testAhead -> Entry.");
-        //TODO não está funcionando direito
         List<BranchStatus> result = new ArrayList<BranchStatus>();
         List<TrackedBranch> branches = getTrackedBranches();
         if (branches == null) {
             LoggerFactory.getLogger(GitConnector.class).error("There are no tracked branches for repository <{}>, which is located at <{}>.", getId(), getPath());
-            throw new VCSException("There are no tracked branches for repository <" + getId() +
-                    ">, which is located at <" + getPath() + ">.");
+            throw new VCSException("There are no tracked branches for repository <" + getId()
+                    + ">, which is located at <" + getPath() + ">.");
         }
         for (Iterator<TrackedBranch> it = branches.iterator(); it.hasNext();) {
+            TrackedBranch trackedBranch = it.next();
+            BranchStatus relationship = new BranchStatus();
+            relationship.setRepositoryBranch(trackedBranch.getName());
+            relationship.setRepositoryUrl(getPath());
+            relationship.setReferencedRepositoryBranch(trackedBranch.getRemoteName());
+            relationship.setReferencedRepositoryUrl(getRemoteUrl(trackedBranch.getRemoteName()));
             try {
-                TrackedBranch trackedBranch = it.next();
-                
-                //Verifies if branch is tracked locally, otherwise there's no sense in checking its status
-                Ref local = repository.getRef(trackedBranch.getName());
-                if (local != null) {
-                    BranchTrackingStatus status = BranchTrackingStatus.of(repository, trackedBranch.getName());
+                WorkingRepositoryBranchStatus status = WorkingRepositoryBranchStatus.of(this, trackedBranch.getName());
 
-                    BranchStatus relationship = new BranchStatus();
+                if (status != null) {
                     relationship.setAhead(status.getAheadCount());
                     relationship.setBehind(status.getBehindCount());
-                    relationship.setRepositoryBranch(trackedBranch.getName());
-                    relationship.setRepositoryUrl(getPath());
-                    relationship.setReferencedRepositoryBranch(trackedBranch.getRemoteName());
-                    relationship.setReferencedRepositoryUrl(getRemoteUrl(trackedBranch.getRemoteName()));
-
-                    result.add(relationship);
                 } else {
-                    LoggerFactory.getLogger(GitConnector.class).warn("cannot testAhead branch <{}> because it is not " +
-                            "tracked locally by repository <{}>.", trackedBranch.getName(), getId());
-                    throw new VCSException("cannot testAhead branch <" + trackedBranch.getName() + 
-                            "> because it is not " +"tracked locally by repository <" +
-                            getId() + ">.");
+                    LoggerFactory.getLogger(GitConnector.class).warn("cannot testAhead branch <{}> declared in repository <{}>.",
+                            trackedBranch.getName(), getId());
                 }
-                
+
             } catch (IOException ex) {
                 LoggerFactory.getLogger(GitConnector.class)
                         .error("Error calculating ahead count.", ex);
                 throw new VCSException(
                         "Error calculating ahead count.", ex);
             }
+
+            result.add(relationship);
         }
         LoggerFactory.getLogger(GitConnector.class).trace("testAhead -> Exit.");
         return result;
@@ -557,6 +560,7 @@ public class GitConnector {
 
     /**
      * Gets an iterator with all commits that happened to this repository.
+     *
      * @return the commit history
      */
     public Iterator<RevCommit> getAllCommitsIterator() {
@@ -564,7 +568,7 @@ public class GitConnector {
         Iterator<RevCommit> result = new ArrayList<RevCommit>().iterator();
         try {
             RevWalk walk = new RevWalk(repository);
-            Iterable<RevCommit> logs = git.log().call(); 
+            Iterable<RevCommit> logs = git.log().call();
             result = logs.iterator();
 
         } catch (Exception ex) {
@@ -599,7 +603,7 @@ public class GitConnector {
         String gitPath = (path.endsWith(GIT_DIR))
                 ? path
                 : (path.startsWith("http") ? path + GIT_DIR : path + "/" + GIT_DIR);
-        
+
         LoggerFactory.getLogger(GitConnector.class).trace("checkRepositoryPathName -> Exit.");
         return gitPath;
     }

@@ -8,7 +8,7 @@ import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
-import br.uff.ic.dyevc.tools.vcs.GitConnector;
+import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.event.ActionEvent;
 import java.io.File;
