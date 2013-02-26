@@ -270,7 +270,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         final DirectedSparseMultigraph<CommitInfo, CommitRelationship> graph = new DirectedSparseMultigraph<CommitInfo, CommitRelationship>();
         GitConnector git;
         try {
-            git = new GitConnector(rep.getCloneAddress(), rep.getName());
+            git = new GitConnector(rep.getWorkingCloneAddress(), rep.getId());
             GitCommitHistory ch = GitCommitHistory.getInstance(git);
             for (CommitInfo commitInfo : ch.getCommitInfos()) {
                 graph.addVertex(commitInfo);

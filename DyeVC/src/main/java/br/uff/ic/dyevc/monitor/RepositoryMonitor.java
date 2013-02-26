@@ -146,8 +146,7 @@ public class RepositoryMonitor extends Thread {
                     .debug("processRepository -> created gitConnector for repository {}, id={}", monitoredRepository.getName(), monitoredRepository.getId());
             checkAuthentication(monitoredRepository, sourceConnector);
 
-            String pathTemp = settings.getWorkingPath()
-                    + IConstants.DIR_SEPARATOR + monitoredRepository.getId();
+            String pathTemp = monitoredRepository.getWorkingCloneAddress();
 
             if (!GitConnector.isValidRepository(pathTemp)) {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
