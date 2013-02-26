@@ -568,7 +568,7 @@ public class GitConnector {
         Iterator<RevCommit> result = new ArrayList<RevCommit>().iterator();
         try {
             RevWalk walk = new RevWalk(repository);
-            Iterable<RevCommit> logs = git.log().call();
+            Iterable<RevCommit> logs = git.log().all().call();
             result = logs.iterator();
 
         } catch (Exception ex) {
