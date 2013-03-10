@@ -112,7 +112,7 @@ class RepositoryRenderer extends DefaultListCellRenderer {
                         .append("&nbsp;&nbsp;&nbsp;<b>Behind:</b> ").append(branchStatus.getBehind());
             }
             tooltip.append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
-                    .append("<bLocal branch:</b> ").append(branchStatus.getRepositoryBranch())
+                    .append("<b>Local branch:</b> ").append(branchStatus.getRepositoryBranch())
                     .append(" <b>Remote branch:</b> ").append(branchStatus.getReferencedRepositoryBranch())
                     .append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
                     .append("<b>Remote url:</b> ").append(branchStatus.getReferencedRepositoryUrl());
