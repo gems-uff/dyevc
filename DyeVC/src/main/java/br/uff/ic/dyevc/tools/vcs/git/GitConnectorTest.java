@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.RemoteConfig;
 
@@ -20,10 +21,24 @@ public class GitConnectorTest {
     public static void main(String[] args) {
         GitConnectorTest test = new GitConnectorTest();
 //        test.test();
-        test.testAheadRemoteBranches();
+        test.testCommitHistory();
+//        test.testAheadRemoteBranches();
 //        test.testAdjustTargetConfiguration();
     }
     
+    private void testCommitHistory() {
+        GitConnector dyevc2 = null;
+        try {
+            dyevc2 = new GitConnector("/C:/Users/Cristiano/.dyevc/rep1361714490249", "tmp");
+            Iterator<RevCommit> commitsIterator = dyevc2.getAllCommitsIterator();
+            
+        } catch (Exception ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            dyevc2.close();
+        }
+        
+    }
     private void test() {
         GitConnector teste = null, clone = null, dyevc = null;
         try {

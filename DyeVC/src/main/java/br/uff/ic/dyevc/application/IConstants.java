@@ -12,6 +12,8 @@ public interface IConstants {
     public static final String DIR_SEPARATOR = System.getProperty("file.separator");
     public static final String APPLICATION_PACKAGE = "br.uff.ic.dyevc";
     public static final String IMAGES_FOLDER = "/br/uff/ic/dyevc/images/";
+    public static final String REFS_HEADS = "refs/heads/";
+    public static final String REFS_REMOTES = "refs/remotes/";
     public static final Color BACKGROUND_COLOR = Color.WHITE;
     public static final Color COLOR_REGULAR = Color.CYAN;
     public static final Color COLOR_MERGE_SPLIT = Color.YELLOW;

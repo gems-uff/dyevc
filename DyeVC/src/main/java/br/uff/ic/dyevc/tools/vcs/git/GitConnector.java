@@ -1,5 +1,6 @@
 package br.uff.ic.dyevc.tools.vcs.git;
 
+import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.git.TrackedBranch;
@@ -16,6 +17,7 @@ import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.CommitCommand;
 import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.api.MergeResult;
 import org.eclipse.jgit.api.PullCommand;
@@ -559,7 +561,8 @@ public class GitConnector {
     }
 
     /**
-     * Gets an iterator with all commits that happened to this repository.
+     * Gets an iterator with all commits that happened to this repository, in 
+     * all branches, whether they are local or remote.
      *
      * @return the commit history
      */
@@ -567,9 +570,21 @@ public class GitConnector {
         LoggerFactory.getLogger(GitConnector.class).trace("getAllCommitsIterator -> Entry.");
         Iterator<RevCommit> result = new ArrayList<RevCommit>().iterator();
         try {
-            RevWalk walk = new RevWalk(repository);
-            Iterable<RevCommit> logs = git.log().all().call();
-            result = logs.iterator();
+            LogCommand logcmd = git.log();
+            Map<String, Ref> mapRefsHeads = repository.getRefDatabase().getRefs(IConstants.REFS_HEADS);
+            Map<String, Ref> mapRefsRemotes = repository.getRefDatabase().getRefs(IConstants.REFS_REMOTES);
+            
+            for (Map.Entry<String, Ref> entry : mapRefsHeads.entrySet()) {
+                Ref ref = entry.getValue();
+                logcmd.add(ref.getObjectId());
+            }
+            
+            for (Map.Entry<String, Ref> entry : mapRefsRemotes.entrySet()) {
+                Ref ref = entry.getValue();
+                logcmd.add(ref.getObjectId());
+            }
+            
+            result = logcmd.call().iterator();
 
         } catch (Exception ex) {
             LoggerFactory.getLogger(GitConnector.class).error("Error in getAllCommitsIterator.", ex);
