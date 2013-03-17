@@ -72,9 +72,14 @@ public class BranchStatus {
     }
 
     /**
-     * Identification of the referenced branch
+     * Merge spec for this branch
      */
-    private String referencedRepositoryBranch;
+    private String mergeSpec;
+
+    /**
+     * Identification of the referenced remote
+     */
+    private String referencedRemote;
 
     public int getAhead() {
         return ahead;
@@ -116,12 +121,20 @@ public class BranchStatus {
         this.repositoryBranch = repositoryBranch;
     }
 
-    public String getReferencedRepositoryBranch() {
-        return referencedRepositoryBranch;
+    public String getMergeSpec() {
+        return mergeSpec;
     }
 
-    public void setReferencedRepositoryBranch(String referencedRepositoryBranch) {
-        this.referencedRepositoryBranch = referencedRepositoryBranch;
+    public void setMergeSpec(String mergeSpec) {
+        this.mergeSpec = mergeSpec;
+    }
+    
+    public String getReferencedRemote() {
+        return referencedRemote;
+    }
+
+    public void setReferencedRemote(String referencedRemote) {
+        this.referencedRemote = referencedRemote;
     }
     
     public void setInvalid() {
@@ -157,7 +170,7 @@ public class BranchStatus {
         result.append("\n\tURL: ").append(getRepositoryUrl());
         result.append("\n\tBranch: ").append(getRepositoryBranch());
         result.append("\tRemote URL: ").append(getReferencedRepositoryUrl());
-        result.append("\tRemote Branch: ").append(getReferencedRepositoryBranch());
+        result.append("\tRemote Branch: ").append(getMergeSpec());
         result.append("\tAhead: ").append(getAhead()).append("\tBehind: ").append(getBehind());
         return result.toString();
     }
@@ -170,7 +183,7 @@ public class BranchStatus {
         hash = 13 * hash + (this.referencedRepositoryUrl != null ? this.referencedRepositoryUrl.hashCode() : 0);
         hash = 13 * hash + (this.repositoryUrl != null ? this.repositoryUrl.hashCode() : 0);
         hash = 13 * hash + (this.repositoryBranch != null ? this.repositoryBranch.hashCode() : 0);
-        hash = 13 * hash + (this.referencedRepositoryBranch != null ? this.referencedRepositoryBranch.hashCode() : 0);
+        hash = 13 * hash + (this.referencedRemote != null ? this.referencedRemote.hashCode() : 0);
         return hash;
     }
     
@@ -189,7 +202,7 @@ public class BranchStatus {
     return
       EqualsUtil.areEqual(this.ahead, that.ahead) &&
       EqualsUtil.areEqual(this.behind, that.behind) &&
-      EqualsUtil.areEqual(this.referencedRepositoryBranch, that.referencedRepositoryBranch) &&
+      EqualsUtil.areEqual(this.referencedRemote, that.referencedRemote) &&
       EqualsUtil.areEqual(this.referencedRepositoryUrl, that.referencedRepositoryUrl) &&
       EqualsUtil.areEqual(this.repositoryBranch, that.repositoryBranch) &&
       EqualsUtil.areEqual(this.repositoryUrl, that.repositoryUrl);

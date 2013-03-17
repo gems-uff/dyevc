@@ -24,6 +24,7 @@ import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.BranchConfig;
 import org.eclipse.jgit.lib.Config;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
@@ -211,9 +212,11 @@ public class GitConnector {
         Set<String> trackedBranches = storedConfig.getSubsections("branch");
         for (Iterator<String> it = trackedBranches.iterator(); it.hasNext();) {
             String branchName = it.next();
+            BranchConfig branchCfg = new BranchConfig(storedConfig, branchName);
             TrackedBranch trackedBranch = new TrackedBranch();
             trackedBranch.setName(branchName);
             trackedBranch.setRemoteName(getRemoteForBranch(branchName));
+            trackedBranch.setMergeSpec(branchCfg.getRemoteTrackingBranch());
 
             result.add(trackedBranch);
 
@@ -534,7 +537,8 @@ public class GitConnector {
             BranchStatus relationship = new BranchStatus();
             relationship.setRepositoryBranch(trackedBranch.getName());
             relationship.setRepositoryUrl(getPath());
-            relationship.setReferencedRepositoryBranch(trackedBranch.getRemoteName());
+            relationship.setReferencedRemote(trackedBranch.getRemoteName());
+            relationship.setMergeSpec(trackedBranch.getMergeSpec());
             relationship.setReferencedRepositoryUrl(getRemoteUrl(trackedBranch.getRemoteName()));
             try {
                 WorkingRepositoryBranchStatus status = WorkingRepositoryBranchStatus.of(this, trackedBranch.getName());

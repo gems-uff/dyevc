@@ -1,6 +1,7 @@
 package br.uff.ic.dyevc.graph.visualization;
 
 import br.uff.ic.dyevc.application.IConstants;
+import br.uff.ic.dyevc.graph.layout.MyLayout;
 import br.uff.ic.dyevc.graph.transform.CommitHistoryTooltipTransformer;
 import br.uff.ic.dyevc.graph.transform.CommitHistoryVertexPaintTransformer;
 import br.uff.ic.dyevc.model.CommitInfo;
@@ -37,8 +38,8 @@ public class RepositoryHistoryViewer {
      */
     public static VisualizationViewer<CommitInfo, CommitRelationship> createBasicRepositoryHistoryView(DirectedSparseMultigraph<CommitInfo, CommitRelationship> graph) {
         // Choosing layout
-        Layout<CommitInfo, CommitRelationship> layout = new ISOMLayout<CommitInfo, CommitRelationship>(graph);
-//        Layout<CommitInfo, CommitRelationship> layout = new MyLayout<CommitInfo, CommitRelationship>(graph);
+//        Layout<CommitInfo, CommitRelationship> layout = new ISOMLayout<CommitInfo, CommitRelationship>(graph);
+        Layout<CommitInfo, CommitRelationship> layout = new MyLayout<CommitInfo, CommitRelationship>(graph);
         layout.setSize(new Dimension(580, 580));
 
         VisualizationViewer<CommitInfo, CommitRelationship> view = new VisualizationViewer<CommitInfo, CommitRelationship>(layout);

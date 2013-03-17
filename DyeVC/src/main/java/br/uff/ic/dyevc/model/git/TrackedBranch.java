@@ -16,6 +16,11 @@ public class TrackedBranch {
      */
     private String remoteName;
 
+    /**
+     * MergeSpec of the branch (remote tracking branch).
+     */
+    private String mergeSpec;
+
     public String getName() {
         return name;
     }
@@ -30,6 +35,20 @@ public class TrackedBranch {
 
     public void setRemoteName(String remoteName) {
         this.remoteName = remoteName;
+    }
+
+    /**
+     * @return the mergeSpec
+     */
+    public String getMergeSpec() {
+        return mergeSpec;
+    }
+
+    /**
+     * @param mergeSpec the mergeSpec to set
+     */
+    public void setMergeSpec(String mergeSpec) {
+        this.mergeSpec = mergeSpec;
     }
     
     

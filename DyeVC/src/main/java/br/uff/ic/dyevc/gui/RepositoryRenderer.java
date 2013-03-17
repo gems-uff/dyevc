@@ -113,7 +113,7 @@ class RepositoryRenderer extends DefaultListCellRenderer {
             }
             tooltip.append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
                     .append("<b>Local branch:</b> ").append(branchStatus.getRepositoryBranch())
-                    .append(" <b>Remote branch:</b> ").append(branchStatus.getReferencedRepositoryBranch())
+                    .append(" <b>Remote branch:</b> ").append(branchStatus.getMergeSpec())
                     .append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
                     .append("<b>Remote url:</b> ").append(branchStatus.getReferencedRepositoryUrl());
         }
@@ -125,7 +125,7 @@ class RepositoryRenderer extends DefaultListCellRenderer {
                     .append("'/> <b>This branch could not be evaluated.</b>")
                     .append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
                     .append("<b>Local branch:</b> ").append(branchStatus.getRepositoryBranch())
-                    .append(" <b>Remote branch:</b> ").append(branchStatus.getReferencedRepositoryBranch())
+                    .append(" <b>Remote branch:</b> ").append(branchStatus.getMergeSpec())
                     .append("<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
                     .append("<b>Remote url:</b> ").append(branchStatus.getReferencedRepositoryUrl());
         }
