@@ -1,9 +1,9 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.application.IConstants;
-import br.uff.ic.dyevc.gui.graph.BasicRepositoryHistoryGraph;
+import br.uff.ic.dyevc.graph.BasicRepositoryHistoryGraph;
 import br.uff.ic.dyevc.gui.icons.ColorIcon;
-import br.uff.ic.dyevc.gui.layout.BasicRepositoryHistoryLayout;
+import br.uff.ic.dyevc.graph.visualization.RepositoryHistoryViewer;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
@@ -58,7 +58,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         createLegendPanel();
 
         DirectedSparseMultigraph<CommitInfo, CommitRelationship> graph = BasicRepositoryHistoryGraph.createBasicRepositoryHistoryGraph(rep);
-        this.getContentPane().add(BasicRepositoryHistoryLayout.createBasicRepositoryHistoryView(graph), BorderLayout.CENTER);
+        this.getContentPane().add(RepositoryHistoryViewer.createBasicRepositoryHistoryView(graph), BorderLayout.CENTER);
 
 
     }// </editor-fold>

@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.gui.graph;
+package br.uff.ic.dyevc.graph;
 
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.gui.MessageManager;

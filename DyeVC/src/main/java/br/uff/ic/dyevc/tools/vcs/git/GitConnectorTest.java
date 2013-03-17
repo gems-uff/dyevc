@@ -1,6 +1,8 @@
 package br.uff.ic.dyevc.tools.vcs.git;
 
+import br.uff.ic.dyevc.gui.CommitHistoryWindow;
 import br.uff.ic.dyevc.model.BranchStatus;
+import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.git.TrackedBranch;
 import java.util.Iterator;
 import java.util.List;
@@ -20,10 +22,17 @@ import org.eclipse.jgit.transport.RemoteConfig;
 public class GitConnectorTest {
     public static void main(String[] args) {
         GitConnectorTest test = new GitConnectorTest();
+        test.testGraph();
 //        test.test();
-        test.testCommitHistory();
+//        test.testCommitHistory();
 //        test.testAheadRemoteBranches();
 //        test.testAdjustTargetConfiguration();
+    }
+    
+    private void testGraph() {
+        MonitoredRepository rep = new MonitoredRepository();
+        rep.setId("rep1353176881646");
+        new CommitHistoryWindow(rep).setVisible(true);
     }
     
     private void testCommitHistory() {
