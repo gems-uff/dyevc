@@ -545,7 +545,8 @@ public class MainWindow extends javax.swing.JFrame {
      * @param message the message to be displayed.
      */
     public void notifyMessage(String message) {
-        trayIcon.displayMessage("DyeVC", message, TrayIcon.MessageType.WARNING);
+        trayIcon.displayMessage("DyeVC", message + " Click on this balloon if you want to see details.", TrayIcon.MessageType.WARNING);
+        MessageManager.getInstance().addMessage(message);
     }
     // </editor-fold>
 
@@ -621,7 +622,7 @@ public class MainWindow extends javax.swing.JFrame {
      * @param repStatusList the list of messages to be displayed.
      */
     public void notifyMessages(List<RepositoryStatus> repStatusList) {
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Entry");
+        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Entry");
 
         int countRepsWithMessages = 0;
         for (Iterator<RepositoryStatus> it = repStatusList.iterator(); it.hasNext();) {
@@ -629,18 +630,19 @@ public class MainWindow extends javax.swing.JFrame {
             if (repositoryStatus.isInvalid()) {
                 countRepsWithMessages++;
             } else {
-                for (Iterator<BranchStatus> it1 = repositoryStatus.getNonSyncedRepositoryBranches().iterator(); it1.hasNext();) {
+                if (repositoryStatus.getInvalidBranchesCount() > 0 || 
+                        repositoryStatus.getNonSyncedBranchesCount() > 0) {
                     countRepsWithMessages++;
                 }
             }
         }
 
         if (countRepsWithMessages != lastMessagesCount) {
-            notifyMessage("There are messages on " + countRepsWithMessages + " repositories. Click on this balloon if you want to see details.");
+            notifyMessage("There are messages on " + countRepsWithMessages + " repositories.");
             lastMessagesCount = countRepsWithMessages;
         }
         repoList.repaint();
 
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("notifyMessages -> Exit");
+        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Exit");
     }
 }
