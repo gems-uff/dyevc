@@ -144,7 +144,6 @@ public class RepositoryMonitor extends Thread {
             sourceConnector = new GitConnector(monitoredRepository.getCloneAddress(), monitoredRepository.getId());
             LoggerFactory.getLogger(RepositoryMonitor.class)
                     .debug("processRepository -> created gitConnector for repository {}, id={}", monitoredRepository.getName(), monitoredRepository.getId());
-            checkAuthentication(monitoredRepository, sourceConnector);
 
             String pathTemp = monitoredRepository.getWorkingCloneAddress();
 
@@ -160,7 +159,6 @@ public class RepositoryMonitor extends Thread {
                 tempConnector = new GitConnector(pathTemp, monitoredRepository.getId());
             }
             GitTools.adjustTargetConfiguration(sourceConnector, tempConnector);
-            checkAuthentication(monitoredRepository, tempConnector);
 
             tempConnector.fetchAllRemotes(true);
             result = tempConnector.testAhead();
@@ -224,23 +222,6 @@ public class RepositoryMonitor extends Thread {
             LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder does not exist. A brand new one was created.");
         }
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkWorkingFolder -> Exit.");
-    }
-
-    /**
-     * Checks if a given repository needs authentication to connect to. If true,
-     * sets the credentials according to the configuration parameters provided
-     * by the user.
-     *
-     * @param monitoredRepository the repository to be checked
-     * @param git the connector to the given repository
-     */
-    private void checkAuthentication(MonitoredRepository monitoredRepository, GitConnector git) {
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkAuthentication -> Entry");
-        if (monitoredRepository.needsAuthentication()) {
-            LoggerFactory.getLogger(RepositoryMonitor.class).debug("checkAuthentication -> repository {} needs authentication.", monitoredRepository.getId());
-            git.setCredentials(monitoredRepository.getUser(), monitoredRepository.getPassword());
-        }
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkAuthentication -> Exit");
     }
 
     /**

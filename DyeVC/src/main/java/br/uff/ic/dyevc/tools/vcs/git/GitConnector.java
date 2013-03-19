@@ -31,7 +31,6 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.merge.ResolveMerger.MergeFailureReason;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.FetchResult;
@@ -62,9 +61,6 @@ public class GitConnector {
     private Repository repository;
     private Git git;
     private String id;
-    private UsernamePasswordCredentialsProvider credentialsProvider;
-    private String user;
-    private String password;
 
     /**
      * Gets the reference to the repository connected to this connector
@@ -261,9 +257,6 @@ public class GitConnector {
         PullResult result = null;
         try {
             PullCommand pull = git.pull();
-            if (credentialsProvider != null) {
-                pull.setCredentialsProvider(credentialsProvider);
-            }
             result = pull.call();
             LoggerFactory.getLogger(GitConnector.class).debug("Pull finished. Result: \n {}", result.isSuccessful());
         } catch (GitAPIException ex) {
@@ -319,13 +312,6 @@ public class GitConnector {
         LoggerFactory.getLogger(GitConnector.class).trace("fetch -> Entry. Uri: {}", urish.toString());
         FetchResult result = null;
         FetchCommand fetch = git.fetch();
-        if ((credentialsProvider != null) && (urish.getScheme() != null)
-                && (urish.getHost() != null)) {
-            LoggerFactory.getLogger(GitConnector.class).trace("Repository needs authentication. Setting credentials.");
-            fetch.setCredentialsProvider(credentialsProvider);
-            urish = urish.setUser(user);
-            urish = urish.setPass(password);
-        }
         fetch.setRemote(checkRepositoryPathName(urish.toString()));
         LoggerFactory.getLogger(GitConnector.class).debug("Fetch url: {}", fetch.getRemote());
         fetch.setRefSpecs(refSpec);
@@ -355,9 +341,6 @@ public class GitConnector {
     public void push() throws GitAPIException {
         LoggerFactory.getLogger(GitConnector.class).trace("push -> Entry.");
         PushCommand push = git.push();
-        if (credentialsProvider != null) {
-            push.setCredentialsProvider(credentialsProvider);
-        }
         Iterator<PushResult> it = push.call().iterator();
         LoggerFactory.getLogger(GitConnector.class).trace("push -> Exit.");
     }
@@ -464,9 +447,6 @@ public class GitConnector {
         CloneCommand cloneCmd = Git.cloneRepository();
         cloneCmd.setURI(source);
         cloneCmd.setDirectory(target);
-        if (credentialsProvider != null) {
-            cloneCmd.setCredentialsProvider(credentialsProvider);
-        }
         cloneCmd.setCloneAllBranches(true);
         cloneCmd.setCloneSubmodules(true);
         Git result = null;
@@ -632,13 +612,5 @@ public class GitConnector {
         String gitPath = checkRepositoryPathName(getPath());
         LoggerFactory.getLogger(GitConnector.class).trace("getRepositoryPath -> Exit.");
         return gitPath;
-    }
-
-    public void setCredentials(String user, String password) {
-        LoggerFactory.getLogger(GitConnector.class).trace("setCredentials -> Entry.");
-        credentialsProvider = new UsernamePasswordCredentialsProvider(user, password);
-        this.user = user;
-        this.password = password;
-        LoggerFactory.getLogger(GitConnector.class).trace("setCredentials -> Exit.");
     }
 }

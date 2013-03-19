@@ -36,19 +36,6 @@ public class MonitoredRepository implements Serializable {
      */
     private String cloneAddress;
     /**
-     * Specifies if the monitored repository needs authentication. If true, user
-     * and password attributes must be provided.
-     */
-    private boolean needsAuthentication;
-    /**
-     * User to connect to the monitored repository.
-     */
-    private String user;
-    /**
-     * Password to connect to the monitored repository.
-     */
-    private String password;
-    /**
      * Status of the monitored repository.
      *
      * @see RepositoryStatus
@@ -92,10 +79,7 @@ public class MonitoredRepository implements Serializable {
     public MonitoredRepository() {
         this.name = "";
         this.cloneAddress = "";
-        this.user = "";
-        this.password = "";
         this.id = "";
-        this.needsAuthentication = false;
         this.repStatus = new RepositoryStatus("");
         propertySupport = new PropertyChangeSupport(this);
     }
@@ -123,32 +107,7 @@ public class MonitoredRepository implements Serializable {
         return new StringBuilder("Repository{name=").append(name)
                 .append(", id=").append(id)
                 .append(", cloneAddress=").append(cloneAddress)
-                .append(", needsAuthentication=").append(needsAuthentication)
                 .append("}").toString();
-    }
-
-    public boolean needsAuthentication() {
-        return needsAuthentication;
-    }
-
-    public void setNeedsAuthentication(boolean needsAuthentication) {
-        this.needsAuthentication = needsAuthentication;
-    }
-
-    public String getUser() {
-        return user;
-    }
-
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getId() {
