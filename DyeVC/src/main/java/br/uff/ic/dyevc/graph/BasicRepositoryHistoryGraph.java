@@ -7,7 +7,7 @@ import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitHistory;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
-import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
+import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,8 +23,8 @@ public class BasicRepositoryHistoryGraph {
      * @param rep the repository for which the graph will be created
      * @return a graph representing the repository
      */
-    public static DirectedSparseMultigraph<CommitInfo, CommitRelationship> createBasicRepositoryHistoryGraph(MonitoredRepository rep) {
-        final DirectedSparseMultigraph<CommitInfo, CommitRelationship> graph = new DirectedSparseMultigraph<CommitInfo, CommitRelationship>();
+    public static DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> createBasicRepositoryHistoryGraph(MonitoredRepository rep) {
+        final DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> graph = new DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship>();
         GitConnector git = null;
         try {
             git = new GitConnector(rep.getWorkingCloneAddress(), rep.getId());

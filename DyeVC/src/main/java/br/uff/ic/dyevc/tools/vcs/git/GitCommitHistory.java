@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -42,7 +43,7 @@ public class GitCommitHistory {
      * @param git the connector to be used to connect to a Git repository.
      */
     private GitCommitHistory(GitConnector git) {
-        this.commitInfoMap = new HashMap<String, CommitInfo>();
+        this.commitInfoMap = new TreeMap<String, CommitInfo>();
         this.commitRelationshipList = new ArrayList<CommitRelationship>();
         this.git = git;
         populateHistory();

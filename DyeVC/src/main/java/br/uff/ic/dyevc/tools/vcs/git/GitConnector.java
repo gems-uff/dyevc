@@ -39,7 +39,6 @@ import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.TrackingRefUpdate;
 import org.eclipse.jgit.transport.URIish;
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -552,7 +551,7 @@ public class GitConnector {
      */
     public Iterator<RevCommit> getAllCommitsIterator() {
         LoggerFactory.getLogger(GitConnector.class).trace("getAllCommitsIterator -> Entry.");
-        Iterator<RevCommit> result = new ArrayList<RevCommit>().iterator();
+        Iterator<RevCommit> result = new TreeSet<RevCommit>().iterator();
         try {
             LogCommand logcmd = git.log();
             Map<String, Ref> mapRefsHeads = repository.getRefDatabase().getRefs(IConstants.REFS_HEADS);

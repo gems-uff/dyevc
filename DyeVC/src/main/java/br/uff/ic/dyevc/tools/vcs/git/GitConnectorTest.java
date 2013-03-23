@@ -31,7 +31,7 @@ public class GitConnectorTest {
     
     private void testGraph() {
         MonitoredRepository rep = new MonitoredRepository();
-        rep.setId("rep1353176881646");
+        rep.setId("rep1363653250218");
         new CommitHistoryWindow(rep).setVisible(true);
     }
     
