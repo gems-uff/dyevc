@@ -2,18 +2,54 @@ package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.graph.BasicRepositoryHistoryGraph;
-import br.uff.ic.dyevc.gui.icons.ColorIcon;
-import br.uff.ic.dyevc.graph.visualization.RepositoryHistoryViewer;
+import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
+import br.uff.ic.dyevc.graph.transform.CHVertexLabelTransformer;
+import br.uff.ic.dyevc.graph.transform.ClusterVertexShapeTransformer;
+import br.uff.ic.dyevc.graph.transform.CHVertexTooltipTransformer;
+import br.uff.ic.dyevc.graph.transform.CHVertexPaintTransformer;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
-import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
+import edu.uci.ics.jung.algorithms.filters.EdgePredicateFilter;
+import edu.uci.ics.jung.algorithms.filters.Filter;
+import edu.uci.ics.jung.algorithms.filters.VertexPredicateFilter;
 import java.awt.BorderLayout;
-import java.awt.Font;
+import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.GridLayout;
-import javax.swing.JLabel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.geom.Point2D;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+
+import org.apache.commons.collections15.Predicate;
+import org.apache.commons.collections15.Transformer;
+
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
+import edu.uci.ics.jung.graph.Graph;
+import edu.uci.ics.jung.visualization.DefaultVisualizationModel;
+import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
+import edu.uci.ics.jung.visualization.VisualizationModel;
+import edu.uci.ics.jung.visualization.VisualizationViewer;
+import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
+import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
+import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
+import edu.uci.ics.jung.visualization.control.ScalingControl;
+import edu.uci.ics.jung.visualization.decorators.EdgeShape;
+import edu.uci.ics.jung.visualization.renderers.Renderer;
+import edu.uci.ics.jung.visualization.subLayout.GraphCollapser;
+import edu.uci.ics.jung.visualization.util.PredicatedParallelEdgeIndexFunction;
+import java.awt.Paint;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.ToolTipManager;
 
 /**
  * Displays the commit history for the specified repository
@@ -21,129 +57,268 @@ import javax.swing.SwingConstants;
  * @author cristiano
  */
 public class CommitHistoryWindow extends javax.swing.JFrame {
-
     private static final long serialVersionUID = 1689885032823010309L;
-    private static final Font LEGEND_FONT = new java.awt.Font("Arial", 1, 12);
-    MonitoredRepository rep;
+    private MonitoredRepository rep;
+    private Graph graph;
+    private Graph collapsedGraph;
+    private VisualizationViewer vv;
+    private Layout layout;
+    private GraphCollapser collapser;
+    Filter<CommitInfo, CommitRelationship> edgeFilter;
+    Filter<CommitInfo, CommitRelationship> nodeFilter;
+    private JComboBox edgeLineShapeCombo;
+    private JComboBox mouseModesCombo;
+    private JButton plus;
+    private JButton minus;
+    private JButton collapse;
+    private JButton expand;
+    private JButton reset;
+    private final DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse();
+    private final ScalingControl scaler = new CrossoverScalingControl();
 
-    /**
-     * Creates new form CommitHistoryWindow
-     */
     public CommitHistoryWindow(MonitoredRepository rep) {
         this.rep = rep;
+        initGraphComponent();
         initComponents();
     }
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        setTitle("Commit History");
+        setTitle("Commit History for repository " + rep.getName());
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         setBounds((screenSize.width - 700) / 2, (screenSize.height - 750) / 2, 700, 750);
 
-        JPanel pnlTitle = new javax.swing.JPanel();
-        pnlTitle.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-        pnlTitle.setLayout(new BorderLayout(getWidth(), 30));
-        pnlTitle.setBackground(IConstants.BACKGROUND_COLOR);
-        
-        JLabel lblTitle = new JLabel();
-        lblTitle.setText("Log for repository " + rep.getName());
-        lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        lblTitle.setVerticalAlignment(SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
-        
-        pnlTitle.add(lblTitle, BorderLayout.CENTER);
-        this.getContentPane().add(pnlTitle, BorderLayout.PAGE_START);
-        
-        createLegendPanel();
+        mouseModesCombo = graphMouse.getModeComboBox();
+        mouseModesCombo.addItemListener(graphMouse.getModeListener());
+        graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
 
-        DirectedSparseMultigraph<CommitInfo, CommitRelationship> graph = BasicRepositoryHistoryGraph.createBasicRepositoryHistoryGraph(rep);
-        this.getContentPane().add(RepositoryHistoryViewer.createBasicRepositoryHistoryView(graph), BorderLayout.CENTER);
+        plus = new JButton("+");
+        plus.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                scaler.scale(vv, 1.1f, vv.getCenter());
+            }
+        });
 
+        minus = new JButton("-");
+        minus.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                scaler.scale(vv, 1 / 1.1f, vv.getCenter());
+            }
+        });
 
+        collapse = new JButton("Collapse");
+        collapse.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                collapseActionPerformed(e);
+            }
+        });
+
+        expand = new JButton("Expand");
+        expand.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                expandActionPerformed(e);
+            }
+        });
+
+        reset = new JButton("Reset");
+        reset.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ResetActionPerformed(e);
+            }
+        });
+
+        edgeLineShapeCombo = new JComboBox();
+        this.edgeLineShapeCombo.setModel(new DefaultComboBoxModel(new String[]{"QuadCurve", "Line", "CubicCurve"}));
+        this.edgeLineShapeCombo.setSelectedItem("Line");
+        this.edgeLineShapeCombo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                edgeLineShapeSelectionActionPerformed(evt);
+            }
+        });
+
+        Container content = getContentPane();
+        GraphZoomScrollPane gzsp = new GraphZoomScrollPane(vv);
+        content.add(gzsp);
+
+        JPanel controls = new JPanel();
+        JPanel zoomControls = new JPanel(new GridLayout(2, 1));
+        zoomControls.setBorder(BorderFactory.createTitledBorder("Zoom"));
+        zoomControls.add(plus);
+        zoomControls.add(minus);
+        controls.add(zoomControls);
+        JPanel collapseControls = new JPanel(new GridLayout(3, 1));
+        collapseControls.setBorder(BorderFactory.createTitledBorder("Picked"));
+        collapseControls.add(collapse);
+        collapseControls.add(expand);
+        collapseControls.add(reset);
+        controls.add(collapseControls);
+        controls.add(mouseModesCombo);
+        controls.add(edgeLineShapeCombo);
+        content.add(controls, BorderLayout.SOUTH);
     }// </editor-fold>
-    
-    // <editor-fold defaultstate="collapsed" desc="createLegendPanel">
+
+    // <editor-fold defaultstate="collapsed" desc="initGraphComponent">
+    private void initGraphComponent() {
+        // create the commit history graph with all commits from repository
+        graph = BasicRepositoryHistoryGraph.createBasicRepositoryHistoryGraph(rep);
+        collapsedGraph = graph;
+
+        // Choosing layout
+        layout = new RepositoryHistoryLayout(graph);
+        Dimension preferredSize = new Dimension(580, 580);
+
+        final VisualizationModel visualizationModel =
+                new DefaultVisualizationModel(layout, preferredSize);
+        vv = new VisualizationViewer(visualizationModel, preferredSize);
+
+        //Scales the graph to show more nodes
+        scaler.scale(vv, 0.4761905F, vv.getCenter());
+        vv.scaleToLayout(scaler);
+
+        collapser = new GraphCollapser(graph);
+
+        final PredicatedParallelEdgeIndexFunction eif = PredicatedParallelEdgeIndexFunction.getInstance();
+        final Set exclusions = new HashSet();
+        eif.setPredicate(new Predicate<CommitInfo>() {
+            @Override
+            public boolean evaluate(CommitInfo e) {
+                return exclusions.contains(e);
+            }
+        });
+        vv.getRenderContext().setParallelEdgeIndexFunction(eif);
+
+        vv.setBackground(IConstants.BACKGROUND_COLOR);
+
+        // Adds interaction via mouse
+        vv.setGraphMouse(graphMouse);
+        vv.addKeyListener(graphMouse.getModeKeyListener());
+
+        nodeFilter = new VertexPredicateFilter(new Predicate<CommitInfo>() {
+            @Override
+            public boolean evaluate(CommitInfo ci) {
+                return true;
+            }
+        });
+
+        edgeFilter = new EdgePredicateFilter(new Predicate<CommitRelationship>() {
+            @Override
+            public boolean evaluate(CommitRelationship cr) {
+                return true;
+            }
+        });
+
+        // <editor-fold defaultstate="collapsed" desc="vertex tooltip transformer">
+        Transformer<Object, String> vertexTooltip = new CHVertexTooltipTransformer();
+        vv.setVertexToolTipTransformer(vertexTooltip);
+        ToolTipManager.sharedInstance().setDismissDelay(15000);
+        //</editor-fold>
+
+        // <editor-fold defaultstate="collapsed" desc="vertex fillPaint transformer">
+        Transformer<Object, Paint> vertexPaint = new CHVertexPaintTransformer();
+        vv.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
+        //</editor-fold>
+
+        // <editor-fold defaultstate="collapsed" desc="vertex label transformer">
+        Transformer<Object, String> vertexLabel = new CHVertexLabelTransformer();
+        vv.getRenderContext().setVertexLabelTransformer(vertexLabel);
+        vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
+        //</editor-fold>
+
+        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
+        vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeTransformer());
+    }
+    //</editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="action handlers">
+    private void collapseActionPerformed(ActionEvent evt) {
+        Collection picked = new HashSet(vv.getPickedVertexState().getPicked());
+        collapse(picked);
+    }
+
+    private void expandActionPerformed(ActionEvent e) {
+        Collection picked = new HashSet(vv.getPickedVertexState().getPicked());
+        expand(picked);
+    }
+
+    private void ResetActionPerformed(ActionEvent evt) {
+        resetGraph();
+    }
+
+    private void edgeLineShapeSelectionActionPerformed(ActionEvent evt) {
+        String mode = (String) this.edgeLineShapeCombo.getSelectedItem();
+        if (mode.equalsIgnoreCase("QuadCurve")) {
+            vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.QuadCurve());
+        } else if (mode.equalsIgnoreCase("Line")) {
+            vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
+        } else if (mode.equalsIgnoreCase("CubicCurve")) {
+            vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.CubicCurve());
+        }
+        this.vv.repaint();
+    }
+    // </editor-fold>
+
+    private void collapse(Collection picked) {
+//        AddFilters();
+        if (picked.size() > 1) {
+            Graph inGraph = layout.getGraph();
+            Graph clusterGraph = collapser.getClusterGraph(inGraph, picked);
+
+            collapsedGraph = ((DirectedOrderedSparseMultigraph) collapser.collapse(layout.getGraph(), clusterGraph));
+            double sumx = 0;
+            double sumy = 0;
+            for (Object v : picked) {
+                Point2D p = (Point2D) layout.transform(v);
+                sumx += p.getX();
+                sumy += p.getY();
+            }
+            Point2D cp = new Point2D.Double(sumx / picked.size(), sumy / picked.size());
+            vv.getRenderContext().getParallelEdgeIndexFunction().reset();
+            layout.setGraph(collapsedGraph);
+            layout.setLocation(clusterGraph, cp);
+            vv.getPickedVertexState().clear();
+            vv.repaint();
+        }
+//    RemoveFilters();
+    }
+
+    private void expand(Collection picked) {
+        for (Object v : picked) {
+            if (v instanceof Graph) {
+//                AddFilters();
+                collapsedGraph = ((DirectedOrderedSparseMultigraph) collapser.expand(layout.getGraph(), (Graph) v));
+                vv.getRenderContext().getParallelEdgeIndexFunction().reset();
+                layout.setGraph(collapsedGraph);
+
+            }
+//            RemoveFilters();
+//            Filter();
+            
+            vv.getPickedVertexState().clear();
+            vv.repaint();
+        }
+    }
+
+    private void resetGraph() {
+        layout.setGraph(graph);
+        collapsedGraph = graph;
+//        RemoveFilters();
+        vv.repaint();
+    }
+
     /**
-     * Creates the legend panel.
+     * runs the graph with a demo repository
      */
-    private void createLegendPanel() {
-        JPanel pnlLegend = new javax.swing.JPanel();
-        
-        JPanel pnlLegendContents = new javax.swing.JPanel();
-        pnlLegendContents.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-        pnlLegendContents.setBackground(IConstants.BACKGROUND_COLOR);
-
-        JLabel lblLegend = new javax.swing.JLabel();
-        JLabel lblRegular = new javax.swing.JLabel();
-        JLabel lblHead = new javax.swing.JLabel();
-        JLabel lblInitial = new javax.swing.JLabel();
-        JLabel lblBlank = new javax.swing.JLabel();
-        JLabel lblMerge = new javax.swing.JLabel();
-        JLabel lblSplit = new javax.swing.JLabel();
-        JLabel lblMergeSplit = new javax.swing.JLabel();
-
-        GridLayout grid = new java.awt.GridLayout(4, 2);
-        grid.setHgap(3);
-        pnlLegendContents.setLayout(grid);
-
-        lblLegend.setFont(LEGEND_FONT);
-        lblLegend.setText("Legend:");
-        pnlLegendContents.add(lblLegend);
-
-        lblBlank.setFont(LEGEND_FONT);
-        lblBlank.setText("");
-        pnlLegendContents.add(lblBlank);
-
-        lblRegular.setFont(LEGEND_FONT);
-        lblRegular.setText("Regular commit");
-        lblRegular.setIcon(new ColorIcon(IConstants.COLOR_REGULAR));
-        pnlLegendContents.add(lblRegular);
-
-        lblHead.setFont(LEGEND_FONT);
-        lblHead.setText("Branch's head");
-        lblHead.setIcon(new ColorIcon(IConstants.COLOR_HEAD));
-        pnlLegendContents.add(lblHead);
-
-        lblInitial.setFont(LEGEND_FONT);
-        lblInitial.setText("Initial commit");
-        lblInitial.setIcon(new ColorIcon(IConstants.COLOR_FIRST));
-        pnlLegendContents.add(lblInitial);
-
-        lblMerge.setFont(LEGEND_FONT);
-        lblMerge.setText("Merge commit");
-        lblMerge.setIcon(new ColorIcon(IConstants.COLOR_MERGE));
-        pnlLegendContents.add(lblMerge);
-
-        lblSplit.setFont(LEGEND_FONT);
-        lblSplit.setText("Split commit");
-        lblSplit.setIcon(new ColorIcon(IConstants.COLOR_SPLIT));
-        pnlLegendContents.add(lblSplit);
-
-        lblMergeSplit.setFont(LEGEND_FONT);
-        lblMergeSplit.setText("Merge and split commit");
-        lblMergeSplit.setIcon(new ColorIcon(IConstants.COLOR_MERGE_SPLIT));
-        pnlLegendContents.add(lblMergeSplit);
-        
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(pnlLegend);
-        pnlLegend.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(pnlLegendContents, javax.swing.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(pnlLegendContents, javax.swing.GroupLayout.DEFAULT_SIZE, 90, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-        
-        this.getContentPane().add(pnlLegend, BorderLayout.PAGE_END);
-    }//</editor-fold>
-    
-
+    public static void main(String[] args) {
+        MonitoredRepository rep = new MonitoredRepository();
+        rep.setId("rep1363653250218");
+//        rep.setId("rep1364318989748");
+        new CommitHistoryWindow(rep).setVisible(true);
+    }
 }

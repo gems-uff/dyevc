@@ -21,4 +21,7 @@ public interface IConstants {
     public static final Color COLOR_FIRST = Color.BLACK;
     public static final Color COLOR_MERGE = Color.GREEN;
     public static final Color COLOR_SPLIT = Color.RED;
+    public static final Color COLOR_COLLAPSED = Color.MAGENTA;
+    public static final int GRAPH_VERTEX_SINGLE_SIZE = 20;
+    public static final int GRAPH_VERTEX_CLUSTER_SIZE = 50;
 }

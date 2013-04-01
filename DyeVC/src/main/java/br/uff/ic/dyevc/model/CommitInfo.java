@@ -48,6 +48,11 @@ public class CommitInfo implements Comparable<CommitInfo> {
     private int childrenCount = 0;
     private final Integer childrenCountLock = new Integer(0);
 
+    /**
+     * Indicates if this commit was already visited in the process of plotting the graph
+     */
+    private boolean visited = false;
+    
     public CommitInfo(String id) {
         this.id = id;
     }
@@ -137,6 +142,20 @@ public class CommitInfo implements Comparable<CommitInfo> {
             result = 0;
         }
         return result;
+    }
+
+    /**
+     * @return the visited
+     */
+    public boolean isVisited() {
+        return visited;
+    }
+
+    /**
+     * @param visited the visited to set
+     */
+    public void setVisited(boolean visited) {
+        this.visited = visited;
     }
     
 }
