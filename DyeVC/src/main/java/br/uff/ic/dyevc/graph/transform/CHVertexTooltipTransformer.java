@@ -1,5 +1,6 @@
 package br.uff.ic.dyevc.graph.transform;
 
+import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.utils.DateUtil;
 import edu.uci.ics.jung.graph.Graph;
@@ -28,7 +29,7 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
         }
         if (o instanceof CommitInfo) {
             CommitInfo ci = (CommitInfo) o;
-
+            details.append("<html>");
             if (ci.getParentsCount() == 0) {
                 details.append("<b>This is the first commit!</b>").append("<br><br>");
             }
@@ -43,8 +44,18 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
                     .append(ci.getCommitter())
                     .append("<br>");
             details.append("<b>message: </b>")
-                    .append(ci.getShortMessage())
-                    .append("</html>");
+                    .append(ci.getShortMessage());
+            
+            if (!ci.getChangeSet().isEmpty()) {
+                details.append("<br><br>");
+                details.append("<b>Affected paths:</b><br>");
+            }
+            for (CommitChange cc : ci.getChangeSet()) {
+                details.append("&nbsp;&nbsp;&nbsp;&nbsp;")
+                        .append(cc.toString())
+                        .append("<br>");
+            }
+            details.append("</html>");
         }
         return details.toString();
     }

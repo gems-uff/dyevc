@@ -1,6 +1,8 @@
 package br.uff.ic.dyevc.model;
 
 import java.util.Date;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Stores information about a singular commit made to VCS.
@@ -48,6 +50,11 @@ public class CommitInfo implements Comparable<CommitInfo> {
     private int childrenCount = 0;
     private final Integer childrenCountLock = new Integer(0);
 
+    /**
+     * Set of the paths that were affected by this commit
+     */
+    private Set<CommitChange> changeSet = new TreeSet<CommitChange>();
+    
     /**
      * Indicates if this commit was already visited in the process of plotting the graph
      */
@@ -157,5 +164,22 @@ public class CommitInfo implements Comparable<CommitInfo> {
     public void setVisited(boolean visited) {
         this.visited = visited;
     }
+
+    /**
+     * @return the changeSet
+     */
+    public Set<CommitChange> getChangeSet() {
+        return changeSet;
+    }
+
+    /**
+     * @param changeSet the changeSet to set
+     */
+    public void setChangeSet(Set<CommitChange> changeSet) {
+        this.changeSet = changeSet;
+    }
     
+    public void addChangePath(CommitChange cc) {
+        this.changeSet.add(cc);
+    }
 }
