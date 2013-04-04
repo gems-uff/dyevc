@@ -1,6 +1,5 @@
 package br.uff.ic.dyevc.monitor;
 
-import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.VCSException;
@@ -16,7 +15,6 @@ import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.LoggerFactory;
@@ -33,12 +31,14 @@ public class RepositoryMonitor extends Thread {
     private MonitoredRepositories repos;
     private List<RepositoryStatus> statusList;
     private MainWindow container;
+    private MonitoredRepository repositoryToMonitor;
 
     /**
-     * Associates the specified window container and continuously monitors the 
+     * Associates the specified window container and continuously monitors the
      * specified list of repositories.
-     * @param container the container for this monitor. It will be used to 
-     * send messages during monitoring.
+     *
+     * @param container the container for this monitor. It will be used to send
+     * messages during monitoring.
      * @param mr the model of monitored repositories to be checked.
      */
     public RepositoryMonitor(MainWindow container, MonitoredRepositories mr) {
@@ -51,7 +51,7 @@ public class RepositoryMonitor extends Thread {
     }
 
     /**
-     * Runs the monitor. After running, monitor sleeps for the time specified by 
+     * Runs the monitor. After running, monitor sleeps for the time specified by
      * the refresh interval application property.
      */
     @Override
@@ -61,12 +61,17 @@ public class RepositoryMonitor extends Thread {
         while (true) {
             try {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
-                statusList = new ArrayList<RepositoryStatus>();
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.getSize());
                 checkWorkingFolder();
-                for (Iterator<MonitoredRepository> it = repos.getMonitoredProjects().iterator(); it.hasNext();) {
-                    MonitoredRepository monitoredRepository = it.next();
-                    checkRepository(monitoredRepository);
+                statusList = new ArrayList<RepositoryStatus>();
+                if (repositoryToMonitor == null) { //monitor all repositories
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.getSize());
+                    for (MonitoredRepository monitoredRepository : repos.getMonitoredProjects()) {
+                        checkRepository(monitoredRepository);
+                    }
+                } else { //monitor specified repository
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Manual monitoring requested for repository {}.", repositoryToMonitor.getName());
+                    checkRepository(repositoryToMonitor);
+                    setRepositoryToMonitor(null);
                 }
                 container.notifyMessages(statusList);
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Will now sleep for {} seconds.", sleepTime);
@@ -94,6 +99,8 @@ public class RepositoryMonitor extends Thread {
                 LoggerFactory.getLogger(RepositoryMonitor.class).info("Waking up due to interruption received.");
             }
         }
+
+
     }
 
     /**
@@ -109,29 +116,32 @@ public class RepositoryMonitor extends Thread {
         RepositoryStatus repStatus = new RepositoryStatus(monitoredRepository.getId());
 
         if (!GitConnector.isValidRepository(monitoredRepository.getCloneAddress())) {
-           List<BranchStatus> status = markInvalidRepository(monitoredRepository);
-           repStatus.addBranchStatusList(status);
+            List<BranchStatus> status = markInvalidRepository(monitoredRepository);
+            repStatus.addBranchStatusList(status);
         } else {
             try {
                 List<BranchStatus> status = processRepository(monitoredRepository);
                 repStatus.addBranchStatusList(status);
             } catch (VCSException ex) {
-                
-            MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <" +
-                    monitoredRepository.getName() + "> with id <" + monitoredRepository.getId() + ">.");
-            LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .error("It was not possible to finish monitoring of repository <{}> with id <{}>",
-                    monitoredRepository.getName(), monitoredRepository.getId());
+
+                MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <"
+                        + monitoredRepository.getName() + "> with id <" + monitoredRepository.getId() + ">.");
+                LoggerFactory.getLogger(RepositoryMonitor.class)
+                        .error("It was not possible to finish monitoring of repository <{}> with id <{}>",
+                        monitoredRepository.getName(), monitoredRepository.getId());
             }
         }
-        
+
         monitoredRepository.setRepStatus(repStatus);
+
         statusList.add(repStatus);
+
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Exit. Repository: {}", monitoredRepository.getName());
     }
 
     /**
      * Process a valid repository to check its behind and ahead status
+     *
      * @param monitoredRepository the repository to be processed
      * @return a list of status for the given repository
      */
@@ -164,15 +174,15 @@ public class RepositoryMonitor extends Thread {
             result = tempConnector.testAhead();
         } finally {
             if (sourceConnector != null) {
-            LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .debug("About to close connection with repository <{}> with id <{}>",
-                    monitoredRepository.getName(), monitoredRepository.getId());
+                LoggerFactory.getLogger(RepositoryMonitor.class)
+                        .debug("About to close connection with repository <{}> with id <{}>",
+                        monitoredRepository.getName(), monitoredRepository.getId());
                 sourceConnector.close();
             }
             if (tempConnector != null) {
-            LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .debug("About to close connection with temp repository for <{}> with id <{}>",
-                    monitoredRepository.getName(), monitoredRepository.getId());
+                LoggerFactory.getLogger(RepositoryMonitor.class)
+                        .debug("About to close connection with temp repository for <{}> with id <{}>",
+                        monitoredRepository.getName(), monitoredRepository.getId());
                 tempConnector.close();
             }
         }
@@ -180,9 +190,10 @@ public class RepositoryMonitor extends Thread {
         return result;
     }
 
-
     /**
-     * Marks a monitored repository as invalid and deletes the related temp folder
+     * Marks a monitored repository as invalid and deletes the related temp
+     * folder
+     *
      * @param monitoredRepository the repository to be marked
      */
     private List<BranchStatus> markInvalidRepository(MonitoredRepository monitoredRepository) {
@@ -196,6 +207,7 @@ public class RepositoryMonitor extends Thread {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("markInvalidRepository -> Exit.");
         return listStatus;
     }
+
     /**
      * Verifies whether the working folder exists or not. If false, creates it,
      * otherwise, looks for orphaned folders related to projects not monitored
@@ -289,5 +301,19 @@ public class RepositoryMonitor extends Thread {
             LoggerFactory.getLogger(RepositoryMonitor.class)
                     .error("It was not possible to delete folder " + pathToDelete, ex);
         }
+    }
+
+    /**
+     * @param repositoryToMonitor the repositoryToMonitor to set
+     */
+    public synchronized void setRepositoryToMonitor(MonitoredRepository repos) {
+        repositoryToMonitor = repos;
+    }
+
+    /**
+     * @return the repositoryToMonitor
+     */
+    public synchronized MonitoredRepository getRepositoryToMonitor() {
+        return repositoryToMonitor;
     }
 }

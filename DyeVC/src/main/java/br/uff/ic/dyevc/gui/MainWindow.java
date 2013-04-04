@@ -425,6 +425,16 @@ public class MainWindow extends javax.swing.JFrame {
         }
     }
 
+    private void mntCheckProjectActionPerformed(ActionEvent evt) {
+        MonitoredRepository rep = getSelectedRepository();
+        if (monitor.getState().equals(Thread.State.TIMED_WAITING)) {
+            monitor.setRepositoryToMonitor(rep);
+            monitor.interrupt();
+        } else {
+            JOptionPane.showMessageDialog(repoList, "Monitor is busy now. Please try again later.", "Information", JOptionPane.OK_OPTION);
+        }
+    }
+
     private void mntExitActionPerformed(java.awt.event.ActionEvent evt) {
         System.exit(0);
     }
@@ -451,6 +461,16 @@ public class MainWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="repoList menu">  
     private void buildRepoListPopup() {
         jPopupRepoList = new JPopupMenu();
+        JMenuItem mntCheckProject = new javax.swing.JMenuItem();
+        mntCheckProject.setText("Check Project");
+        mntCheckProject.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntCheckProjectActionPerformed(evt);
+            }
+        });
+        jPopupRepoList.add(mntCheckProject);
+
         JMenuItem mntEditProject = new javax.swing.JMenuItem();
         mntEditProject.setText("Edit Project");
         mntEditProject.addActionListener(new java.awt.event.ActionListener() {
