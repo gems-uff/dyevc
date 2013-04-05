@@ -60,7 +60,8 @@ class RepositoryRenderer extends DefaultListCellRenderer {
             tooltip.append(DateUtil.format(repStatus.getLastCheckedTime(), "yyyy-MM-dd HH:mm:ss"));
             if (repStatus.isInvalid()) {
                 listItem.setIcon(ImageUtils.getInstance().getIcon("nocheck_32.png"));
-                tooltip.append("<br><br>Repository location is invalid. Please check or remove it from the configured repositories list.");
+                tooltip.append("<br><br><b>Repository could not be checked.</b> Message received from monitor: <br>")
+                        .append(repStatus.getInvalidMessage());
             } else {
                 if ((repStatus.getNonSyncedBranchesCount() == 0) && (repStatus.getInvalidBranchesCount() == 0)) {
                     listItem.setIcon(ImageUtils.getInstance().getIcon("check_32.png"));

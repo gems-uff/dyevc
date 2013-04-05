@@ -31,6 +31,12 @@ public class RepositoryStatus {
     private boolean invalid;
     
     /**
+     * If repository is invalid, stores the exception message received trying to
+     * access it.
+     */
+    private String invalidMessage;
+    
+    /**
      * List of branches that are synchronized.
      */
     private List<BranchStatus> syncedList;
@@ -60,6 +66,7 @@ public class RepositoryStatus {
         syncedList = new ArrayList<BranchStatus>();
         nonSyncedList = new ArrayList<BranchStatus>();
         invalidList = new ArrayList<BranchStatus>();
+        invalid = false;
         if (!"".equals(repId)) {
             lastCheckedTime = new Date(System.currentTimeMillis());
         }
@@ -140,5 +147,17 @@ public class RepositoryStatus {
      */
     public int getBehindCount() {
         return behindCount;
+    }
+
+    /**
+     * @return the invalidMessage
+     */
+    public String getInvalidMessage() {
+        return invalidMessage;
+    }
+    
+    public void setInvalid(String invalidMessage) {
+        this.invalid = true;
+        this.invalidMessage = invalidMessage;
     }
 }

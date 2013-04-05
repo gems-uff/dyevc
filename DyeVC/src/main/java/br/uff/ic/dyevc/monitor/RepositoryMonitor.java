@@ -114,21 +114,21 @@ public class RepositoryMonitor extends Thread {
                 .trace("checkRepository -> Entry. Repository: {}, id:{}", monitoredRepository.getName(), monitoredRepository.getId());
 
         RepositoryStatus repStatus = new RepositoryStatus(monitoredRepository.getId());
+        String cloneAddress = monitoredRepository.getCloneAddress();
 
-        if (!GitConnector.isValidRepository(monitoredRepository.getCloneAddress())) {
-            List<BranchStatus> status = markInvalidRepository(monitoredRepository);
-            repStatus.addBranchStatusList(status);
+        if (!GitConnector.isValidRepository(cloneAddress)) {
+            repStatus.setInvalid("<" + cloneAddress + "> is not a valid repository path.");
         } else {
             try {
                 List<BranchStatus> status = processRepository(monitoredRepository);
                 repStatus.addBranchStatusList(status);
             } catch (VCSException ex) {
-
                 MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <"
                         + monitoredRepository.getName() + "> with id <" + monitoredRepository.getId() + ">.");
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .error("It was not possible to finish monitoring of repository <{}> with id <{}>",
                         monitoredRepository.getName(), monitoredRepository.getId());
+                repStatus.setInvalid(ex.getCause().toString());
             }
         }
 
@@ -188,24 +188,6 @@ public class RepositoryMonitor extends Thread {
         }
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Exit. Repository: {}", monitoredRepository.getName());
         return result;
-    }
-
-    /**
-     * Marks a monitored repository as invalid and deletes the related temp
-     * folder
-     *
-     * @param monitoredRepository the repository to be marked
-     */
-    private List<BranchStatus> markInvalidRepository(MonitoredRepository monitoredRepository) {
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("markInvalidRepository -> Entry.");
-        LoggerFactory.getLogger(RepositoryMonitor.class).debug("Marking <{}> as an invalid repository.", monitoredRepository.getName());
-        deleteDirectory(new File(settings.getWorkingPath()), monitoredRepository.getId());
-        List<BranchStatus> listStatus = new ArrayList<BranchStatus>();
-        BranchStatus status = new BranchStatus();
-        status.setInvalid();
-        listStatus.add(status);
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("markInvalidRepository -> Exit.");
-        return listStatus;
     }
 
     /**
