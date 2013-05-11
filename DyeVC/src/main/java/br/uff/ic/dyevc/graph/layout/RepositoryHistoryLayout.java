@@ -47,24 +47,6 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
         calcPositions(initialVertex, xPos, yPos, yFather);
     }
 
-    /**
-     * Calculates the position for each vertex of the graph
-     *
-     * @param v Vertex whose position will be set
-     * @param xPos X position of previous vertex
-     * @param yPos Y position of previous vertex
-     * @param yFather Y position of the father of v's branch
-     */
-    protected synchronized void calcPositions(V v, double xPos, double yPos, double yFather) {
-        if (v instanceof CommitInfo) {
-            CommitInfo ci = (CommitInfo) v;
-            if (!ci.isVisited()) {
-                ci.setVisited(true);
-                processNode(v, xPos, yPos, yFather);
-            }
-        }
-    }
-
     protected boolean Equals(double a, double b) {
         return Math.abs(a - b) < EPSILON;
     }
@@ -100,6 +82,27 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
         return result;
     }
 
+    /**
+     * Calculates the position for each vertex of the graph
+     *
+     * @param v Vertex whose position will be set
+     * @param xPos X position of previous vertex
+     * @param yPos Y position of previous vertex
+     * @param yFather Y position of the father of v's branch
+     */
+    protected synchronized void calcPositions(V v, double xPos, double yPos, double yFather) {
+        if (v instanceof CommitInfo) {
+            CommitInfo ci = (CommitInfo) v;
+            if (!ci.isVisited()) {
+                //only process node if all its father's were already visited
+                if (allParentsVisited(v)) {
+                    ci.setVisited(true);
+                    processNode(v, xPos, yPos, yFather);
+                }
+            }
+        }
+    }
+
     private void processNode(V v, double xPos, double yPos, double yFather) {
         Point2D xyd = transform(v);
 
@@ -116,10 +119,11 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
         }
 
         if (parentsCount > 1) {
-            // more parents -> this is a merge, return to father's yPos and increment xPos
+            // more parents -> this is a merge, return to father's yPos and use greatest father's x to increment x position
             yPos = yFather;
-            xPos += XDISTANCE;
+            xPos = maxXParents(v) + XDISTANCE;
         }
+
         xyd.setLocation(xPos, yPos);
 
         boolean evenNode = false;
@@ -140,5 +144,23 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
             calcPositions(vx, xPos, yChild, yFather);
             evenNode = !evenNode;
         }
+    }
+
+    private boolean allParentsVisited(V v) {
+        for (V vx : graph.getSuccessors(v)) {
+            if (!((CommitInfo)vx).isVisited()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private double maxXParents(V v) {
+        double maxX = 0;
+        for (V vx : graph.getSuccessors(v)) {
+            Point2D xyd = transform(vx);
+            maxX = Math.max(maxX, xyd.getX());
+        }
+        return maxX;
     }
 }
