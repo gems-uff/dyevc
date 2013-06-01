@@ -28,14 +28,19 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
             details.append("</B> nodes.</html>");
         }
         if (o instanceof CommitInfo) {
+            StringBuilder header = new StringBuilder();
             CommitInfo ci = (CommitInfo) o;
+            int children = ci.getChildrenCount();
+            int parents = ci.getParentsCount();
             details.append("<html>");
-            if (ci.getParentsCount() == 0) {
-                details.append("<b>This is the first commit!</b>").append("<br><br>");
-            }
-            if (ci.getChildrenCount() == 0) {
-                details.append("<b>This is a branch's head!</b>").append("<br><br>");
-            }
+            
+            if (parents == 0) header.append("<b>This is the first commit!</b><br>");
+            if (children == 0) header.append("<b>This is a branch's head!</b><br>");
+            if (children > 1) header.append("<b> This node splits into ").append(children).append(" branches.</b><br>");
+            if (ci.getParentsCount() > 1) header.append("<b> This node merges ").append(parents).append(" branches.</b><br>");
+            if (header.length() > 0) header.append("<br>");
+            
+            details.append(header);
             details.append("<b>Commit id: </b>").append(ci.getId()).append("<br>");
             details.append("<b>time: </b>")
                     .append(DateUtil.format(ci.getCommitDate(), "yyyy-MM-dd HH:mm:ss.SSS"))

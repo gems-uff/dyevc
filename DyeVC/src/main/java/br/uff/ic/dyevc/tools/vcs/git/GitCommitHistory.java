@@ -6,6 +6,8 @@ import br.uff.ic.dyevc.model.CommitRelationship;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -84,7 +86,12 @@ public class GitCommitHistory {
      * @return the list of commits
      */
     public Collection<CommitInfo> getCommitInfos() {
-        return commitInfoMap.values();
+        List<CommitInfo> cis = new ArrayList<CommitInfo>(commitInfoMap.values());
+
+        Comparator<CommitInfo> comparator = new CommitInfoDateComparator();
+        
+        Collections.sort(cis, comparator);
+        return cis;
     }
 
     /**
@@ -198,7 +205,7 @@ public class GitCommitHistory {
         try {
             rw = new RevWalk(git.getRepository());
             RevCommit parent;
-            
+
             DiffFormatter df = new DiffFormatter(DisabledOutputStream.INSTANCE);
             df.setRepository(git.getRepository());
             df.setDiffComparator(RawTextComparator.DEFAULT);
@@ -217,7 +224,7 @@ public class GitCommitHistory {
                 cc.setChangeType(diff.getChangeType().name());
                 cc.setOldPath(diff.getOldPath());
                 cc.setNewPath(diff.getNewPath());
-                
+
                 ci.addChangePath(cc);
             }
             df.release();

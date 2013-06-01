@@ -5,6 +5,7 @@ import edu.uci.ics.jung.algorithms.layout.AbstractLayout;
 import edu.uci.ics.jung.algorithms.util.IterativeContext;
 import edu.uci.ics.jung.graph.Graph;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 
 /**
  * Layout for drawing a repository history
@@ -17,6 +18,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     private static final double YDISTANCE = 50.0;
     private static final double VARIATION = 30;
     private static final double EPSILON = 0.000001D;
+    private ArrayList<V> heads = new ArrayList<V>();
 
     /**
      * Creates an instance for the specified graph.
@@ -36,15 +38,19 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     }
 
     private void doInit() {
-        //Starting Y position
-        double yPos = 0.0;
+        //Initial height of tree
+        int height = 0;
         //Y position of node's branch's father
         double yFather = 0.0;
         //Starting X position
         double xPos = 0.0;
 
-        V initialVertex = getInitialVertex();
-        calcPositions(initialVertex, xPos, yPos, yFather);
+        heads.clear();
+        calcXPositionsAndSelectHeads(xPos);
+        while (!heads.isEmpty()) {
+            V v = heads.remove(heads.size() - 1);
+            height = calcYPositions(v, height);
+        }
     }
 
     protected boolean Equals(double a, double b) {
@@ -71,96 +77,56 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     public void step() {
     }
 
-    private V getInitialVertex() {
-        V result = null;
-        for (V v : graph.getVertices()) {
-            if (graph.getSuccessorCount(v) == 0) {
-                result = v;
-                break;
-            }
-        }
-        return result;
-    }
-
     /**
      * Calculates the position for each vertex of the graph
      *
-     * @param v Vertex whose position will be set
-     * @param xPos X position of previous vertex
-     * @param yPos Y position of previous vertex
-     * @param yFather Y position of the father of v's branch
+     * @param v Initial vertex of subtree to calculate height
+     * @param height Initial height of subtree
      */
-    protected synchronized void calcPositions(V v, double xPos, double yPos, double yFather) {
-        if (v instanceof CommitInfo) {
-            CommitInfo ci = (CommitInfo) v;
-            if (!ci.isVisited()) {
-                //only process node if all its father's were already visited
-                if (allParentsVisited(v)) {
+    protected synchronized int calcYPositions(V v, int height) {
+        //maxHeight of subtree is initially equals to height
+        int maxHeight = height;
+        boolean visited = false;
+        while (!visited) {
+            if (v instanceof CommitInfo) {
+                CommitInfo ci = (CommitInfo) v;
+                visited = ci.isVisited();
+                if (!visited) {
                     ci.setVisited(true);
-                    processNode(v, xPos, yPos, yFather);
+                    Point2D xyd = transform(v);
+                    xyd.setLocation(xyd.getX(), YDISTANCE * height);
+                    int parentsCount = graph.getSuccessorCount(v);
+                    if (parentsCount == 1) {
+                        // only one parent, process it
+                        v = graph.getSuccessors(v).iterator().next();
+                    } else {
+                        // more parents -> process each one, increasing height after for each one of them
+                        //i is initially -1 because the first subtree will be at same height as its child
+                        int i = -1;
+                        for (V parent : graph.getSuccessors(v)) {
+                            i++;
+                            maxHeight = maxHeight + i;
+                            calcYPositions(parent, maxHeight);
+                        }
+                    }
                 }
             }
         }
+        return maxHeight;
     }
 
-    private void processNode(V v, double xPos, double yPos, double yFather) {
-        Point2D xyd = transform(v);
-
-        int childrenCount = graph.getPredecessorCount(v);
-        int parentsCount = graph.getSuccessorCount(v);
-
-        if (parentsCount == 0) {
-            //no out edges -> first commit (use provided coords)
-        }
-
-        if (parentsCount == 1) {
-            // one father only -> same yPos, increment xPos
+    /**
+     *
+     * @param xPos
+     */
+    private void calcXPositionsAndSelectHeads(double xPos) {
+        for (V v : graph.getVertices()) {
+            Point2D xyd = transform(v);
+            xyd.setLocation(xPos, xyd.getY());
             xPos += XDISTANCE;
-        }
-
-        if (parentsCount > 1) {
-            // more parents -> this is a merge, return to father's yPos and use greatest father's x to increment x position
-            yPos = yFather;
-            xPos = maxXParents(v) + XDISTANCE;
-        }
-
-        xyd.setLocation(xPos, yPos);
-
-        boolean evenNode = false;
-        double yChild = yPos;
-        for (V vx : graph.getPredecessors(v)) {
-            if (childrenCount == 1) {
-                //only one child, does not change yPos
-            } else {
-                //more then one child, changes yPos
-                if (evenNode) {
-                    //even nodes go to a negative yPos
-                    yChild *= -1;
-                } else {
-                    //odd nodes go to a positive yPos
-                    yChild = Math.abs(yChild) + YDISTANCE;
-                }
-            }
-            calcPositions(vx, xPos, yChild, yFather);
-            evenNode = !evenNode;
-        }
-    }
-
-    private boolean allParentsVisited(V v) {
-        for (V vx : graph.getSuccessors(v)) {
-            if (!((CommitInfo)vx).isVisited()) {
-                return false;
+            if (graph.getPredecessorCount(v) == 0) {
+                heads.add(v);
             }
         }
-        return true;
-    }
-
-    private double maxXParents(V v) {
-        double maxX = 0;
-        for (V vx : graph.getSuccessors(v)) {
-            Point2D xyd = transform(vx);
-            maxX = Math.max(maxX, xyd.getX());
-        }
-        return maxX;
     }
 }

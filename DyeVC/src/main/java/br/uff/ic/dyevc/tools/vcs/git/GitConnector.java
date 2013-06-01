@@ -369,7 +369,7 @@ public class GitConnector {
      * @return the required reference object.
      */
     public Ref getBranchRemoteRef(String branchName, String remoteName) throws VCSException {
-        LoggerFactory.getLogger(GitConnector.class).trace("getOriginRefFromSource -> Entry.");
+        LoggerFactory.getLogger(GitConnector.class).trace("getBranchRemoteRef -> Entry.");
         Ref ref = null;
         try {
             String refToFind = REFS_REMOTES + remoteName + "/" + branchName;
