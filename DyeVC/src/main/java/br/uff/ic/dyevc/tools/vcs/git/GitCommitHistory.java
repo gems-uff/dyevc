@@ -1,5 +1,6 @@
 package br.uff.ic.dyevc.tools.vcs.git;
 
+import br.uff.ic.dyevc.utils.CommitInfoDateComparator;
 import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;

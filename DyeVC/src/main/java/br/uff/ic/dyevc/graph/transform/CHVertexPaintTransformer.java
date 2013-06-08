@@ -3,7 +3,6 @@ package br.uff.ic.dyevc.graph.transform;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.model.CommitInfo;
 import edu.uci.ics.jung.graph.Graph;
-import java.awt.Color;
 import java.awt.Paint;
 import org.apache.commons.collections15.Transformer;
 
@@ -24,16 +23,6 @@ public class CHVertexPaintTransformer implements Transformer<Object, Paint> {
         Paint paint = IConstants.COLOR_COLLAPSED;
         if (o instanceof Graph) {
           String text = ((Graph)o).toString();
-//          if (text.contains("Project")) {
-//            return new Color(255, 222, 173);
-//          }
-//          if (text.contains("Agent")) {
-//            return new Color(119, 136, 153);
-//          }
-//          if (text.contains("Process")) {
-//            return new Color(190, 190, 190);
-//          }
-
           return paint;
         }
         if (o instanceof CommitInfo) {

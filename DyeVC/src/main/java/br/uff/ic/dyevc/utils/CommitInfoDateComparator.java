@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.tools.vcs.git;
+package br.uff.ic.dyevc.utils;
 
 import br.uff.ic.dyevc.model.CommitInfo;
 import java.util.Comparator;

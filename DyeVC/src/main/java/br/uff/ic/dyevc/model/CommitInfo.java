@@ -182,4 +182,62 @@ public class CommitInfo implements Comparable<CommitInfo> {
     public void addChangePath(CommitChange cc) {
         this.changeSet.add(cc);
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 37 * hash + (this.id != null ? this.id.hashCode() : 0);
+        hash = 37 * hash + (this.commitDate != null ? this.commitDate.hashCode() : 0);
+        hash = 37 * hash + (this.author != null ? this.author.hashCode() : 0);
+        hash = 37 * hash + (this.committer != null ? this.committer.hashCode() : 0);
+        hash = 37 * hash + (this.shortMessage != null ? this.shortMessage.hashCode() : 0);
+        hash = 37 * hash + this.parentsCount;
+        hash = 37 * hash + (this.parentsCountLock != null ? this.parentsCountLock.hashCode() : 0);
+        hash = 37 * hash + this.childrenCount;
+        hash = 37 * hash + (this.childrenCountLock != null ? this.childrenCountLock.hashCode() : 0);
+        hash = 37 * hash + (this.changeSet != null ? this.changeSet.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CommitInfo other = (CommitInfo) obj;
+        if ((this.id == null) ? (other.id != null) : !this.id.equals(other.id)) {
+            return false;
+        }
+        if (this.commitDate != other.commitDate && (this.commitDate == null || !this.commitDate.equals(other.commitDate))) {
+            return false;
+        }
+        if ((this.author == null) ? (other.author != null) : !this.author.equals(other.author)) {
+            return false;
+        }
+        if ((this.committer == null) ? (other.committer != null) : !this.committer.equals(other.committer)) {
+            return false;
+        }
+        if ((this.shortMessage == null) ? (other.shortMessage != null) : !this.shortMessage.equals(other.shortMessage)) {
+            return false;
+        }
+        if (this.parentsCount != other.parentsCount) {
+            return false;
+        }
+        if (this.parentsCountLock != other.parentsCountLock && (this.parentsCountLock == null || !this.parentsCountLock.equals(other.parentsCountLock))) {
+            return false;
+        }
+        if (this.childrenCount != other.childrenCount) {
+            return false;
+        }
+        if (this.childrenCountLock != other.childrenCountLock && (this.childrenCountLock == null || !this.childrenCountLock.equals(other.childrenCountLock))) {
+            return false;
+        }
+        if (this.changeSet != other.changeSet && (this.changeSet == null || !this.changeSet.equals(other.changeSet))) {
+            return false;
+        }
+        return true;
+    }
 }

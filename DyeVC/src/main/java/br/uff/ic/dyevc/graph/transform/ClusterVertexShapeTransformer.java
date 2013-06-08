@@ -4,7 +4,6 @@ import br.uff.ic.dyevc.application.IConstants;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.visualization.decorators.EllipseVertexShapeTransformer;
 import java.awt.Shape;
-import java.awt.geom.Ellipse2D;
 
 /**
  * Creates a vertex shape that is either a polygon or a star. 
@@ -32,7 +31,6 @@ public class ClusterVertexShapeTransformer<V> extends EllipseVertexShapeTransfor
                 return factory.getRegularStar(v, size);
             }
         }
-        
         return factory.getEllipse(v);
     }
 }

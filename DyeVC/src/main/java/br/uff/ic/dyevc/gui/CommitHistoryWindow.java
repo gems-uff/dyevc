@@ -59,8 +59,8 @@ import javax.swing.ToolTipManager;
 public class CommitHistoryWindow extends javax.swing.JFrame {
     private static final long serialVersionUID = 1689885032823010309L;
     private MonitoredRepository rep;
-    private Graph graph;
-    private Graph collapsedGraph;
+    private DirectedOrderedSparseMultigraph graph;
+    private DirectedOrderedSparseMultigraph collapsedGraph;
     private VisualizationViewer vv;
     private Layout layout;
     private GraphCollapser collapser;
@@ -308,7 +308,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private void resetGraph() {
         layout.setGraph(graph);
         collapsedGraph = graph;
-//        RemoveFilters();
+        layout.initialize();
         vv.repaint();
     }
 
