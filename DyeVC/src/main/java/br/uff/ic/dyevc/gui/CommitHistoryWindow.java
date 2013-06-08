@@ -186,9 +186,9 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
         final PredicatedParallelEdgeIndexFunction eif = PredicatedParallelEdgeIndexFunction.getInstance();
         final Set exclusions = new HashSet();
-        eif.setPredicate(new Predicate<CommitInfo>() {
+        eif.setPredicate(new Predicate<CommitRelationship>() {
             @Override
-            public boolean evaluate(CommitInfo e) {
+            public boolean evaluate(CommitRelationship e) {
                 return exclusions.contains(e);
             }
         });
