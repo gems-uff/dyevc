@@ -1,6 +1,7 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.application.IConstants;
+import br.uff.ic.dyevc.application.branchhistory.controller.BranchesHistoryController;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepository;
@@ -412,6 +413,13 @@ public class MainWindow extends javax.swing.JFrame {
     private void mntShowLogActionPerformed(ActionEvent evt) {
         new CommitHistoryWindow(getSelectedRepository()).setVisible(true);
     }
+    
+    private void mntShowBranchesHistoryActionPerformed(ActionEvent evt) {
+        BranchesHistoryController branchesHistoryController = new BranchesHistoryController(getSelectedRepository());
+        branchesHistoryController.execute();
+        //Main main = new Main(getSelectedRepository());
+        //main.executar();
+    }
 
     private void mntRemoveProjectActionPerformed(ActionEvent evt) {
         MonitoredRepository rep = getSelectedRepository();
@@ -495,7 +503,17 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jPopupRepoList.add(mntShowLog);
-
+        
+        JMenuItem mntShowBranchesHistory = new javax.swing.JMenuItem();
+        mntShowBranchesHistory.setText("Show Branches History");
+        mntShowBranchesHistory.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntShowBranchesHistoryActionPerformed(evt);
+            }
+        });
+        jPopupRepoList.add(mntShowBranchesHistory);
+        
         jPopupRepoList.addSeparator();
         JMenuItem mntRemoveProject = new javax.swing.JMenuItem();
         mntRemoveProject.setText("Remove Project");
