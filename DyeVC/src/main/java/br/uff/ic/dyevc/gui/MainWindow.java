@@ -1,11 +1,13 @@
 package br.uff.ic.dyevc.gui;
 
+import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
 import br.uff.ic.dyevc.utils.ImageUtils;
+import br.uff.ic.dyevc.utils.LimitLinesDocumentListener;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.AWTException;
 import java.awt.Image;
@@ -54,7 +56,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JPanel pnlMain;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPaneMessages;
-    private javax.swing.JTextArea jTextAreaMessages;
+    private LogTextArea jTextAreaMessages;
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositories;
     private javax.swing.JList repoList;
     //Variáveis de menu
@@ -65,6 +67,7 @@ public class MainWindow extends javax.swing.JFrame {
     private TrayIcon trayIcon;
     private RepositoryMonitor monitor;
     private int lastMessagesCount = 0;
+    private LimitLinesDocumentListener documentListener;
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">                          
@@ -99,12 +102,14 @@ public class MainWindow extends javax.swing.JFrame {
 
         jScrollPaneMessages = new javax.swing.JScrollPane();
         jScrollPaneMessages.setBorder(javax.swing.BorderFactory.createTitledBorder("Messages"));
-        jTextAreaMessages = new javax.swing.JTextArea();
+        jTextAreaMessages = new LogTextArea();
         jTextAreaMessages.setColumns(20);
         jTextAreaMessages.setRows(5);
         //this is to scroll messages automatically
         DefaultCaret caret = (DefaultCaret) jTextAreaMessages.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        documentListener = new LimitLinesDocumentListener(IConstants.DEFAULT_MAX_MESSAGE_LINES);
+        jTextAreaMessages.getDocument().addDocumentListener(documentListener);
 
         jScrollPaneMessages.setViewportView(jTextAreaMessages);
         MessageManager manager = MessageManager.initialize(jTextAreaMessages);

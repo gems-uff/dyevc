@@ -1,6 +1,7 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.application.IConstants;
+import br.uff.ic.dyevc.utils.LimitLinesDocumentListener;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.MouseEvent;
@@ -9,28 +10,30 @@ import java.io.PrintStream;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 import javax.swing.text.DefaultCaret;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 
 /**
- * This class receives stdout and stderr messages and displays them. After being 
+ * This class receives stdout and stderr messages and displays them. After being
  * initialized, all console messages are redirected to this window.<br>
- * The class also allows the user to dynamically set the desired log level to 
- * be displayed.
- * 
+ * The class also allows the user to dynamically set the desired log level to be
+ * displayed.
+ *
  * @author Cristiano
  */
 public class StdOutErrWindow extends JFrame {
 
     private static final long serialVersionUID = 5080471850955743986L;
-    private JTextArea jTextAreaOut;
+    private LogTextArea jTextAreaOut;
     private JPopupMenu jPopupTextAreaOut;
+    private JMenuItem mntLogSize;
     private boolean autoScroll = true;
+    LimitLinesDocumentListener documentListener;
 
     public StdOutErrWindow() {
         initComponents();
@@ -43,11 +46,14 @@ public class StdOutErrWindow extends JFrame {
         setSize(800, 600);
         setMinimumSize(new Dimension(800, 600));
         setVisible(false);
-        jTextAreaOut = new JTextArea(20, 50);
+        jTextAreaOut = new LogTextArea(20, 50);
         jTextAreaOut.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        documentListener = new LimitLinesDocumentListener();
+        jTextAreaOut.getDocument().addDocumentListener(documentListener);
+
         JScrollPane outPane = new JScrollPane(jTextAreaOut);
         setAutoScrolling();
-        
+
         getContentPane().add(outPane);
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
         buildTextAreaPopup();
@@ -82,6 +88,15 @@ public class StdOutErrWindow extends JFrame {
                 JCheckBoxMenuItem source = (JCheckBoxMenuItem) evt.getSource();
                 autoScroll = source.isSelected();
                 setAutoScrolling();
+            }
+        });
+
+        mntLogSize = new javax.swing.JMenuItem();
+        mntLogSize.setText("Limit Log Buffer (" + documentListener.getLimitLines() + ")");
+        mntLogSize.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                setLogLimit();
             }
         });
 
@@ -131,8 +146,9 @@ public class StdOutErrWindow extends JFrame {
         });
 
         jPopupTextAreaOut.add(mntScrolling);
-        jPopupTextAreaOut.addSeparator();
+        jPopupTextAreaOut.add(mntLogSize);
         jPopupTextAreaOut.add(mntClear);
+        jPopupTextAreaOut.addSeparator();
         jPopupTextAreaOut.add(mntLogTrace);
         jPopupTextAreaOut.add(mntLogDebug);
         jPopupTextAreaOut.add(mntLogInfo);
@@ -162,14 +178,28 @@ public class StdOutErrWindow extends JFrame {
         }
     }
 
+    private void setLogLimit() {
+        String newLimit = null;
+        int newLimitInt = documentListener.getLimitLines();
+        while (newLimit == null || newLimit.equals("")) {
+            newLimit = JOptionPane.showInputDialog("Enter how many lines to keep in log.", newLimitInt);
+            try {
+                newLimitInt = Integer.parseInt(newLimit);
+            } catch (NumberFormatException e) {
+                newLimit = null;
+            }
+        }
+        documentListener.setLimitLines(newLimitInt);
+        mntLogSize.setText("Limit Log Buffer (" + documentListener.getLimitLines() + ")");
+    }
+
     // </editor-fold>
-    
     // <editor-fold defaultstate="collapsed" desc="JTextAreaOutputStream">
     public class JTextAreaOutputStream extends OutputStream {
 
-        JTextArea ta;
+        LogTextArea ta;
 
-        public JTextAreaOutputStream(JTextArea t) {
+        public JTextAreaOutputStream(LogTextArea t) {
             super();
             ta = t;
         }

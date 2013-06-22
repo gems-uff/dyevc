@@ -8,6 +8,8 @@ import java.awt.Color;
  * @author Cristiano
  */
 public interface IConstants {
+    public static final int DEFAULT_MAX_LOG_LINES = 10000;
+    public static final int DEFAULT_MAX_MESSAGE_LINES  = 100;
     public static final String FETCH_SPECS = "+refs/heads/*:refs/remotes/origin/*";
     public static final String DIR_SEPARATOR = System.getProperty("file.separator");
     public static final String APPLICATION_PACKAGE = "br.uff.ic.dyevc";

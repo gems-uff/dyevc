@@ -2,7 +2,6 @@ package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.utils.DateUtil;
 import java.awt.Font;
-import javax.swing.JTextArea;
 
 /**
  * Presents important messages sent by application.
@@ -14,15 +13,15 @@ public class MessageManager {
     /**
      * Singleton that manages messages sent by application.
      */
-    private JTextArea messages;
+    private LogTextArea messages;
     private static MessageManager manager;
 
-    private MessageManager(JTextArea messages) {
+    private MessageManager(LogTextArea messages) {
         this.messages = messages;
         messages.setFont(new Font("Monospaced", Font.PLAIN, 12));
     }
 
-    public synchronized static MessageManager initialize(JTextArea messages) {
+    public synchronized static MessageManager initialize(LogTextArea messages) {
         if (manager == null) {
             manager = new MessageManager(messages);
         }
