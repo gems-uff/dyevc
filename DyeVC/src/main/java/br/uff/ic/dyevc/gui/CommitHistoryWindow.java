@@ -91,7 +91,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
         mouseModesCombo = graphMouse.getModeComboBox();
         mouseModesCombo.addItemListener(graphMouse.getModeListener());
-        graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
+        graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
 
         plus = new JButton("+");
         plus.addActionListener(new ActionListener() {
@@ -135,7 +135,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
         edgeLineShapeCombo = new JComboBox();
         this.edgeLineShapeCombo.setModel(new DefaultComboBoxModel(new String[]{"QuadCurve", "Line", "CubicCurve"}));
-        this.edgeLineShapeCombo.setSelectedItem("Line");
+        this.edgeLineShapeCombo.setSelectedItem("CubicCurve");
         this.edgeLineShapeCombo.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
@@ -231,7 +231,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
         //</editor-fold>
 
-        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
+        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.CubicCurve());
         vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeTransformer());
     }
     //</editor-fold>
