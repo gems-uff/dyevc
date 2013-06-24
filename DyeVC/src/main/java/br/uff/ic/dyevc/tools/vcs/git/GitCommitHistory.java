@@ -90,7 +90,7 @@ public class GitCommitHistory {
         List<CommitInfo> cis = new ArrayList<CommitInfo>(commitInfoMap.values());
 
         Comparator<CommitInfo> comparator = new CommitInfoDateComparator();
-        
+
         Collections.sort(cis, comparator);
         return cis;
     }
@@ -106,13 +106,14 @@ public class GitCommitHistory {
         try {
             Iterator<RevCommit> commitsIterator = git.getAllCommitsIterator();
             walk = new RevWalk(git.getRepository());
-
+            int countItems = 0;
             for (Iterator<RevCommit> it = commitsIterator; it.hasNext();) {
                 RevCommit commit = walk.parseCommit(it.next());
                 if (!commitInfoMap.containsKey(commit.getName())) {
                     createCommitInfo(commit, walk);
                 }
             }
+            LoggerFactory.getLogger(GitCommitHistory.class).debug("populateHistory -> created history with {} items.", commitInfoMap.size());
         } catch (Exception ex) {
             LoggerFactory.getLogger(GitCommitHistory.class).error("Error in populateHistory.", ex);
         } finally {
@@ -220,6 +221,7 @@ public class GitCommitHistory {
                 diffs = df.scan(new EmptyTreeIterator(),
                         new CanonicalTreeParser(null, rw.getObjectReader(), commit.getTree()));
             }
+            LoggerFactory.getLogger(GitCommitHistory.class).debug("Commit <{}> has <{}> itemms in changeset", commit.getId(), diffs.size());
             for (DiffEntry diff : diffs) {
                 CommitChange cc = new CommitChange();
                 cc.setChangeType(diff.getChangeType().name());
@@ -230,7 +232,7 @@ public class GitCommitHistory {
             }
             df.release();
         } catch (Exception ex) {
-            Logger.getLogger(GitCommitHistory.class.getName()).log(Level.SEVERE, "Error parsing change set for commit " + commit.getName(), ex);
+             LoggerFactory.getLogger(GitCommitHistory.class).error("Error parsing change set for commit " + commit.getName(), ex);
         } finally {
             if (rw != null) {
                 rw.release();

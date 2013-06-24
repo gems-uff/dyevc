@@ -10,7 +10,7 @@
     </appender>  
           
     <category name="br.uff.ic.dyevc" additivity="false">  
-        <priority value="TRACE" />  
+        <priority value="INFO" />  
           <appender-ref ref="stdout" />  
     </category> 
   

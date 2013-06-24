@@ -10,6 +10,7 @@ import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A basic repository history graph implemented as a DAG that relates all the
@@ -24,6 +25,7 @@ public class BasicRepositoryHistoryGraph {
      * @return a graph representing the repository
      */
     public static DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> createBasicRepositoryHistoryGraph(MonitoredRepository rep) {
+        LoggerFactory.getLogger(BasicRepositoryHistoryGraph.class).trace("Constructor -> Entry");
         final DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> graph = new DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship>();
         GitConnector git = null;
         try {
@@ -35,7 +37,6 @@ public class BasicRepositoryHistoryGraph {
             for (CommitRelationship commitRelationship : ch.getCommitRelationships()) {
                 graph.addEdge(commitRelationship, commitRelationship.getChild(), commitRelationship.getParent());
             }
-            return graph;
         } catch (VCSException ex) {
             Logger.getLogger(BasicRepositoryHistoryGraph.class.getName()).log(Level.SEVERE, null, ex);
             MessageManager.getInstance().addMessage("Error during graph creation: " + ex);
@@ -44,7 +45,7 @@ public class BasicRepositoryHistoryGraph {
                 git.close();
             }
         }
-        
+        LoggerFactory.getLogger(BasicRepositoryHistoryGraph.class).trace("Constructor -> Exit");
         return graph;
     }
 }

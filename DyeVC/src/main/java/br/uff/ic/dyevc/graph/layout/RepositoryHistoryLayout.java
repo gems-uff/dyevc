@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TreeSet;
+import org.slf4j.LoggerFactory;
 
 /**
  * Layout for drawing a repository history
@@ -50,20 +51,28 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      */
     public RepositoryHistoryLayout(DirectedOrderedSparseMultigraph<V, E> g) {
         super(g);
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("Constructor -> Entry");
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("Constructor -> Graph has {} nodes to be plotted.", g.getVertexCount());
         distances = new DijkstraDistance<V, E>(g);
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("Constructor -> Exit");
     }
 
     @Override
     public void reset() {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("reset -> Entry");
         doInit();
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("reset -> Exit");
     }
 
     @Override
     public void initialize() {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("initialize -> Entry");
         doInit();
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("initialize -> Exit");
     }
 
     private void doInit() {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Entry");
         //Initial height of tree
         int height = 0;
         //Starting X position
@@ -72,11 +81,14 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
         heads.clear();
         nodes.clear();
         calcXPositionsAndFindHeads(xPos);
-        
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("doInit -> Graph has {} nodes and {} heads", nodes.size(), heads.size());
+
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Initializing visited state for all graph nodes");
         for (V v: graph.getVertices()) {
             //resets the attribute "visited" of each node to repaint graph uppon user demand
             if (v instanceof CommitInfo) ((CommitInfo)v).setVisited(false);
         }
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Finished initializing visited state for all graph nodes");
         
         while (!heads.isEmpty()) {
             V v = heads.remove(heads.size() - 1);
@@ -84,6 +96,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
             // algorithm will change it if necessary
             calcYPositions(v, height);
         }
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Exit");
     }
 
     /**
@@ -102,6 +115,8 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      * @param xPos
      */
     private void calcXPositionsAndFindHeads(double xPos) {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("calcXPositionsAndFindHeads -> Entry.");
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("calcXPositionsAndFindHeads -> Initial xPos is <{}>", xPos);
         //Initializes the heights list with -1 for each node, meaning that the
         //height was not calculated yet
         Integer heightsArray[] = new Integer[graph.getVertexCount()];
@@ -153,6 +168,8 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
                 }
             }
         }
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("calcXPositionsAndFindHeads Final xPos is <{}>", xPos);
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("calcXPositionsAndFindHeads -> Exit.");
     }
 
     /**
@@ -163,6 +180,8 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      * @return true if height is different from initial childHeight
      */
     protected synchronized boolean calcYPositions(V v, int childHeight) {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("calcYPositions -> Entry");
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("calcYPositions -> Will now calculate yPos for node <{}>, which initially received childHeight <{}>", ((CommitInfo)v).getId(), childHeight);
         boolean result = false;
         boolean visited = false;
         while (!visited) { //Visits each node only once
@@ -220,6 +239,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
                 }
             }
         }
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("calcYPositions -> Exit");
         return result;
     }
     /**
@@ -230,6 +250,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      * @return max height found
      */
     private int findMaxHeightBetweenSuccessors(V v, int height) {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenSuccessors -> Entry");
         int vIndex = calcIndexFromXPosition(v);
         int minIndex = vIndex;
         int result = -1;
@@ -240,12 +261,14 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
         minIndex++;
 
         if (minIndex >= vIndex) { //There is no node situated between v and its most ancient successor
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenSuccessors -> Exit");
             return height;
         }
 
         List<Integer> heightsSubList = heights.subList(minIndex, vIndex);
         List<V> nodesSubList = nodes.subList(minIndex, vIndex);
         if (heightsSubList.isEmpty()) {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenSuccessors -> Exit");
             return height;
         } else {
             for (V node : nodesSubList) {
@@ -259,6 +282,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
                     }
                 }
             }
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenSuccessors -> Exit");
             return result + 1;
         }
     }
@@ -271,6 +295,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      * @return
      */
     private int findMaxHeightBetweenPredecessors(V v, int height) {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenPredecessors -> Entry");
         int vIndex = calcIndexFromXPosition(v);
         int maxIndex = vIndex;
         int result = -1;
@@ -281,12 +306,14 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
         maxIndex--;
 
         if (maxIndex <= vIndex) { //There is no node situated between v and its most ancient successor
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenPredecessors -> Exit");
             return height;
         }
 
         List<Integer> heightsSubList = heights.subList(vIndex, maxIndex);
         List<V> nodesSubList = nodes.subList(vIndex, maxIndex);
         if (heightsSubList.isEmpty()) {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenPredecessors -> Exit");
             return height;
         } else {
             for (V node : nodesSubList) {
@@ -298,6 +325,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
                     }
                 }
             }
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenPredecessors -> Exit");
             return result + 1;
         }
     }
@@ -344,6 +372,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      * @return the first commit in the graph;
      */
     private V getFirstCommit() {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("getFirstCommit -> Entry");
         if (firstCommit == null) {
             for (V v : graph.getVertices()) {
                 if (graph.getSuccessorCount(v) == 0) {
@@ -353,6 +382,8 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
             }
 
         }
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("getFirstCommit -> First commit for this repository has id <{}>", ((CommitInfo)firstCommit).getId());
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("getFirstCommit -> Exit");
         return firstCommit;
     }
 
