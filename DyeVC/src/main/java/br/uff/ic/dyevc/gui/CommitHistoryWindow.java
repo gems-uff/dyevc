@@ -78,13 +78,18 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
     public CommitHistoryWindow(MonitoredRepository rep) {
         this.rep = rep;
+        SplashScreen.getInstance().setStatus("Initializing Graph component");
+        SplashScreen.getInstance().setVisible(true);
         initGraphComponent();
+        SplashScreen.getInstance().setStatus("Initializing Window components");
         initComponents();
+        SplashScreen.getInstance().setVisible(false);
     }
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setAutoRequestFocus(true);
         setTitle("Commit History for repository " + rep.getName());
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         setBounds((screenSize.width - 700) / 2, (screenSize.height - 750) / 2, 700, 750);

@@ -1,5 +1,6 @@
 package br.uff.ic.dyevc.graph.layout;
 
+import br.uff.ic.dyevc.gui.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import edu.uci.ics.jung.algorithms.layout.AbstractLayout;
 import edu.uci.ics.jung.algorithms.shortestpath.DijkstraDistance;
@@ -80,22 +81,30 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
 
         heads.clear();
         nodes.clear();
+        
+        SplashScreen splash = SplashScreen.getInstance();
+        splash.setStatus("Calculating X positions...");
+        splash.setVisible(true);
         calcXPositionsAndFindHeads(xPos);
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("doInit -> Graph has {} nodes and {} heads", nodes.size(), heads.size());
-
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Initializing visited state for all graph nodes");
+        
+        splash.setStatus("Resetting visited status for " + graph.getVertexCount() + " vertices...");
         for (V v: graph.getVertices()) {
             //resets the attribute "visited" of each node to repaint graph uppon user demand
             if (v instanceof CommitInfo) ((CommitInfo)v).setVisited(false);
         }
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Finished initializing visited state for all graph nodes");
-        
+
+        int i = 1;
         while (!heads.isEmpty()) {
+            splash.setStatus("Calculating Y positions starting in head " + i++ +"/"+ heads.size() + "...");            
             V v = heads.remove(heads.size() - 1);
             // There is no problem in starting with height = 0, because the
             // algorithm will change it if necessary
             calcYPositions(v, height);
         }
+        splash.setVisible(false);
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Exit");
     }
 

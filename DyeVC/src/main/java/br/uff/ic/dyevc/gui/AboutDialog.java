@@ -1,12 +1,29 @@
 package br.uff.ic.dyevc.gui;
 
+import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JButton;
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import org.slf4j.LoggerFactory;
+
 /**
  * Dialog that shows up application version obtained from manifest file.
+ *
  * @author Cristiano
  */
 public class AboutDialog extends javax.swing.JDialog {
 
     private static final long serialVersionUID = -4997538889485458252L;
+    private br.uff.ic.dyevc.beans.ApplicationVersionBean applicationPropertiesBean1;
 
     /**
      * Creates new form NewJDialog
@@ -23,77 +40,68 @@ public class AboutDialog extends javax.swing.JDialog {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("About");
-        setSize(new java.awt.Dimension(440, 340));
-        setMinimumSize(new java.awt.Dimension(440, 340));
+        setSize(new java.awt.Dimension(440, 370));
+        setMinimumSize(new java.awt.Dimension(440, 370));
         setModal(true);
         setResizable(false);
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
-        setLocation((screenSize.width-dialogSize.width)/2,(screenSize.height-dialogSize.height)/2);
+        setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
 
-        jPanel1 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        AboutOK = new javax.swing.JButton();
+        JPanel jPanel1 = new javax.swing.JPanel(new BorderLayout());
 
-        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/uff/ic/dyevc/images/splash.png"))); // NOI18N
-        jLabel1.setText(applicationPropertiesBean1.getAppVersion());
+        String textAbout = new StringBuilder("<html><body><p align='center'>")
+                .append("<img src='")
+                .append(RepositoryRenderer.class.getResource("/br/uff/ic/dyevc/images/splash.png"))
+                .append("'/></p></body></html>").toString();
+        
+        JEditorPane editorPane = new JEditorPane("text/html", textAbout);
+        editorPane.setEditable(false);
+        editorPane.setOpaque(false);
+        jPanel1.add(new JScrollPane(editorPane), BorderLayout.CENTER);
 
-        AboutOK.setText("OK");
-        AboutOK.addActionListener(new java.awt.event.ActionListener() {
+        JPanel topPanel = new JPanel(new BorderLayout());
+
+        JPanel memoryPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        memoryPanel.setOpaque(false);
+        long memory = Runtime.getRuntime().totalMemory();
+        memoryPanel.add(new JLabel("Memory used: " + Long.toString(Math.round(memory / Math.pow(2, 20))) + " MB"));
+        
+        JPanel versionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        versionPanel.setOpaque(false);
+        versionPanel.add(new JLabel(applicationPropertiesBean1.getAppVersion()));
+        
+        topPanel.add(versionPanel, BorderLayout.WEST);
+        topPanel.add(memoryPanel, BorderLayout.EAST);
+        
+        jPanel1.add(topPanel, BorderLayout.NORTH);
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+
+        JButton aboutOK = new javax.swing.JButton();
+        aboutOK.setText("OK");
+        aboutOK.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                AboutOKActionPerformed(evt);
+                dispose();
             }
         });
-
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jLabel1))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(191, 191, 191)
-                        .addComponent(AboutOK)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addGap(18, 18, 18)
-                .addComponent(AboutOK))
-        );
-
-        javax.swing.GroupLayout AboutDialogLayout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(AboutDialogLayout);
-        AboutDialogLayout.setHorizontalGroup(
-            AboutDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-        );
-        AboutDialogLayout.setVerticalGroup(
-            AboutDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, AboutDialogLayout.createSequentialGroup()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(34, Short.MAX_VALUE))
-        );
-
         
+        bottomPanel.add(aboutOK);
+        jPanel1.add(bottomPanel, BorderLayout.SOUTH);
+        this.add(jPanel1);
+
     }// </editor-fold>
     
-    private void AboutOKActionPerformed(java.awt.event.ActionEvent evt) { 
+    public static void main(String[] args) {
+        JFrame frame = new JFrame();
+        frame.setTitle("About");
+        frame.setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        AboutDialog dialog = new AboutDialog(frame, true);
         
-        dispose();
-    }                                       
-
-    // Variables declaration - do not modify
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JButton AboutOK;
-    private br.uff.ic.dyevc.beans.ApplicationVersionBean applicationPropertiesBean1;
-    // End of variables declaration
+        
+        frame.setVisible(true);
+        dialog.setVisible(true);
+        
+    }
 }
