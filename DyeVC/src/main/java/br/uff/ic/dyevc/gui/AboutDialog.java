@@ -1,9 +1,11 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
+import br.uff.ic.dyevc.utils.SystemUtils;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * @author Cristiano
  */
 public class AboutDialog extends javax.swing.JDialog {
-
+    JLabel memoryLabel;
     private static final long serialVersionUID = -4997538889485458252L;
     private br.uff.ic.dyevc.beans.ApplicationVersionBean applicationPropertiesBean1;
 
@@ -64,8 +66,8 @@ public class AboutDialog extends javax.swing.JDialog {
 
         JPanel memoryPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         memoryPanel.setOpaque(false);
-        long memory = Runtime.getRuntime().totalMemory();
-        memoryPanel.add(new JLabel("Memory used: " + Long.toString(Math.round(memory / Math.pow(2, 20))) + " MB"));
+        memoryLabel = new JLabel(getMemoryUsage());
+        memoryPanel.add(memoryLabel);
         
         JPanel versionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         versionPanel.setOpaque(false);
@@ -91,7 +93,17 @@ public class AboutDialog extends javax.swing.JDialog {
         jPanel1.add(bottomPanel, BorderLayout.SOUTH);
         this.add(jPanel1);
 
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowActivated(WindowEvent e) {
+                memoryLabel.setText(getMemoryUsage());
+            }
+        });
     }// </editor-fold>
+    
+    private String getMemoryUsage() {
+        return "Memory used: " + Long.toString(SystemUtils.getMemoryUsage()) + " MB";
+    }
     
     public static void main(String[] args) {
         JFrame frame = new JFrame();
