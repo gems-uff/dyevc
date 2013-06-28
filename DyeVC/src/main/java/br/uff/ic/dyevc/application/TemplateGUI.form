@@ -499,6 +499,9 @@
       </SubComponents>
     </Container>
     <Component class="br.uff.ic.dyevc.model.MonitoredRepository" name="repositoryBean1">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new br.uff.ic.dyevc.model.MonitoredRepository(&quot;&quot;)"/>
+      </AuxValues>
     </Component>
     <Container class="javax.swing.JPopupMenu" name="jPopupMenu1">
 
@@ -667,7 +670,6 @@
               </Properties>
               <BindingProperties>
                 <BindingProperty name="elements" source="monitoredRepositoriesBean1" sourcePath="${monitoredProjects}" target="repoList" targetPath="elements" updateStrategy="0" immediately="false">
-                  <BindingParameter name="DISPLAY" value="\&quot;${name}\&quot; at ${cloneAddress}"/>
                   <Property name="name" type="java.lang.String" value="repoNames"/>
                 </BindingProperty>
               </BindingProperties>

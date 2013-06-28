@@ -87,8 +87,8 @@ public final class PreferencesUtils {
      * 
      * @see MonitoredRepositories
      */
-    public static void persistRepositories(MonitoredRepositories listBeans) {
-        List<MonitoredRepository> reps = listBeans.getMonitoredProjects();
+    public static void persistRepositories() {
+        List<MonitoredRepository> reps = MonitoredRepositories.getMonitoredProjects();
         if (!reps.isEmpty()) {
             try {
                 if (pref.nodeExists(NODE_MONITORED_REPOSITORIES)) {
@@ -120,8 +120,7 @@ public final class PreferencesUtils {
                 String[] reps = nodeToStore.childrenNames();
                 for (int i = 0; i < reps.length; i++) {
                     Preferences repNode = nodeToStore.node(reps[i]);
-                    MonitoredRepository bean = new MonitoredRepository();
-                    bean.setId(repNode.name());
+                    MonitoredRepository bean = new MonitoredRepository(repNode.name());
                     bean.setName(repNode.get("name", "no name"));
                     bean.setCloneAddress(repNode.get("cloneaddress", "no cloneaddress"));
                     monBean.addMonitoredRepository(bean);

@@ -70,7 +70,7 @@ public class TemplateGUI extends javax.swing.JFrame {
         jPanel7 = new javax.swing.JPanel();
         saveRepository = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
-        repositoryBean1 = new br.uff.ic.dyevc.model.MonitoredRepository();
+        repositoryBean1 = new br.uff.ic.dyevc.model.MonitoredRepository("");
         jPopupMenu1 = new javax.swing.JPopupMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -374,7 +374,6 @@ public class TemplateGUI extends javax.swing.JFrame {
 
         org.jdesktop.beansbinding.ELProperty eLProperty = org.jdesktop.beansbinding.ELProperty.create("${monitoredProjects}");
         org.jdesktop.swingbinding.JListBinding jListBinding = org.jdesktop.swingbinding.SwingBindings.createJListBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, monitoredRepositoriesBean1, eLProperty, repoList, "repoNames");
-        jListBinding.setDetailBinding(org.jdesktop.beansbinding.ELProperty.create("\"${name}\" at ${cloneAddress}"));
         bindingGroup.addBinding(jListBinding);
 
         repoList.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -475,9 +474,7 @@ public class TemplateGUI extends javax.swing.JFrame {
         bindingGroup.bind();
 
         pack();
-        java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
-        java.awt.Dimension dialogSize = getSize();
-        setLocation((screenSize.width-dialogSize.width)/2,(screenSize.height-dialogSize.height)/2);
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void exitMnuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMnuItemActionPerformed

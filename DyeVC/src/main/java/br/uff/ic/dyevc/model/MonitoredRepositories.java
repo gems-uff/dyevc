@@ -12,7 +12,7 @@ import javax.swing.AbstractListModel;
 public final class MonitoredRepositories extends AbstractListModel<MonitoredRepository> {
 
     private static final long serialVersionUID = -7567721142354738718L;
-    private List<MonitoredRepository> monitoredRepositories = new ArrayList<MonitoredRepository>();
+    private static List<MonitoredRepository> monitoredRepositories = new ArrayList<MonitoredRepository>();
     public static final String MONITORED_PROJECTS = "monitoredProjects";
 
     /**
@@ -20,7 +20,7 @@ public final class MonitoredRepositories extends AbstractListModel<MonitoredRepo
      *
      * @return the value of monitoredProjects
      */
-    public List<MonitoredRepository> getMonitoredProjects() {
+    public static List<MonitoredRepository> getMonitoredProjects() {
         return monitoredRepositories;
     }
 
@@ -31,7 +31,7 @@ public final class MonitoredRepositories extends AbstractListModel<MonitoredRepo
      *
      * @return the required monitored repository
      */
-    public MonitoredRepository getMonitoredProjectById(String id) {
+    public static MonitoredRepository getMonitoredProjectById(String id) {
         for (MonitoredRepository monitoredRepository : monitoredRepositories) {
             if (monitoredRepository.getId().equals(id)) {
                 return monitoredRepository;
@@ -95,5 +95,14 @@ public final class MonitoredRepositories extends AbstractListModel<MonitoredRepo
     public MonitoredRepository getElementAt(int index) {
         List<MonitoredRepository> values = getMonitoredProjects();
         return values.get(index);
+    }
+    
+    /**
+     * Closes the connection established in each of the monitored repositories. 
+     */
+    public void closeRepositories() {
+        for (MonitoredRepository rep: monitoredRepositories) {
+            rep.close();
+        }
     }
 }

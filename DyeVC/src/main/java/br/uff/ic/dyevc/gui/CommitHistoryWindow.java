@@ -48,6 +48,8 @@ import edu.uci.ics.jung.visualization.renderers.Renderer;
 import edu.uci.ics.jung.visualization.subLayout.GraphCollapser;
 import edu.uci.ics.jung.visualization.util.PredicatedParallelEdgeIndexFunction;
 import java.awt.Paint;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ToolTipManager;
 
@@ -57,6 +59,7 @@ import javax.swing.ToolTipManager;
  * @author cristiano
  */
 public class CommitHistoryWindow extends javax.swing.JFrame {
+
     private static final long serialVersionUID = 1689885032823010309L;
     private MonitoredRepository rep;
     private DirectedOrderedSparseMultigraph graph;
@@ -89,6 +92,12 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="initComponents">
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent we) {
+                resetComponents();
+            }
+        });
         setAutoRequestFocus(true);
         setTitle("Commit History for repository " + rep.getName());
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
@@ -304,7 +313,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             }
 //            RemoveFilters();
 //            Filter();
-            
+
             vv.getPickedVertexState().clear();
             vv.repaint();
         }
@@ -317,12 +326,22 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         vv.repaint();
     }
 
+    private void resetComponents() {
+        rep = null;
+        graph = null;
+        collapsedGraph = null;
+        vv = null;
+        layout = null;
+        collapser = null;
+        edgeFilter = null;
+        nodeFilter = null;
+    }
+
     /**
      * runs the graph with a demo repository
      */
     public static void main(String[] args) {
-        MonitoredRepository rep = new MonitoredRepository();
-        rep.setId("rep1363653250218");
+        MonitoredRepository rep = new MonitoredRepository("rep1363653250218");
 //        rep.setId("rep1364318989748");
         new CommitHistoryWindow(rep).setVisible(true);
     }

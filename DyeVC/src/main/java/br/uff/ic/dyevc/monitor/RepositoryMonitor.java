@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 public class RepositoryMonitor extends Thread {
 
     private ApplicationSettingsBean settings;
-    private MonitoredRepositories repos;
     private List<RepositoryStatus> statusList;
     private MainWindow container;
     private MonitoredRepository repositoryToMonitor;
@@ -45,7 +44,6 @@ public class RepositoryMonitor extends Thread {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
         settings = PreferencesUtils.loadPreferences();
         this.container = container;
-        repos = mr;
         this.start();
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Exit.");
     }
@@ -64,8 +62,8 @@ public class RepositoryMonitor extends Thread {
                 checkWorkingFolder();
                 statusList = new ArrayList<RepositoryStatus>();
                 if (repositoryToMonitor == null) { //monitor all repositories
-                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", repos.getSize());
-                    for (MonitoredRepository monitoredRepository : repos.getMonitoredProjects()) {
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", MonitoredRepositories.getMonitoredProjects().size());
+                    for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
                         checkRepository(monitoredRepository);
                     }
                 } else { //monitor specified repository
@@ -151,7 +149,8 @@ public class RepositoryMonitor extends Thread {
         GitConnector tempConnector = null;
         List<BranchStatus> result = null;
         try {
-            sourceConnector = new GitConnector(monitoredRepository.getCloneAddress(), monitoredRepository.getId());
+
+            sourceConnector = monitoredRepository.getConnection();
             LoggerFactory.getLogger(RepositoryMonitor.class)
                     .debug("processRepository -> created gitConnector for repository {}, id={}", monitoredRepository.getName(), monitoredRepository.getId());
 
@@ -161,13 +160,9 @@ public class RepositoryMonitor extends Thread {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("There is no temp repository at {}. Will create a temp by cloning {}.",
                         pathTemp, monitoredRepository.getId());
-                tempConnector = createWorkingClone(pathTemp, sourceConnector);
-            } else {
-                LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .debug("There is a valid repository at {}. Creating a git connector to it.",
-                        pathTemp);
-                tempConnector = new GitConnector(pathTemp, monitoredRepository.getId());
+                monitoredRepository.setWorkingCloneConnection(createWorkingClone(pathTemp, sourceConnector));
             }
+            tempConnector = monitoredRepository.getWorkingCloneConnection();
             GitTools.adjustTargetConfiguration(sourceConnector, tempConnector);
 
             tempConnector.fetchAllRemotes(true);
@@ -229,7 +224,7 @@ public class RepositoryMonitor extends Thread {
         String[] tmpFolders = workingFolder.list();
         for (int i = 0; i < tmpFolders.length; i++) {
             String tmpFolder = tmpFolders[i];
-            if (repos.getMonitoredProjectById(tmpFolder) == null) {
+            if (MonitoredRepositories.getMonitoredProjectById(tmpFolder) == null) {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
                         .debug("Repository with id={} is not being monitored anymore. Temp folder will be deleted.", tmpFolder);
                 deleteDirectory(workingFolder, tmpFolder);

@@ -1,5 +1,6 @@
 package br.uff.ic.dyevc.model;
 
+import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
@@ -15,6 +16,11 @@ public class CommitInfo implements Comparable<CommitInfo> {
      * Commit's identification.
      */
     private String id;
+    
+    /**
+     * The id of the repository where this commit is found.
+     */
+    private String repositoryId;
     
     /**
      * Date the commit was done.
@@ -53,15 +59,16 @@ public class CommitInfo implements Comparable<CommitInfo> {
     /**
      * Set of the paths that were affected by this commit
      */
-    private Set<CommitChange> changeSet = new TreeSet<CommitChange>();
+    private Set<CommitChange> changeSet = null;
     
     /**
      * Indicates if this commit was already visited in the process of plotting the graph
      */
     private boolean visited = false;
     
-    public CommitInfo(String id) {
+    public CommitInfo(String id, String repositoryId) {
         this.id = id;
+        this.repositoryId = repositoryId;
     }
 
     public String getId() {
@@ -70,6 +77,14 @@ public class CommitInfo implements Comparable<CommitInfo> {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getRepositoryId() {
+        return repositoryId;
+    }
+
+    public void setRepositoryId(String repositoryId) {
+        this.repositoryId = repositoryId;
     }
 
     public Date getCommitDate() {
@@ -168,7 +183,8 @@ public class CommitInfo implements Comparable<CommitInfo> {
     /**
      * @return the changeSet
      */
-    public Set<CommitChange> getChangeSet() {
+    public synchronized Set<CommitChange> getChangeSet() {
+        if (changeSet == null) changeSet = GitCommitTools.getCommitChangeSet(id, repositoryId);
         return changeSet;
     }
 
@@ -180,6 +196,7 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
     
     public void addChangePath(CommitChange cc) {
+        if (changeSet == null) changeSet = new TreeSet<CommitChange>();
         this.changeSet.add(cc);
     }
 
@@ -187,15 +204,6 @@ public class CommitInfo implements Comparable<CommitInfo> {
     public int hashCode() {
         int hash = 7;
         hash = 37 * hash + (this.id != null ? this.id.hashCode() : 0);
-        hash = 37 * hash + (this.commitDate != null ? this.commitDate.hashCode() : 0);
-        hash = 37 * hash + (this.author != null ? this.author.hashCode() : 0);
-        hash = 37 * hash + (this.committer != null ? this.committer.hashCode() : 0);
-        hash = 37 * hash + (this.shortMessage != null ? this.shortMessage.hashCode() : 0);
-        hash = 37 * hash + this.parentsCount;
-        hash = 37 * hash + (this.parentsCountLock != null ? this.parentsCountLock.hashCode() : 0);
-        hash = 37 * hash + this.childrenCount;
-        hash = 37 * hash + (this.childrenCountLock != null ? this.childrenCountLock.hashCode() : 0);
-        hash = 37 * hash + (this.changeSet != null ? this.changeSet.hashCode() : 0);
         return hash;
     }
 
@@ -209,33 +217,6 @@ public class CommitInfo implements Comparable<CommitInfo> {
         }
         final CommitInfo other = (CommitInfo) obj;
         if ((this.id == null) ? (other.id != null) : !this.id.equals(other.id)) {
-            return false;
-        }
-        if (this.commitDate != other.commitDate && (this.commitDate == null || !this.commitDate.equals(other.commitDate))) {
-            return false;
-        }
-        if ((this.author == null) ? (other.author != null) : !this.author.equals(other.author)) {
-            return false;
-        }
-        if ((this.committer == null) ? (other.committer != null) : !this.committer.equals(other.committer)) {
-            return false;
-        }
-        if ((this.shortMessage == null) ? (other.shortMessage != null) : !this.shortMessage.equals(other.shortMessage)) {
-            return false;
-        }
-        if (this.parentsCount != other.parentsCount) {
-            return false;
-        }
-        if (this.parentsCountLock != other.parentsCountLock && (this.parentsCountLock == null || !this.parentsCountLock.equals(other.parentsCountLock))) {
-            return false;
-        }
-        if (this.childrenCount != other.childrenCount) {
-            return false;
-        }
-        if (this.childrenCountLock != other.childrenCountLock && (this.childrenCountLock == null || !this.childrenCountLock.equals(other.childrenCountLock))) {
-            return false;
-        }
-        if (this.changeSet != other.changeSet && (this.changeSet == null || !this.changeSet.equals(other.changeSet))) {
             return false;
         }
         return true;

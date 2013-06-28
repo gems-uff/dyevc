@@ -2,6 +2,8 @@ package br.uff.ic.dyevc.model;
 
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
+import br.uff.ic.dyevc.exception.VCSException;
+import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.beans.*;
 import java.io.Serializable;
@@ -41,6 +43,16 @@ public class MonitoredRepository implements Serializable {
      * @see RepositoryStatus
      */
     private RepositoryStatus repStatus;
+    
+    /**
+     * Connection with the working clone for this monitored repository
+     */
+    private GitConnector workingCloneConnection;
+    
+    /**
+     * Connection with the clone for this monitored repository
+     */
+    private GitConnector cloneConnection;
 
     /**
      * Get the value of cloneAddress
@@ -50,6 +62,7 @@ public class MonitoredRepository implements Serializable {
     public String getCloneAddress() {
         return cloneAddress;
     }
+    
 
     /**
      * Get the path to working clone
@@ -76,10 +89,10 @@ public class MonitoredRepository implements Serializable {
     }
     private PropertyChangeSupport propertySupport;
 
-    public MonitoredRepository() {
+    public MonitoredRepository(String id) {
         this.name = "";
         this.cloneAddress = "";
-        this.id = "";
+        this.id = id;
         this.repStatus = new RepositoryStatus("");
         propertySupport = new PropertyChangeSupport(this);
     }
@@ -124,5 +137,50 @@ public class MonitoredRepository implements Serializable {
 
     public void setRepStatus(RepositoryStatus repStatus) {
         this.repStatus = repStatus;
+    }
+
+    /**
+     * Gets the git connector for this monitored repository
+     * @return the git connector for this monitored repository
+     * @throws VCSException
+     */
+    public synchronized GitConnector getConnection() throws VCSException {
+        if (cloneConnection == null) {
+            cloneConnection = new GitConnector(this.cloneAddress, this.id);
+        }
+        return cloneConnection;
+    }
+
+    /**
+     * Gets the git connection for the working clone of this monitored repository
+     * @return the git connector for the working clone of this monitored repository
+     * @throws VCSException
+     */
+    public synchronized GitConnector getWorkingCloneConnection() throws VCSException {
+        if (workingCloneConnection == null) {
+            workingCloneConnection = new GitConnector(this.getWorkingCloneAddress(), this.id);
+        }
+        return workingCloneConnection;
+    }
+
+    /**
+     * Sets the git connection for the working clone of this monitored repository.
+     * If a connection is already set, then close it before setting the new one.
+     * @param connection the connection to be set
+     * @throws VCSException
+     */
+    public synchronized void setWorkingCloneConnection(GitConnector connection) throws VCSException {
+        if (this.workingCloneConnection != null) this.workingCloneConnection.close();
+        this.workingCloneConnection = connection;
+    }
+    
+    /**
+     * Close connection established with the working clone
+     * If a connection is not established for a particular monitored, does nothing.
+     */
+    public void close() {
+        if (workingCloneConnection != null) {
+            workingCloneConnection.close();
+        }
     }
 }

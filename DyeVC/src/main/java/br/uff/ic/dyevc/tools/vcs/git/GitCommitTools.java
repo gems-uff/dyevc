@@ -1,31 +1,37 @@
 package br.uff.ic.dyevc.tools.vcs.git;
 
+import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.utils.CommitInfoDateComparator;
 import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
+import br.uff.ic.dyevc.model.MonitoredRepositories;
+import br.uff.ic.dyevc.model.MonitoredRepository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.RawTextComparator;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
+import org.gitective.core.CommitUtils;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -33,7 +39,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Cristiano
  */
-public class GitCommitHistory {
+public class GitCommitTools {
 
     /**
      * Map of commits with its properties. Each commit is identified by its id.
@@ -52,24 +58,25 @@ public class GitCommitHistory {
     /**
      * The list of commits if created in this constructor.
      *
-     * @param git the connector to be used to connect to a Git repository.
+     * @param git the repository that contains a git connection
      */
-    private GitCommitHistory(GitConnector git) {
+    public GitCommitTools(MonitoredRepository rep) throws VCSException {
         this.commitInfoMap = new TreeMap<String, CommitInfo>();
         this.commitRelationshipList = new ArrayList<CommitRelationship>();
-        this.git = git;
+        this.git = rep.getWorkingCloneConnection();
         populateHistory();
     }
 
     /**
-     * This class is NOT a singleton. Each call to this method returns a new
-     * instance.
+     * The list of commits if created in this constructor.
      *
      * @param git the connector to be used to connect to a Git repository.
-     * @return an instance of this class.
      */
-    public static GitCommitHistory getInstance(GitConnector git) {
-        return new GitCommitHistory(git);
+    public GitCommitTools(GitConnector git) {
+        this.commitInfoMap = new TreeMap<String, CommitInfo>();
+        this.commitRelationshipList = new ArrayList<CommitRelationship>();
+        this.git = git;
+        populateHistory();
     }
 
     /**
@@ -101,7 +108,7 @@ public class GitCommitHistory {
      * includes it.
      */
     private void populateHistory() {
-        LoggerFactory.getLogger(GitCommitHistory.class).trace("populateHistory -> Entry.");
+        LoggerFactory.getLogger(GitCommitTools.class).trace("populateHistory -> Entry.");
         RevWalk walk = null;
         try {
             Iterator<RevCommit> commitsIterator = git.getAllCommitsIterator();
@@ -113,15 +120,15 @@ public class GitCommitHistory {
                     createCommitInfo(commit, walk);
                 }
             }
-            LoggerFactory.getLogger(GitCommitHistory.class).debug("populateHistory -> created history with {} items.", commitInfoMap.size());
+            LoggerFactory.getLogger(GitCommitTools.class).debug("populateHistory -> created history with {} items.", commitInfoMap.size());
         } catch (Exception ex) {
-            LoggerFactory.getLogger(GitCommitHistory.class).error("Error in populateHistory.", ex);
+            LoggerFactory.getLogger(GitCommitTools.class).error("Error in populateHistory.", ex);
         } finally {
             if (walk != null) {
                 walk.release();
             }
         }
-        LoggerFactory.getLogger(GitCommitHistory.class).trace("populateHistory -> Exit.");
+        LoggerFactory.getLogger(GitCommitTools.class).trace("populateHistory -> Exit.");
     }
 
     /**
@@ -135,19 +142,19 @@ public class GitCommitHistory {
      * @throws IOException
      */
     private CommitInfo createCommitInfo(RevCommit commit, RevWalk walk) throws IOException {
-        LoggerFactory.getLogger(GitCommitHistory.class).trace("createCommitInfo -> Entry.");
-        CommitInfo ci = new CommitInfo(commit.getName());
+        LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitInfo -> Entry.");
+        CommitInfo ci = new CommitInfo(commit.getName(), git.getId());
         ci.setCommitDate(new Date(commit.getCommitTime() * 1000L));
         ci.setAuthor(commit.getAuthorIdent().getName());
         ci.setCommitter(commit.getCommitterIdent().getName());
         ci.setShortMessage(commit.getShortMessage());
 
-        fillCommitDiff(commit, ci);
+//        fillCommitDiff(commit, ci);
         commitInfoMap.put(ci.getId(), ci);
 
         createCommitRelations(commit, walk);
 
-        LoggerFactory.getLogger(GitCommitHistory.class).trace("createCommitInfo -> Exit.");
+        LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitInfo -> Exit.");
         return ci;
     }
 
@@ -163,7 +170,7 @@ public class GitCommitHistory {
      * @throws IOException
      */
     private void createCommitRelations(RevCommit commit, RevWalk walk) throws MissingObjectException, IncorrectObjectTypeException, IOException {
-        LoggerFactory.getLogger(GitCommitHistory.class).trace("createCommitRelations -> Entry.");
+        LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitRelations -> Entry.");
         //gets the list of parents for the commit
         RevCommit[] parents = commit.getParents();
         for (int j = 0; j < parents.length; j++) {
@@ -179,7 +186,7 @@ public class GitCommitHistory {
                     commitInfoMap.get(parent.getName()));
             commitRelationshipList.add(relation);
         }
-        LoggerFactory.getLogger(GitCommitHistory.class).trace("createCommitRelations -> Exit.");
+        LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitRelations -> Exit.");
     }
 
     /**
@@ -201,15 +208,29 @@ public class GitCommitHistory {
         return builder.toString();
     }
 
-    private void fillCommitDiff(RevCommit commit, CommitInfo ci) {
-        LoggerFactory.getLogger(GitCommitHistory.class).trace("fillCommitDiff -> Entry.");
+    /**
+     * Gets the changeset of a given revision string in the specified repository.
+     * The search is made in the working clone.
+     * 
+     * @param commitId the commitId whose changeset will be returned
+     * @param repositoryId the repository id to look into.
+     * @return the set of changes found in the given commit.
+     */
+    public static Set<CommitChange> getCommitChangeSet(String commitId, String repositoryId) {
+        LoggerFactory.getLogger(GitCommitTools.class).trace("getCommitChangeSet -> Entry.");
+        Set<CommitChange> changes = new HashSet<CommitChange>();
+        Repository repo = null;
         RevWalk rw = null;
+        DiffFormatter df = null;
         try {
-            rw = new RevWalk(git.getRepository());
+            repo = MonitoredRepositories.getMonitoredProjectById(repositoryId).getWorkingCloneConnection().getRepository();
+            ObjectId objId = repo.resolve(commitId);
+            RevCommit commit = CommitUtils.getCommit(repo, objId);
+            rw = new RevWalk(repo);
             RevCommit parent;
 
-            DiffFormatter df = new DiffFormatter(DisabledOutputStream.INSTANCE);
-            df.setRepository(git.getRepository());
+            df = new DiffFormatter(DisabledOutputStream.INSTANCE);
+            df.setRepository(repo);
             df.setDiffComparator(RawTextComparator.DEFAULT);
             df.setDetectRenames(true);
 
@@ -221,23 +242,25 @@ public class GitCommitHistory {
                 diffs = df.scan(new EmptyTreeIterator(),
                         new CanonicalTreeParser(null, rw.getObjectReader(), commit.getTree()));
             }
-            LoggerFactory.getLogger(GitCommitHistory.class).debug("Commit <{}> has <{}> itemms in changeset", commit.getId(), diffs.size());
             for (DiffEntry diff : diffs) {
                 CommitChange cc = new CommitChange();
                 cc.setChangeType(diff.getChangeType().name());
                 cc.setOldPath(diff.getOldPath());
                 cc.setNewPath(diff.getNewPath());
 
-                ci.addChangePath(cc);
+                changes.add(cc);
             }
-            df.release();
         } catch (Exception ex) {
-             LoggerFactory.getLogger(GitCommitHistory.class).error("Error parsing change set for commit " + commit.getName(), ex);
+            LoggerFactory.getLogger(GitCommitTools.class).error("Error parsing change set for commit " + commitId, ex);
         } finally {
+            if (df != null) {
+                df.release();
+            }
             if (rw != null) {
                 rw.release();
             }
         }
-        LoggerFactory.getLogger(GitCommitHistory.class).trace("fillCommitDiff -> Exit.");
+        LoggerFactory.getLogger(GitCommitTools.class).trace("getCommitChangeSet -> Exit.");
+        return changes;
     }
 }

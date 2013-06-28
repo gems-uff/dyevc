@@ -3,7 +3,6 @@ package br.uff.ic.dyevc.gui;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.application.branchhistory.controller.BranchesHistoryController;
 import br.uff.ic.dyevc.exception.DyeVCException;
-import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
@@ -426,7 +425,7 @@ public class MainWindow extends javax.swing.JFrame {
         int n = JOptionPane.showConfirmDialog(repoList, "Do you really want to stop monitoring " + rep.getName() + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (n == JOptionPane.YES_OPTION) {
             monitoredRepositories.removeMonitoredRepository(rep);
-            PreferencesUtils.persistRepositories(monitoredRepositories);
+            PreferencesUtils.persistRepositories();
         }
     }
 
@@ -448,7 +447,11 @@ public class MainWindow extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * Closes resources and exit from DyeVC
+     */
     private void mntExitActionPerformed(java.awt.event.ActionEvent evt) {
+        monitoredRepositories.closeRepositories();
         System.exit(0);
     }
 

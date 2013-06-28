@@ -10,7 +10,6 @@ import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -40,8 +39,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             repositoryBean = repository;
         } else {
             create = true;
-            repositoryBean = new MonitoredRepository();
-            repositoryBean.setId("rep" + System.currentTimeMillis());
+            repositoryBean = new MonitoredRepository("rep" + System.currentTimeMillis());
         }
         initComponents();
     }
@@ -120,7 +118,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         repositoryBean.setName(txtRepositoryName.getText());
         repositoryBean.setCloneAddress(txtCloneAddres.getText());
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
-        PreferencesUtils.persistRepositories(monitoredRepositoriesBean);
+        PreferencesUtils.persistRepositories();
         PreferencesUtils.storePreferences(settings);
         dispose();
     }
@@ -145,10 +143,10 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             File file = fileChooser.getSelectedFile();
             pathChosen = file.getAbsolutePath();
             settings.setLastUsedPath(pathChosen);
-            if (!GitConnector.isValidRepository(pathChosen)) {
-                JOptionPane.showMessageDialog(txtCloneAddres, "The specified path does not contain a valid git repository.", "Message", JOptionPane.ERROR_MESSAGE);
-            } else {
+            if (GitConnector.isValidRepository(pathChosen)) {
                 field.setText(file.getAbsolutePath());
+            } else {
+                JOptionPane.showMessageDialog(txtCloneAddres, "The specified path does not contain a valid git repository.", "Message", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

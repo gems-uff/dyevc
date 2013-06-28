@@ -26,6 +26,7 @@ import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.BranchConfig;
 import org.eclipse.jgit.lib.Config;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.merge.MergeStrategy;
@@ -598,10 +599,13 @@ public class GitConnector {
     public static String checkRepositoryPathName(String path) {
         LoggerFactory.getLogger(GitConnector.class).trace("checkRepositoryPathName -> Entry.");
 
-        String gitPath = (path.endsWith(GIT_DIR))
-                ? path
-                : (path.startsWith("http") ? path + GIT_DIR : path + "/" + GIT_DIR);
-
+        String gitPath = path;
+        
+        if (!path.endsWith(GIT_DIR)) {
+            if (path.startsWith("http")) {
+                gitPath = path + GIT_DIR;
+            } else if (new File(path + "/" + GIT_DIR).exists()) gitPath = path + "/" + GIT_DIR;
+        }
         LoggerFactory.getLogger(GitConnector.class).trace("checkRepositoryPathName -> Exit.");
         return gitPath;
     }
@@ -611,5 +615,19 @@ public class GitConnector {
         String gitPath = checkRepositoryPathName(getPath());
         LoggerFactory.getLogger(GitConnector.class).trace("getRepositoryPath -> Exit.");
         return gitPath;
+    }
+    
+    /**
+     * Returns an object id for a given revision string.
+     *
+     */
+    public ObjectId resolve(String revisionString) {
+        ObjectId result = null;
+        try {
+            result = getRepository().resolve(revisionString);
+        } catch (Exception ex) {
+            LoggerFactory.getLogger(GitConnector.class).error("Error resolving a reference to " + revisionString, ex);
+        }
+        return result;
     }
 }

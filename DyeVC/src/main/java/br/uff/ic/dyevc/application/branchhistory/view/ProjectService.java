@@ -15,7 +15,7 @@ import br.uff.ic.dyevc.application.branchhistory.model.VersionedItemsBucket;
 import br.uff.ic.dyevc.application.branchhistory.model.VersionedDirectory;
 import br.uff.ic.dyevc.application.branchhistory.model.VersionedProject;
 import br.uff.ic.dyevc.model.CommitRelationship;
-import br.uff.ic.dyevc.tools.vcs.git.GitCommitHistory;
+import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import java.io.File;
 import java.util.Collection;
@@ -60,7 +60,7 @@ public class ProjectService {
         //gitConnector = gitConnector.cloneRepository(path, BRANCHES_HISTORY_PATH+projectName,projectName);
         
         GitConnector gitConnector = new GitConnector(BRANCHES_HISTORY_PATH+projectName,projectName);
-        GitCommitHistory gitCommitHistory = GitCommitHistory.getInstance(gitConnector);
+        GitCommitTools gitCommitHistory = new GitCommitTools(gitConnector);
             
         Git git = new Git(gitConnector.getRepository());
         
