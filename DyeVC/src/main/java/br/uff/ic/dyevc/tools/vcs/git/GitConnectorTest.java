@@ -36,7 +36,8 @@ public class GitConnectorTest {
 
     public static void main(String[] args) {
         GitConnectorTest test = new GitConnectorTest();
-        test.testGetDiff();
+        test.testGetBase();
+//        test.testGetDiff();
 //        test.testBare();
 //        test.testGraph();
 //        test.test();
@@ -44,6 +45,21 @@ public class GitConnectorTest {
 //        test.testAheadRemoteBranches();
 //        test.testAdjustTargetConfiguration();
     }
+
+    private void testGetBase() {
+        GitConnector egit = null;
+        try {
+            egit = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/egit", "egit");
+            Repository repo = egit.getRepository();
+            RevCommit commit = CommitUtils.getBase(repo, "49480572da5418df", "f9733c0dfad825a");
+            System.out.println(commit.getId());
+        } catch (Exception ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (egit != null) egit.close();
+        }
+    }
+
 
     private void testGetDiff() {
         GitConnector dyevc = null;
