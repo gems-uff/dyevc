@@ -72,7 +72,7 @@ public class GitCommitTools {
      *
      * @param git the connector to be used to connect to a Git repository.
      */
-    public GitCommitTools(GitConnector git) {
+    public GitCommitTools(GitConnector git) throws VCSException {
         this.commitInfoMap = new TreeMap<String, CommitInfo>();
         this.commitRelationshipList = new ArrayList<CommitRelationship>();
         this.git = git;
@@ -107,25 +107,29 @@ public class GitCommitTools {
      * Git repository. If commit does not yet exist in the commitInfoMap, than
      * includes it.
      */
-    private void populateHistory() {
+    private void populateHistory() throws VCSException{
         LoggerFactory.getLogger(GitCommitTools.class).trace("populateHistory -> Entry.");
         RevWalk walk = null;
         try {
             Iterator<RevCommit> commitsIterator = git.getAllCommitsIterator();
             walk = new RevWalk(git.getRepository());
-            int countItems = 0;
             for (Iterator<RevCommit> it = commitsIterator; it.hasNext();) {
                 RevCommit commit = walk.parseCommit(it.next());
                 if (!commitInfoMap.containsKey(commit.getName())) {
                     createCommitInfo(commit, walk);
                 }
             }
+            for (String commitId : commitInfoMap.keySet()) {
+                RevCommit commit = CommitUtils.getCommit(git.getRepository(), commitId);
+                createCommitRelations(commit, walk);
+            }
             LoggerFactory.getLogger(GitCommitTools.class).debug("populateHistory -> created history with {} items.", commitInfoMap.size());
         } catch (Exception ex) {
             LoggerFactory.getLogger(GitCommitTools.class).error("Error in populateHistory.", ex);
+            throw new VCSException("Error getting repository history.", ex);
         } finally {
             if (walk != null) {
-                walk.release();
+                walk.dispose();
             }
         }
         LoggerFactory.getLogger(GitCommitTools.class).trace("populateHistory -> Exit.");
@@ -152,7 +156,7 @@ public class GitCommitTools {
 //        fillCommitDiff(commit, ci);
         commitInfoMap.put(ci.getId(), ci);
 
-        createCommitRelations(commit, walk);
+//        createCommitRelations(commit, walk);
 
         LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitInfo -> Exit.");
         return ci;
@@ -177,9 +181,9 @@ public class GitCommitTools {
             //for each parent in the list, parses it, creating a RevCommit
             RevCommit parent = walk.parseCommit(parents[j]);
             //if parent does not exist in map, recursively calls createCommitInfo to include it.
-            if (!commitInfoMap.containsKey(parent.getName())) {
-                createCommitInfo(parent, walk);
-            }
+//            if (!commitInfoMap.containsKey(parent.getName())) {
+//                createCommitInfo(parent, walk);
+//            }
             //adds a new relation between the commit and its parent in commitRelationshipList
             CommitRelationship relation =
                     new CommitRelationship(commitInfoMap.get(commit.getName()),
@@ -219,11 +223,10 @@ public class GitCommitTools {
     public static Set<CommitChange> getCommitChangeSet(String commitId, String repositoryId) {
         LoggerFactory.getLogger(GitCommitTools.class).trace("getCommitChangeSet -> Entry.");
         Set<CommitChange> changes = new HashSet<CommitChange>();
-        Repository repo = null;
         RevWalk rw = null;
         DiffFormatter df = null;
         try {
-            repo = MonitoredRepositories.getMonitoredProjectById(repositoryId).getWorkingCloneConnection().getRepository();
+            Repository repo = MonitoredRepositories.getMonitoredProjectById(repositoryId).getWorkingCloneConnection().getRepository();
             ObjectId objId = repo.resolve(commitId);
             RevCommit commit = CommitUtils.getCommit(repo, objId);
             rw = new RevWalk(repo);
@@ -257,7 +260,7 @@ public class GitCommitTools {
                 df.release();
             }
             if (rw != null) {
-                rw.release();
+                rw.dispose();
             }
         }
         LoggerFactory.getLogger(GitCommitTools.class).trace("getCommitChangeSet -> Exit.");

@@ -7,8 +7,6 @@ import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -23,7 +21,7 @@ public class BasicRepositoryHistoryGraph {
      * @param rep the repository for which the graph will be created
      * @return a graph representing the repository
      */
-    public static DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> createBasicRepositoryHistoryGraph(MonitoredRepository rep) {
+    public static DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> createBasicRepositoryHistoryGraph(MonitoredRepository rep) throws VCSException {
         LoggerFactory.getLogger(BasicRepositoryHistoryGraph.class).trace("Constructor -> Entry");
         final DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> graph = new DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship>();
         try {
@@ -35,8 +33,8 @@ public class BasicRepositoryHistoryGraph {
                 graph.addEdge(commitRelationship, commitRelationship.getChild(), commitRelationship.getParent());
             }
         } catch (VCSException ex) {
-            Logger.getLogger(BasicRepositoryHistoryGraph.class.getName()).log(Level.SEVERE, null, ex);
             MessageManager.getInstance().addMessage("Error during graph creation: " + ex);
+            throw ex;
         }
         LoggerFactory.getLogger(BasicRepositoryHistoryGraph.class).trace("Constructor -> Exit");
         return graph;

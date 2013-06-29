@@ -1,6 +1,7 @@
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.application.IConstants;
+import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.graph.BasicRepositoryHistoryGraph;
 import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
 import br.uff.ic.dyevc.graph.transform.CHVertexLabelTransformer;
@@ -51,6 +52,7 @@ import java.awt.Paint;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JOptionPane;
 import javax.swing.ToolTipManager;
 
 /**
@@ -80,13 +82,20 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private final ScalingControl scaler = new CrossoverScalingControl();
 
     public CommitHistoryWindow(MonitoredRepository rep) {
-        this.rep = rep;
-        SplashScreen.getInstance().setStatus("Initializing Graph component");
-        SplashScreen.getInstance().setVisible(true);
-        initGraphComponent();
-        SplashScreen.getInstance().setStatus("Initializing Window components");
-        initComponents();
-        SplashScreen.getInstance().setVisible(false);
+        SplashScreen splash = SplashScreen.getInstance();
+        try {
+            splash.setStatus("Initializing Graph component");
+            this.rep = rep;
+            SplashScreen.getInstance().setVisible(true);
+            initGraphComponent();
+            SplashScreen.getInstance().setStatus("Initializing Window components");
+            initComponents();
+            SplashScreen.getInstance().setVisible(false);
+        } catch (VCSException ex) {
+            splash.dispose();
+            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
+                    ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">
@@ -179,7 +188,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     }// </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="initGraphComponent">
-    private void initGraphComponent() {
+    private void initGraphComponent() throws VCSException {
         // create the commit history graph with all commits from repository
         graph = BasicRepositoryHistoryGraph.createBasicRepositoryHistoryGraph(rep);
         collapsedGraph = graph;
