@@ -161,7 +161,7 @@ public class CommitInfo implements Comparable<CommitInfo> {
             result = 1;
         }
         if (this.getCommitDate().equals(o.getCommitDate())) {
-            result = 0;
+            result = this.getId().compareTo(o.getId());
         }
         return result;
     }
