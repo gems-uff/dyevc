@@ -33,11 +33,11 @@ import javax.swing.JPanel;
 import org.apache.commons.collections15.Predicate;
 import org.apache.commons.collections15.Transformer;
 
-import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.visualization.DefaultVisualizationModel;
 import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
+import edu.uci.ics.jung.visualization.Layer;
 import edu.uci.ics.jung.visualization.VisualizationModel;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
@@ -47,8 +47,10 @@ import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
 import edu.uci.ics.jung.visualization.subLayout.GraphCollapser;
+import edu.uci.ics.jung.visualization.transform.MutableTransformer;
 import edu.uci.ics.jung.visualization.util.PredicatedParallelEdgeIndexFunction;
 import java.awt.Paint;
+import java.awt.Point;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.DefaultComboBoxModel;
@@ -67,7 +69,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private DirectedOrderedSparseMultigraph graph;
     private DirectedOrderedSparseMultigraph collapsedGraph;
     private VisualizationViewer vv;
-    private Layout layout;
+    private RepositoryHistoryLayout layout;
     private GraphCollapser collapser;
     Filter<CommitInfo, CommitRelationship> edgeFilter;
     Filter<CommitInfo, CommitRelationship> nodeFilter;
@@ -78,7 +80,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private JButton collapse;
     private JButton expand;
     private JButton reset;
-    private final DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse();
+    private final DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse<CommitInfo, CommitRelationship>();
     private final ScalingControl scaler = new CrossoverScalingControl();
 
     public CommitHistoryWindow(MonitoredRepository rep) {
@@ -90,12 +92,18 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             initGraphComponent();
             SplashScreen.getInstance().setStatus("Initializing Window components");
             initComponents();
+            translateGraph();
             SplashScreen.getInstance().setVisible(false);
         } catch (VCSException ex) {
             splash.dispose();
             JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
                     ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
-        }
+        } catch(RuntimeException ex) {
+            ex.printStackTrace(System.err);
+            splash.dispose();
+            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
+                    ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+        }            
     }
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">
@@ -115,6 +123,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         mouseModesCombo = graphMouse.getModeComboBox();
         mouseModesCombo.addItemListener(graphMouse.getModeListener());
         graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+        
 
         plus = new JButton("+");
         plus.addActionListener(new ActionListener() {
@@ -353,5 +362,21 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         MonitoredRepository rep = new MonitoredRepository("rep1363653250218");
 //        rep.setId("rep1364318989748");
         new CommitHistoryWindow(rep).setVisible(true);
+    }
+
+    /**
+     * Translates graph, positioning it at the farthest X position.
+     */
+    private void translateGraph() {
+        MutableTransformer modelTransformer = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT);
+
+        int lastXPosition = graph.getVertexCount() * 70;
+        int showPosition = lastXPosition - vv.getPreferredSize().width;
+        Point graphEnd = new Point(layout.getWidth() - vv.getPreferredSize().width, 0);
+        Point graphStart = new Point(0, 0);
+        float dx = (float) (graphStart.getX()-graphEnd.getX());
+        float dy = (float) (graphStart.getY()-graphEnd.getY());
+
+        modelTransformer.translate(dx, dy);
     }
 }
