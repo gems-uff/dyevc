@@ -63,7 +63,7 @@ public class GitCommitTools {
     public GitCommitTools(MonitoredRepository rep) throws VCSException {
         this.commitInfoMap = new TreeMap<String, CommitInfo>();
         this.commitRelationshipList = new ArrayList<CommitRelationship>();
-        this.git = rep.getWorkingCloneConnection();
+        this.git = rep.getConnection();
         populateHistory();
     }
 
