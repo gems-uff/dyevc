@@ -7,3 +7,4 @@
 *.bak
 /DyeVC/target/
 /DyeVC/src/main/jnlp/template2.vm.jnlp
+/DyeVC/src/main/java/br/uff/ic/dyevc/tests
