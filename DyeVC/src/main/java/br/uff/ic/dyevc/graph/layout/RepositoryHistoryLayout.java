@@ -1,7 +1,9 @@
 package br.uff.ic.dyevc.graph.layout;
 
+import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.gui.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
+import br.uff.ic.dyevc.model.MonitoredRepository;
 import edu.uci.ics.jung.algorithms.layout.AbstractLayout;
 import edu.uci.ics.jung.algorithms.shortestpath.DijkstraDistance;
 import edu.uci.ics.jung.algorithms.util.IterativeContext;
@@ -9,8 +11,13 @@ import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
+import javax.swing.JOptionPane;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.gitective.core.CommitUtils;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -31,6 +38,11 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     private ArrayList<V> heads = new ArrayList<V>();
     
     /**
+     * List of heads that were already processed
+     */
+    private ArrayList<V> processedHeads = new ArrayList<V>();
+    
+    /**
      * List of heights for each node. To find the height of a node, all that is
      * needed is to divide the X position by XDISTANCE and the integer result is
      * the position in the list where the node's height is stored.
@@ -43,17 +55,29 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     private ArrayList<V> nodes = new ArrayList<V>();
     
     /**
+     * Maps each node's hash info with its X position
+     */
+    private HashMap<String, Double> nodePositions = new HashMap<String, Double>();
+    
+    
+    /**
      * DijkstraDistance is used to find out if there is a path between two nodes.
      */
     private DijkstraDistance<V, E> distances;
+    
+    /**
+     * Repository from where this log is being drawn
+     */
+    MonitoredRepository rep;
 
     /**
      * Creates an instance for the specified graph.
      */
-    public RepositoryHistoryLayout(DirectedOrderedSparseMultigraph<V, E> g) {
+    public RepositoryHistoryLayout(DirectedOrderedSparseMultigraph<V, E> g, MonitoredRepository rep) {
         super(g);
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("Constructor -> Entry");
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("Constructor -> Graph has {} nodes to be plotted.", g.getVertexCount());
+        this.rep = rep;
         distances = new DijkstraDistance<V, E>(g);
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("Constructor -> Exit");
     }
@@ -78,37 +102,56 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
 
     private void doInit() {
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Entry");
-        //Initial height of tree
-        int height = 0;
-        //Starting X position
-        double xPos = 0.0;
-
-        heads.clear();
-        nodes.clear();
-        
         SplashScreen splash = SplashScreen.getInstance();
-        splash.setStatus("Calculating X positions...");
-        splash.setVisible(true);
-        calcXPositionsAndFindHeads(xPos);
-        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("doInit -> Graph has {} nodes and {} heads", nodes.size(), heads.size());
-        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Initializing visited state for all graph nodes");
-        
-        splash.setStatus("Resetting visited status for " + graph.getVertexCount() + " vertices...");
-        for (V v: graph.getVertices()) {
-            //resets the attribute "visited" of each node to repaint graph uppon user demand
-            if (v instanceof CommitInfo) ((CommitInfo)v).setVisited(false);
-        }
-        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Finished initializing visited state for all graph nodes");
+        try {
+            //Starting X position
+            double xPos = 0.0;
 
-        int i = 1;
-        while (!heads.isEmpty()) {
-            splash.setStatus("Calculating Y positions starting in head " + i++ +"/"+ heads.size() + "...");            
-            V v = heads.remove(heads.size() - 1);
-            // There is no problem in starting with height = 0, because the
-            // algorithm will change it if necessary
-            calcYPositions(v, height);
+            heads.clear();
+            processedHeads.clear();
+            nodes.clear();
+
+            splash.setStatus("Calculating X positions...");
+            splash.setVisible(true);
+            calcXPositionsAndFindHeads(xPos);
+            LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("doInit -> Graph has {} nodes and {} heads", nodes.size(), heads.size());
+            LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Initializing visited state for all graph nodes");
+
+            splash.setStatus("Resetting visited status for " + graph.getVertexCount() + " vertices...");
+            for (V v: graph.getVertices()) {
+                //resets the attribute "visited" of each node to repaint graph uppon user demand
+                if (v instanceof CommitInfo) ((CommitInfo)v).setVisited(false);
+            }
+            LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Finished initializing visited state for all graph nodes");
+
+            int i = 1;
+            while (!heads.isEmpty()) {
+                splash.setStatus("Calculating Y positions starting in head " + i++ +"/"+ heads.size() + "...");            
+                //Initial height of tree
+                int height = 0;
+                V v = heads.remove(heads.size() - 1);
+
+                //Get max height 
+                for (V head: processedHeads) {
+                    height = Math.max(height, findMaxHeightBetweenSubtrees(v, head));
+                }
+                processedHeads.add(v);
+                // There is no problem in starting with height = 0, because the
+                // algorithm will change it if necessary
+                calcYPositions(v, height);
+            }
+            splash.setVisible(false);
+        } catch (VCSException vcse) {
+            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
+                    vcse + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+            
+        } catch(RuntimeException ex) {
+            ex.printStackTrace(System.err);
+            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
+                    ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            splash.dispose();
         }
-        splash.setVisible(false);
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Exit");
     }
 
@@ -151,32 +194,35 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
             //If this happens, v will be shifted to a new X position and all nodes
             //that were after it before will be left shifted.
             if (nodes.contains(v)) {
+                double newXPos = xPos - (XDISTANCE * 2);
                 for (int i = nodes.indexOf(v); i < nodes.size(); i++) {
                     //ajustar a posição x, recuando em xdistance
                     V node = nodes.get(i);
                     Point2D coords = transform(node);
-                    coords.setLocation(xPos - (XDISTANCE * 2), coords.getY());
+                    coords.setLocation(newXPos, coords.getY());
+                    nodePositions.put(getHashFromNode(node), new Double(newXPos));
                 }
                 xPos -= XDISTANCE;
                 nodes.remove(v);
             }
             Point2D xyd = transform(v);
             xyd.setLocation(xPos, xyd.getY());
+            nodePositions.put(getHashFromNode(v), new Double(xPos));
             nodes.add(v);
             xPos += XDISTANCE;
 
-            int parentsCount = graph.getPredecessorCount(v);
+            int childrenCount = graph.getPredecessorCount(v);
             
-            if (parentsCount == 0)  {
+            if (childrenCount == 0)  {
                 //A new head was found. Include it in the list, because Y position
                 //is calculated starting with the heads.
                 heads.add(v);
             } else {
                 //Include predecessors in the Set to be processed, taking care of
                 //its type, because collapsed graphs will not be processed here.
-                for (V parent : graph.getPredecessors(v)) {
-                    if (parent instanceof CommitInfo) {
-                        nodesToProcess.add(parent);
+                for (V child : graph.getPredecessors(v)) {
+                    if (child instanceof CommitInfo) {
+                        nodesToProcess.add(child);
                     }
                 }
             }
@@ -344,6 +390,35 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     }
 
     /**
+     * Calculates the max height between subtrees headed by v1 and v2, until their
+     * merge base
+     *
+     * @param head1 First head
+     * @param head2 Second head
+     * @return the max height of nodes between nodes v1 and v2
+     */
+    private int findMaxHeightBetweenSubtrees(V head1, V head2) throws VCSException {
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenSubtrees -> Entry");
+        int index1 = calcIndexFromXPosition(head1);
+        
+        RevCommit commit = CommitUtils.getBase(rep.getConnection().getRepository(), getHashFromNode(head1), getHashFromNode(head2));
+        String hashBase = commit.getName();
+        int index2 = calcIndexFromXPosition(nodePositions.get(hashBase));
+        
+        if (index1 > index2) {
+            int temp = index1;
+            index1 = index2;
+            index2 = temp;
+        }
+        
+        List<Integer> heightsSubList = heights.subList(index1, index2);
+        
+        int result = Collections.max(heightsSubList);
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("findMaxHeightBetweenSubtrees -> Exit");
+        return result + 1;
+    }
+
+    /**
      * Calculates the position in the heights list, based on X position. The
      * calculation involves dividing the X position by XDISTANCE.
      *
@@ -351,7 +426,28 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      * @return
      */
     private int calcIndexFromXPosition(V v) {
-        return (int) (transform(v).getX() / XDISTANCE);
+        return calcIndexFromXPosition(transform(v).getX());
+    }
+
+    /**
+     * Calculates the position in the heights list, based on a node's hash
+     *
+     * @param hash Node's hash for which position will be calculated.
+     * @return
+     */
+    private int calcIndexFromHash(String hash) {
+        return calcIndexFromXPosition(nodePositions.get(hash));
+    }
+
+    /**
+     * Calculates the position in the heights list, based on X position. The
+     * calculation involves dividing the X position by XDISTANCE.
+     *
+     * @param xPosition Position to be calculated
+     * @return
+     */
+    private int calcIndexFromXPosition(Double xPosition) {
+        return (int) (xPosition / XDISTANCE);
     }
 
     /**
@@ -422,5 +518,14 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
 
     @Override
     public void step() {
+    }
+
+    /**
+     * Gets the hash of a node
+     * @param node The node to get the hash
+     * @return  the hash of the specified node
+     */
+    private String getHashFromNode(V node) {
+        return ((CommitInfo)node).getId();
     }
 }

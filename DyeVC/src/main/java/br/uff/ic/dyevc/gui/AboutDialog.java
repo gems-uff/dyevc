@@ -1,21 +1,15 @@
 package br.uff.ic.dyevc.gui;
 
-import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
 import br.uff.ic.dyevc.utils.SystemUtils;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import org.slf4j.LoggerFactory;
 
 /**
  * Dialog that shows up application version obtained from manifest file.

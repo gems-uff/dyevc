@@ -203,7 +203,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         collapsedGraph = graph;
 
         // Choosing layout
-        layout = new RepositoryHistoryLayout(graph);
+        layout = new RepositoryHistoryLayout(graph, rep);
         Dimension preferredSize = new Dimension(580, 580);
 
         final VisualizationModel visualizationModel =
