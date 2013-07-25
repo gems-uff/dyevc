@@ -55,8 +55,8 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         } else {
             setTitle("Changing a monitoring configuration");
         }
-        setSize(new java.awt.Dimension(528, 160));
-        setMinimumSize(new java.awt.Dimension(528, 160));
+        setSize(new java.awt.Dimension(528, 180));
+        setMinimumSize(new java.awt.Dimension(528, 180));
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
         setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
@@ -65,13 +65,18 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         pnlBottom = new javax.swing.JPanel();
         pnlTop.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
+        lblSystemName = new javax.swing.JLabel();
+        lblSystemName.setText("Repository Name:");
+        lblSystemName.setToolTipText("Enter the globally known name to recognize this repository.");
         lblRepositoryName = new javax.swing.JLabel();
-        lblRepositoryName.setText("Repository Name:");
-        lblRepositoryName.setToolTipText("Enter a name to recognize this repository.");
+        lblRepositoryName.setText("Clone Name:");
+        lblRepositoryName.setToolTipText("Enter a name to recognize this clone in your machine.");
         lblCloneAddress = new javax.swing.JLabel();
         lblCloneAddress.setText("Repository Address:");
         lblCloneAddress.setToolTipText("Click on the button to select the path to a local repository you want to monitor.");
 
+        txtSystemName = new javax.swing.JTextField();
+        txtSystemName.setText(repositoryBean.getSystemName());
         txtRepositoryName = new javax.swing.JTextField();
         txtRepositoryName.setText(repositoryBean.getName());
         txtCloneAddres = new javax.swing.JTextField();
@@ -115,6 +120,20 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     }
 
     private void btnSaveRepositoryActionPerformed(java.awt.event.ActionEvent evt) {
+        if (txtSystemName.getText() == null || "".equals(txtSystemName.getText()) || "no name".equals(txtSystemName.getText())){
+            JOptionPane.showMessageDialog(this, "Repository name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
+            txtSystemName.requestFocus();
+            txtSystemName.selectAll();
+            return;
+        }            
+        if (txtRepositoryName.getText() == null || "".equals(txtRepositoryName.getText()) || "no name".equals(txtRepositoryName.getText())){
+            JOptionPane.showMessageDialog(this, "Clone name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
+            txtRepositoryName.requestFocus();
+            txtRepositoryName.selectAll();
+            return;
+        }
+            
+        repositoryBean.setSystemName(txtSystemName.getText());
         repositoryBean.setName(txtRepositoryName.getText());
         repositoryBean.setCloneAddress(txtCloneAddres.getText());
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
@@ -161,9 +180,11 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private javax.swing.JButton btnExploreCloneAddress;
     private javax.swing.JButton btnSaveRepository;
     private javax.swing.JButton btnCancel;
+    private javax.swing.JLabel lblSystemName;
     private javax.swing.JLabel lblRepositoryName;
     private javax.swing.JLabel lblCloneAddress;
     private javax.swing.JTextField txtCloneAddres;
+    private javax.swing.JTextField txtSystemName;
     private javax.swing.JTextField txtRepositoryName;
     private javax.swing.JPanel pnlTop;
     private javax.swing.JPanel pnlBottom;
@@ -176,10 +197,12 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addGroup(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(lblSystemName, javax.swing.GroupLayout.Alignment.TRAILING)
                 .addComponent(lblRepositoryName, javax.swing.GroupLayout.Alignment.TRAILING)
                 .addComponent(lblCloneAddress, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(txtSystemName)
                 .addComponent(txtRepositoryName)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addComponent(btnExploreCloneAddress)
@@ -190,6 +213,10 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addComponent(lblSystemName)
+                .addComponent(txtSystemName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                 .addComponent(lblRepositoryName)
                 .addComponent(txtRepositoryName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))

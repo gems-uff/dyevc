@@ -102,6 +102,7 @@ public final class PreferencesUtils {
             Preferences nodeToStore = pref.node(NODE_MONITORED_REPOSITORIES);
             for (Iterator<MonitoredRepository> it = reps.iterator(); it.hasNext();) {
                 MonitoredRepository repositoryBean = it.next();
+                nodeToStore.node(repositoryBean.getId()).put("systemName", repositoryBean.getSystemName());
                 nodeToStore.node(repositoryBean.getId()).put("name", repositoryBean.getName());
                 nodeToStore.node(repositoryBean.getId()).put("cloneaddress", repositoryBean.getCloneAddress());
             }
@@ -121,6 +122,7 @@ public final class PreferencesUtils {
                 for (int i = 0; i < reps.length; i++) {
                     Preferences repNode = nodeToStore.node(reps[i]);
                     MonitoredRepository bean = new MonitoredRepository(repNode.name());
+                    bean.setSystemName(repNode.get("systemName", "no name"));
                     bean.setName(repNode.get("name", "no name"));
                     bean.setCloneAddress(repNode.get("cloneaddress", "no cloneaddress"));
                     monBean.addMonitoredRepository(bean);

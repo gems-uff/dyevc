@@ -21,12 +21,20 @@ public class MonitoredRepository implements Serializable {
      */
     public static final String NAME = "name";
     /**
+     * How the attribute "systemName" is called
+     */
+    public static final String SYSTEM_NAME = "systemName";
+    /**
      * How the attribute "cloneAddress" is called
      */
     public static final String PROP_CLONEADDRESS = "cloneAddress";
     private static final long serialVersionUID = -8604175800390199323L;
     /**
-     * Name of the repository.
+     * Name of the system (global known name of the repository).
+     */
+    private String systemName;
+    /**
+     * Name of the clone.
      */
     private String name;
     /**
@@ -91,6 +99,7 @@ public class MonitoredRepository implements Serializable {
 
     public MonitoredRepository(String id) {
         this.name = "";
+        this.systemName = "";
         this.cloneAddress = "";
         this.id = id;
         this.repStatus = new RepositoryStatus("");
@@ -107,6 +116,16 @@ public class MonitoredRepository implements Serializable {
         propertySupport.firePropertyChange(NAME, oldValue, name);
     }
 
+    public String getSystemName() {
+        return systemName;
+    }
+
+    public void setSystemName(String value) {
+        String oldValue = systemName;
+        systemName = value;
+        propertySupport.firePropertyChange(SYSTEM_NAME, oldValue, systemName);
+    }
+
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         propertySupport.addPropertyChangeListener(listener);
     }
@@ -117,7 +136,8 @@ public class MonitoredRepository implements Serializable {
 
     @Override
     public String toString() {
-        return new StringBuilder("Repository{name=").append(name)
+        return new StringBuilder("Repository{systemName=").append(systemName)
+                .append(", name=").append(name)
                 .append(", id=").append(id)
                 .append(", cloneAddress=").append(cloneAddress)
                 .append("}").toString();
