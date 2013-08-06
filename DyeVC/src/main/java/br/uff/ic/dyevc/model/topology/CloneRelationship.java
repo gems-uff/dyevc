@@ -23,9 +23,4 @@ public class CloneRelationship {
     public CloneInfo getDestination() {
         return destination;
     }
-
-    @Override
-    public String toString() {
-        return origin.getCloneName() + " --> " + destination.getCloneName();
-    }
 }

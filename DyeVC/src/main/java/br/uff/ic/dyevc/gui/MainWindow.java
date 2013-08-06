@@ -413,6 +413,18 @@ public class MainWindow extends javax.swing.JFrame {
         new CommitHistoryWindow(getSelectedRepository()).setVisible(true);
     }
     
+    private void mntShowTopologyActionPerformed(ActionEvent evt) {
+        MonitoredRepository rep = getSelectedRepository();
+        
+        //Verify if system name was specified.
+        if ("".equals(rep.getSystemName()) || "no name".equals(rep.getSystemName())){
+            JOptionPane.showMessageDialog(this, "This clone doesn't have a system name configured. Edit its configuration and set a system name.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        new TopologyWindow(getSelectedRepository().getSystemName()).setVisible(true);
+    }
+    
     private void mntShowBranchesHistoryActionPerformed(ActionEvent evt) {
         BranchesHistoryController branchesHistoryController = new BranchesHistoryController(getSelectedRepository());
         branchesHistoryController.execute();
@@ -506,6 +518,16 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jPopupRepoList.add(mntShowLog);
+        
+        JMenuItem mntShowTopology = new javax.swing.JMenuItem();
+        mntShowTopology.setText("Show topology");
+        mntShowTopology.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntShowTopologyActionPerformed(evt);
+            }
+        });
+        jPopupRepoList.add(mntShowTopology);
         
         JMenuItem mntShowBranchesHistory = new javax.swing.JMenuItem();
         mntShowBranchesHistory.setText("Show Branches History");

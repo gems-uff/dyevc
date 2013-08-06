@@ -9,6 +9,7 @@ import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.topology.CloneInfo;
 import br.uff.ic.dyevc.model.topology.CloneRelationship;
 import br.uff.ic.dyevc.model.topology.Topology;
+import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import edu.uci.ics.jung.graph.DelegateForest;
 import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
@@ -57,12 +58,16 @@ public class GraphBuilder {
         LoggerFactory.getLogger(GraphBuilder.class).trace("createTopologyGraph -> Entry");
         final DirectedSparseMultigraph<CloneInfo, CloneRelationship> graph = new DirectedSparseMultigraph<CloneInfo, CloneRelationship>();
         try {
-            Topology top = Topology.getTopology();
+            TopologyDAO dao = new TopologyDAO();
+            Topology top = dao.readTopology();
             for (CloneInfo cloneInfo : top.getClonesForSystem(systemName)) {
                 graph.addVertex(cloneInfo);
+                LoggerFactory.getLogger(GraphBuilder.class).debug("Vertex added: " + cloneInfo);
+
             }
             for (CloneRelationship cloneRelationship : top.getRelationshipsForSystem(systemName)) {
                 graph.addEdge(cloneRelationship, cloneRelationship.getOrigin(), cloneRelationship.getDestination(), EdgeType.DIRECTED);
+                LoggerFactory.getLogger(GraphBuilder.class).debug("Edge added: " + cloneRelationship);
             }
         } catch (DyeVCException ex) {
             MessageManager.getInstance().addMessage("Error during graph creation: " + ex);
