@@ -44,8 +44,8 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         initComponents();
     }
 
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="initComponents">
+    @SuppressWarnings("unchecked")
     private void initComponents() {
         settings = PreferencesUtils.loadPreferences();
 
@@ -113,6 +113,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         buildUI();
 
     }
+    //</editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="event handlers">    
     private void btnCancelActionPerformed(java.awt.event.ActionEvent evt) {
@@ -120,17 +121,30 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     }
 
     private void btnSaveRepositoryActionPerformed(java.awt.event.ActionEvent evt) {
+        //Verify if system name was specified.
         if (txtSystemName.getText() == null || "".equals(txtSystemName.getText()) || "no name".equals(txtSystemName.getText())){
             JOptionPane.showMessageDialog(this, "Repository name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
             txtSystemName.requestFocus();
             txtSystemName.selectAll();
             return;
-        }            
+        }
+        
+        //Verify if clone name was specified.
         if (txtRepositoryName.getText() == null || "".equals(txtRepositoryName.getText()) || "no name".equals(txtRepositoryName.getText())){
             JOptionPane.showMessageDialog(this, "Clone name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
             txtRepositoryName.requestFocus();
             txtRepositoryName.selectAll();
             return;
+        }
+        
+        //Verify if clone namem is unique in this host.
+        for(MonitoredRepository rep: MonitoredRepositories.getMonitoredProjects()) {
+            if (rep.getName().equalsIgnoreCase(txtRepositoryName.getText())) {
+                JOptionPane.showMessageDialog(this, "There is a clone defined with this name. Please choose another clone name.", "Error", JOptionPane.ERROR_MESSAGE);
+                txtRepositoryName.requestFocus();
+                txtRepositoryName.selectAll();
+                return;
+            }
         }
             
         repositoryBean.setSystemName(txtSystemName.getText());
@@ -176,7 +190,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     /**
      * If true, bean will be created. Otherwise it will be modified.
      */
-    boolean create;
+    private boolean create;
     private javax.swing.JButton btnExploreCloneAddress;
     private javax.swing.JButton btnSaveRepository;
     private javax.swing.JButton btnCancel;

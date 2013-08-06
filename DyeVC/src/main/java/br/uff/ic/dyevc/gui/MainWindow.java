@@ -582,7 +582,7 @@ public class MainWindow extends javax.swing.JFrame {
      * Starts the repository monitor.
      */
     private void startMonitor() {
-        monitor = new RepositoryMonitor(this, monitoredRepositories);
+        monitor = new RepositoryMonitor(this);
     }
 
     /**

@@ -38,9 +38,8 @@ public class RepositoryMonitor extends Thread {
      *
      * @param container the container for this monitor. It will be used to send
      * messages during monitoring.
-     * @param mr the model of monitored repositories to be checked.
      */
-    public RepositoryMonitor(MainWindow container, MonitoredRepositories mr) {
+    public RepositoryMonitor(MainWindow container) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
         settings = PreferencesUtils.loadPreferences();
         this.container = container;

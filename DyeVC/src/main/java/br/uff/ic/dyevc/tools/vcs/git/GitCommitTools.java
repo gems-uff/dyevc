@@ -56,7 +56,7 @@ public class GitCommitTools {
     private GitConnector git;
 
     /**
-     * The list of commits if created in this constructor.
+     * The list of commits is created in this constructor.
      *
      * @param git the repository that contains a git connection
      */
@@ -68,7 +68,7 @@ public class GitCommitTools {
     }
 
     /**
-     * The list of commits if created in this constructor.
+     * The list of commits is created in this constructor.
      *
      * @param git the connector to be used to connect to a Git repository.
      */
