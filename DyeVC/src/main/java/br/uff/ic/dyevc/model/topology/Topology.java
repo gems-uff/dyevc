@@ -117,11 +117,11 @@ public class Topology {
      * returned
      * @return List of known clones for the given system name
      */
-    public ArrayList<CloneInfo> getClonesForSystem(String systemName) throws DyeVCException {
+    public Collection<CloneInfo> getClonesForSystem(String systemName) throws DyeVCException {
         if (!cloneMap.containsKey(systemName)) {
             throw new DyeVCException("System " + systemName + " is not a known system name.");
         }
-        return new ArrayList(cloneMap.get(systemName).values());
+        return cloneMap.get(systemName).values();
     }
     // </editor-fold>
     
