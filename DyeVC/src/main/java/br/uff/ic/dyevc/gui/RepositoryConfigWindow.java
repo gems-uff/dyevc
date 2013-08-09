@@ -137,9 +137,9 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             return;
         }
         
-        //Verify if clone namem is unique in this host.
+        //Verify if clone name is unique in this host.
         for(MonitoredRepository rep: MonitoredRepositories.getMonitoredProjects()) {
-            if (rep.getName().equalsIgnoreCase(txtRepositoryName.getText())) {
+            if (rep.getName().equalsIgnoreCase(txtRepositoryName.getText()) && !rep.getId().equals(repositoryBean.getId())) {
                 JOptionPane.showMessageDialog(this, "There is a clone defined with this name. Please choose another clone name.", "Error", JOptionPane.ERROR_MESSAGE);
                 txtRepositoryName.requestFocus();
                 txtRepositoryName.selectAll();
