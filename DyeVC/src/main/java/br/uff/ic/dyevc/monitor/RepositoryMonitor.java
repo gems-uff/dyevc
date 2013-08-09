@@ -158,7 +158,7 @@ public class RepositoryMonitor extends Thread {
 
             if (!GitConnector.isValidRepository(pathTemp)) {
                 LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .debug("There is no temp repository at {}. Will create a temp by cloning {}.",
+                        .debug("There is no valid temp repository at {}. Will create a valid temp by cloning {}.",
                         pathTemp, monitoredRepository.getId());
                 monitoredRepository.setWorkingCloneConnection(createWorkingClone(pathTemp, sourceConnector));
             }
