@@ -117,7 +117,7 @@ public class GitConnector {
             try {
                 result = new FileRepository(checkRepositoryPathName(path)).getObjectDatabase().exists();
                 LoggerFactory.getLogger(GitConnector.class).debug("Path <{}> IS a valid repository.", path);
-            } catch (IOException e) {
+            } catch (Throwable t) {
                 result = false;
             }
         }
