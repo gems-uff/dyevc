@@ -10,6 +10,7 @@ import br.uff.ic.dyevc.utils.ImageUtils;
 import br.uff.ic.dyevc.utils.LimitLinesDocumentListener;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.AWTException;
+import java.awt.Cursor;
 import java.awt.Image;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
@@ -23,11 +24,13 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
+import javax.swing.JTable;
 import javax.swing.WindowConstants;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.text.DefaultCaret;
 import org.slf4j.LoggerFactory;
 
@@ -58,10 +61,11 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPaneMessages;
     private LogTextArea jTextAreaMessages;
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositories;
-    private javax.swing.JList repoList;
+    private javax.swing.JTable repoTable;
+    private TableColumnAdjuster tca;
     //Variáveis de menu
     private javax.swing.JMenuBar jMenuBar;
-    private JPopupMenu jPopupRepoList;
+    private JPopupMenu jPopupRepoTable;
     private JPopupMenu jPopupTextAreaMessages;
     private PopupMenu trayPopup;
     private TrayIcon trayIcon;
@@ -94,11 +98,20 @@ public class MainWindow extends javax.swing.JFrame {
 
         jScrollPane1 = new javax.swing.JScrollPane();
 
-        repoList = new javax.swing.JList(monitoredRepositories);
-        repoList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        repoList.setCellRenderer(new RepositoryRenderer(true));
+        repoTable = new javax.swing.JTable(monitoredRepositories);
+        repoTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        repoTable.setDefaultRenderer(MonitoredRepository.class, new RepositoryRenderer());
+        repoTable.setDefaultRenderer(String.class, new StringRenderer());
+        repoTable.getTableHeader().setDefaultRenderer(new HeaderRenderer());
+        repoTable.getTableHeader().setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        repoTable.setAutoCreateRowSorter(true);
+        repoTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        tca = new TableColumnAdjuster(repoTable);
+        tca.adjustColumns();
+        repoTable.setPreferredScrollableViewportSize(repoTable.getPreferredSize());
+        repoTable.setRowHeight(36);
 
-        jScrollPane1.setViewportView(repoList);
+        jScrollPane1.setViewportView(repoTable);
 
         jScrollPaneMessages = new javax.swing.JScrollPane();
         jScrollPaneMessages.setBorder(javax.swing.BorderFactory.createTitledBorder("Messages"));
@@ -131,7 +144,7 @@ public class MainWindow extends javax.swing.JFrame {
                 .addComponent(jScrollPaneMessages, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)));
 
         buildMainMenu();
-        buildRepoListPopup();
+        buildRepoTablePopup();
         buildTextAreaPopup();
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -412,19 +425,19 @@ public class MainWindow extends javax.swing.JFrame {
     private void mntShowLogActionPerformed(ActionEvent evt) {
         new CommitHistoryWindow(getSelectedRepository()).setVisible(true);
     }
-    
+
     private void mntShowTopologyActionPerformed(ActionEvent evt) {
         MonitoredRepository rep = getSelectedRepository();
-        
+
         //Verify if system name was specified.
-        if ("".equals(rep.getSystemName()) || "no name".equals(rep.getSystemName())){
+        if ("".equals(rep.getSystemName()) || "no name".equals(rep.getSystemName())) {
             JOptionPane.showMessageDialog(this, "This clone doesn't have a system name configured. Edit its configuration and set a system name.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
+
         new TopologyWindow(getSelectedRepository().getSystemName()).setVisible(true);
     }
-    
+
     private void mntShowBranchesHistoryActionPerformed(ActionEvent evt) {
         BranchesHistoryController branchesHistoryController = new BranchesHistoryController(getSelectedRepository());
         branchesHistoryController.execute();
@@ -434,7 +447,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntRemoveProjectActionPerformed(ActionEvent evt) {
         MonitoredRepository rep = getSelectedRepository();
-        int n = JOptionPane.showConfirmDialog(repoList, "Do you really want to stop monitoring " + rep.getName() + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        int n = JOptionPane.showConfirmDialog(repoTable, "Do you really want to stop monitoring " + rep.getName() + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (n == JOptionPane.YES_OPTION) {
             monitoredRepositories.removeMonitoredRepository(rep);
             PreferencesUtils.persistRepositories();
@@ -445,7 +458,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (monitor.getState().equals(Thread.State.TIMED_WAITING)) {
             monitor.interrupt();
         } else {
-            JOptionPane.showMessageDialog(repoList, "Monitor is busy now. Please try again later.", "Information", JOptionPane.OK_OPTION);
+            JOptionPane.showMessageDialog(repoTable, "Monitor is busy now. Please try again later.", "Information", JOptionPane.OK_OPTION);
         }
     }
 
@@ -455,7 +468,7 @@ public class MainWindow extends javax.swing.JFrame {
             monitor.setRepositoryToMonitor(rep);
             monitor.interrupt();
         } else {
-            JOptionPane.showMessageDialog(repoList, "Monitor is busy now. Please try again later.", "Information", JOptionPane.OK_OPTION);
+            JOptionPane.showMessageDialog(repoTable, "Monitor is busy now. Please try again later.", "Information", JOptionPane.OK_OPTION);
         }
     }
 
@@ -487,8 +500,8 @@ public class MainWindow extends javax.swing.JFrame {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="repoList menu">  
-    private void buildRepoListPopup() {
-        jPopupRepoList = new JPopupMenu();
+    private void buildRepoTablePopup() {
+        jPopupRepoTable = new JPopupMenu();
         JMenuItem mntCheckProject = new javax.swing.JMenuItem();
         mntCheckProject.setText("Check Project");
         mntCheckProject.addActionListener(new java.awt.event.ActionListener() {
@@ -497,7 +510,7 @@ public class MainWindow extends javax.swing.JFrame {
                 mntCheckProjectActionPerformed(evt);
             }
         });
-        jPopupRepoList.add(mntCheckProject);
+        jPopupRepoTable.add(mntCheckProject);
 
         JMenuItem mntEditProject = new javax.swing.JMenuItem();
         mntEditProject.setText("Edit Project");
@@ -507,7 +520,7 @@ public class MainWindow extends javax.swing.JFrame {
                 mntEditProjectActionPerformed(evt);
             }
         });
-        jPopupRepoList.add(mntEditProject);
+        jPopupRepoTable.add(mntEditProject);
 
         JMenuItem mntShowLog = new javax.swing.JMenuItem();
         mntShowLog.setText("Show log");
@@ -517,8 +530,8 @@ public class MainWindow extends javax.swing.JFrame {
                 mntShowLogActionPerformed(evt);
             }
         });
-        jPopupRepoList.add(mntShowLog);
-        
+        jPopupRepoTable.add(mntShowLog);
+
         JMenuItem mntShowTopology = new javax.swing.JMenuItem();
         mntShowTopology.setText("Show topology");
         mntShowTopology.addActionListener(new java.awt.event.ActionListener() {
@@ -527,8 +540,8 @@ public class MainWindow extends javax.swing.JFrame {
                 mntShowTopologyActionPerformed(evt);
             }
         });
-        jPopupRepoList.add(mntShowTopology);
-        
+        jPopupRepoTable.add(mntShowTopology);
+
         JMenuItem mntShowBranchesHistory = new javax.swing.JMenuItem();
         mntShowBranchesHistory.setText("Show Branches History");
         mntShowBranchesHistory.addActionListener(new java.awt.event.ActionListener() {
@@ -537,9 +550,9 @@ public class MainWindow extends javax.swing.JFrame {
                 mntShowBranchesHistoryActionPerformed(evt);
             }
         });
-        jPopupRepoList.add(mntShowBranchesHistory);
-        
-        jPopupRepoList.addSeparator();
+        jPopupRepoTable.add(mntShowBranchesHistory);
+
+        jPopupRepoTable.addSeparator();
         JMenuItem mntRemoveProject = new javax.swing.JMenuItem();
         mntRemoveProject.setText("Remove Project");
         mntRemoveProject.addActionListener(new java.awt.event.ActionListener() {
@@ -548,7 +561,7 @@ public class MainWindow extends javax.swing.JFrame {
                 mntRemoveProjectActionPerformed(evt);
             }
         });
-        jPopupRepoList.add(mntRemoveProject);
+        jPopupRepoTable.add(mntRemoveProject);
     }
 
     /**
@@ -556,10 +569,10 @@ public class MainWindow extends javax.swing.JFrame {
      *
      * @param evt
      */
-    private void repoListMouseClicked(java.awt.event.MouseEvent evt) {
-        JList list = (JList) evt.getSource();
+    private void repoTableMouseClicked(java.awt.event.MouseEvent evt) {
+        JTable table = (JTable) evt.getSource();
         if (evt.getButton() == MouseEvent.BUTTON3) {
-            jPopupRepoList.show(evt.getComponent(), evt.getX(), evt.getY());
+            jPopupRepoTable.show(evt.getComponent(), evt.getX(), evt.getY());
         }
     }
     // </editor-fold>
@@ -597,7 +610,8 @@ public class MainWindow extends javax.swing.JFrame {
      * @return name of the selected repository
      */
     private MonitoredRepository getSelectedRepository() {
-        return (MonitoredRepository) repoList.getSelectedValue();
+        int selectedRow = repoTable.getSelectedRow();
+        return (MonitoredRepository) repoTable.getValueAt(selectedRow, 0);
     }
 
     /**
@@ -609,7 +623,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     /**
      * Displays the specified message as a ballon in tray icon.
-     * 
+     *
      * @param message the message to be displayed.
      */
     public void notifyMessage(String message) {
@@ -661,17 +675,18 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
 
-        repoList.addMouseListener(new java.awt.event.MouseAdapter() {
+        repoTable.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                repoListMouseClicked(evt);
+                repoTableMouseClicked(evt);
             }
         });
 
-        repoList.addMouseMotionListener(new java.awt.event.MouseAdapter() {
+        repoTable.addMouseMotionListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent evt) {
-               repoList.setSelectedIndex(repoList.locationToIndex(evt.getPoint()));
+                int row = repoTable.rowAtPoint(evt.getPoint());
+                repoTable.setRowSelectionInterval(row, row);
             }
         });
 
@@ -679,6 +694,13 @@ public class MainWindow extends javax.swing.JFrame {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTextAreaMessagesMouseClicked(evt);
+            }
+        });
+
+        repoTable.getModel().addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                tca.adjustColumns();
             }
         });
     }
@@ -689,28 +711,45 @@ public class MainWindow extends javax.swing.JFrame {
      * 
      * @param repStatusList the list of messages to be displayed.
      */
-    public void notifyMessages(List<RepositoryStatus> repStatusList) {
-        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Entry");
+    public 
+
+void notifyMessages(List<RepositoryStatus> repStatusList) {
+        LoggerFactory.getLogger(MainWindow.class  
+
+    ).trace("notifyMessages -> Entry");
 
         int countRepsWithMessages = 0;
-        for (Iterator<RepositoryStatus> it = repStatusList.iterator(); it.hasNext();) {
+    for (Iterator<RepositoryStatus> it = repStatusList.iterator();
+
+    it.hasNext ();
+
+    
+        ) {
             RepositoryStatus repositoryStatus = it.next();
-            if (repositoryStatus.isInvalid()) {
+        if (repositoryStatus.isInvalid()) {
+            countRepsWithMessages++;
+        } else {
+            if (repositoryStatus.getInvalidBranchesCount() > 0
+                    || repositoryStatus.getNonSyncedBranchesCount() > 0) {
                 countRepsWithMessages++;
-            } else {
-                if (repositoryStatus.getInvalidBranchesCount() > 0 || 
-                        repositoryStatus.getNonSyncedBranchesCount() > 0) {
-                    countRepsWithMessages++;
-                }
             }
         }
+    }
+    if (countRepsWithMessages != lastMessagesCount
 
-        if (countRepsWithMessages != lastMessagesCount) {
+    
+        ) {
             notifyMessage("There are messages on " + countRepsWithMessages + " repositories.");
-            lastMessagesCount = countRepsWithMessages;
-        }
-        repoList.repaint();
+        lastMessagesCount = countRepsWithMessages;
+    }
 
-        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Exit");
+    repoTable.repaint ();
+
+    LoggerFactory.getLogger (MainWindow.
+
+    class  
+    
+
+).trace("notifyMessages -> Exit");
     }
 }

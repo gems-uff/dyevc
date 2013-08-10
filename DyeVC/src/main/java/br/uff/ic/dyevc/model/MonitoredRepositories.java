@@ -2,14 +2,14 @@ package br.uff.ic.dyevc.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.AbstractListModel;
+import javax.swing.table.AbstractTableModel;
 
 /**
  * Models a list of monitored repositories as an AbstractListModel
  *
  * @author Cristiano
  */
-public final class MonitoredRepositories extends AbstractListModel<MonitoredRepository> {
+public final class MonitoredRepositories extends AbstractTableModel {
 
     private static final long serialVersionUID = -7567721142354738718L;
     private static List<MonitoredRepository> monitoredRepositories = new ArrayList<MonitoredRepository>();
@@ -50,11 +50,11 @@ public final class MonitoredRepositories extends AbstractListModel<MonitoredRepo
         int index = monitoredRepositories.indexOf(repository);
         if (index >= 0) {
             monitoredRepositories.set(index, repository);
-            fireContentsChanged(this, index, index);
+            fireTableRowsUpdated(index, index);
         } else {
             index = monitoredRepositories.size();
             monitoredRepositories.add(repository);
-            fireIntervalAdded(this, index, index);
+            fireTableRowsInserted(index, index);
         }
     }
 
@@ -69,34 +69,11 @@ public final class MonitoredRepositories extends AbstractListModel<MonitoredRepo
         int index = monitoredRepositories.indexOf(repository);
         boolean rv = monitoredRepositories.remove(repository);
         if (index >= 0) {
-            fireIntervalRemoved(this, index, index);
+            fireTableRowsDeleted(index, index);
         }
         return rv;
     }
 
-    /**
-     * Returns the number of monitored repositories
-     * 
-     * @return the number of monitored repositories
-     */
-    @Override
-    public int getSize() {
-        return monitoredRepositories.size();
-    }
-
-    /**
-     * Returns the instance of monitored repository located at a specified position.
-     * 
-     * @param index the position to look at
-     * 
-     * @return the instance of monitored repository located at index.
-     */
-    @Override
-    public MonitoredRepository getElementAt(int index) {
-        List<MonitoredRepository> values = getMonitoredProjects();
-        return values.get(index);
-    }
-    
     /**
      * Closes the connection established in each of the monitored repositories. 
      */
@@ -104,5 +81,75 @@ public final class MonitoredRepositories extends AbstractListModel<MonitoredRepo
         for (MonitoredRepository rep: monitoredRepositories) {
             rep.close();
         }
+    }
+
+    @Override
+    public int getRowCount() {
+        return monitoredRepositories.size();
+    }
+
+    @Override
+    public int getColumnCount() {
+        return 5;
+    }
+
+    @Override
+    public String getColumnName(int column) {
+        String result = null;
+        switch(column) {
+            case 0:
+                result = "Status";
+                break;
+            case 1:
+                result = "System Name";
+                break;
+            case 2:
+                result = "Clone Name";
+                break;
+            case 3:
+                result = "ID";
+                break;
+            case 4:
+                result = "Clone Path";
+                break;
+        }
+        return result;
+    }
+
+    @Override
+    public Class getColumnClass(int columnIndex) {
+        Class result;
+        switch(columnIndex) {
+            case 0:
+                result = MonitoredRepository.class;
+                break;
+            default:
+                result = String.class;
+        }
+        return result;
+    }
+    
+    @Override
+    public Object getValueAt(int rowIndex, int columnIndex) {
+        MonitoredRepository rep = monitoredRepositories.get(rowIndex);
+        Object result = null;
+        switch(columnIndex) {
+            case 0:
+                result = rep;
+                break;
+            case 1:
+                result = rep.getSystemName();
+                break;
+            case 2:
+                result = rep.getName();
+                break;
+            case 3:
+                result = rep.getId();
+                break;
+            case 4:
+                result = rep.getCloneAddress();
+                break;
+        }
+        return result;
     }
 }

@@ -7,43 +7,37 @@ import br.uff.ic.dyevc.utils.DateUtil;
 import br.uff.ic.dyevc.utils.ImageUtils;
 import java.awt.Component;
 import java.util.Iterator;
-import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
-import javax.swing.JList;
+import javax.swing.JTable;
 import javax.swing.ToolTipManager;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 
 /**
  * This class renders information about the monitored repositories. Information 
- * is rendered as a List in a JList.
+ * is rendered as a table.
  * 
  * @author Cristiano
  */
-class RepositoryRenderer extends DefaultListCellRenderer {
+class RepositoryRenderer extends DefaultTableCellRenderer {
 
     private static final long serialVersionUID = -1767445271244335267L;
-    private final boolean pad;
     private final Border padBorder = new EmptyBorder(3, 3, 3, 3);
 
-    RepositoryRenderer(boolean pad) {
-        this.pad = pad;
-    }
-
     @Override
-    public Component getListCellRendererComponent(
-            JList list,
-            Object value,
-            int index,
-            boolean isSelected,
-            boolean cellHasFocus) {
-
-        Component c = super.getListCellRendererComponent(
-                list, value, index, isSelected, cellHasFocus);
-        JLabel listItem = (JLabel) c;
+    public Component getTableCellRendererComponent(
+            JTable table, 
+            Object value, 
+            boolean isSelected, 
+            boolean hasFocus, 
+            int row, 
+            int column) {
+        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        setHorizontalAlignment(JLabel.CENTER);
+        setValue("");
+        
         MonitoredRepository repository = (MonitoredRepository) value;
-        listItem.setText(repository.getName());
-
         RepositoryStatus repStatus = repository.getRepStatus();
 
         StringBuilder tooltip = new StringBuilder();
@@ -55,24 +49,24 @@ class RepositoryRenderer extends DefaultListCellRenderer {
         if (repStatus.getLastCheckedTime() == null) {
             tooltip.append("not yet checked in this session.")
                     .append("<br><br>Status for this repository is not ready yet.");
-            listItem.setIcon(ImageUtils.getInstance().getIcon("question_32.png"));
+            setIcon(ImageUtils.getInstance().getIcon("question_32.png"));
         } else {
             tooltip.append(DateUtil.format(repStatus.getLastCheckedTime(), "yyyy-MM-dd HH:mm:ss"));
             if (repStatus.isInvalid()) {
-                listItem.setIcon(ImageUtils.getInstance().getIcon("nocheck_32.png"));
+                setIcon(ImageUtils.getInstance().getIcon("nocheck_32.png"));
                 tooltip.append("<br><br><b>Repository could not be checked.</b> Message received from monitor: <br>")
                         .append(repStatus.getInvalidMessage());
             } else {
                 if ((repStatus.getNonSyncedBranchesCount() == 0) && (repStatus.getInvalidBranchesCount() == 0)) {
-                    listItem.setIcon(ImageUtils.getInstance().getIcon("check_32.png"));
+                    setIcon(ImageUtils.getInstance().getIcon("check_32.png"));
                     tooltip.append("<br><br>Repository is in sync with all remotes.");
                 } else {
                     if (repStatus.getAheadCount() > 0 && repStatus.getBehindCount() > 0) {
-                        listItem.setIcon(ImageUtils.getInstance().getIcon("aheadbehind_ylw_32.png"));
+                        setIcon(ImageUtils.getInstance().getIcon("aheadbehind_ylw_32.png"));
                     } else if (repStatus.getAheadCount() > 0 ) {
-                        listItem.setIcon(ImageUtils.getInstance().getIcon("ahead_ylw_32.png"));
+                        setIcon(ImageUtils.getInstance().getIcon("ahead_ylw_32.png"));
                     } else {
-                        listItem.setIcon(ImageUtils.getInstance().getIcon("behind_ylw_32.png"));
+                        setIcon(ImageUtils.getInstance().getIcon("behind_ylw_32.png"));
                     }
                     appendMessages(repStatus, tooltip);
                 }
@@ -80,13 +74,11 @@ class RepositoryRenderer extends DefaultListCellRenderer {
         }
 
         tooltip.append("</html>");
-        listItem.setToolTipText(tooltip.toString());
+        setToolTipText(tooltip.toString());
         ToolTipManager.sharedInstance().setDismissDelay(15000);
-        if (pad) {
-            listItem.setBorder(padBorder);
-        }
+        setBorder(padBorder);
 
-        return listItem;
+        return this;
     }
 
     /**
