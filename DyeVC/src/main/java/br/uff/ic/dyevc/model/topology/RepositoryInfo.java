@@ -1,6 +1,8 @@
 package br.uff.ic.dyevc.model.topology;
 
-import java.util.ArrayList;
+import br.uff.ic.dyevc.utils.StringUtils;
+import java.util.HashSet;
+import java.util.Set;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
@@ -9,49 +11,80 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RepositoryInfo implements Comparable<RepositoryInfo>{
-    private String name;
-    private ArrayList<CloneInfo> clones;
-    
+    private String systemName;
+    private String hostName;
+    private String cloneName;
+    private String clonePath;
+    private Set<RepositoryKey> pushesTo;
+    private Set<RepositoryKey> pullsFrom;
+
     public RepositoryInfo() {
-        clones = new ArrayList<CloneInfo>();
+        pushesTo = new HashSet<RepositoryKey>();
+        pullsFrom = new HashSet<RepositoryKey>();
     }
 
-    public String getName() {
-        return name;
+    public String getSystemName() {
+        return systemName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setSystemName(String systemName) {
+        this.systemName = systemName;
     }
 
-    public ArrayList<CloneInfo> getClones() {
-        return clones;
+    public String getHostName() {
+        return hostName;
     }
 
-    public void setClones(ArrayList<CloneInfo> clones) {
-        this.clones = clones;
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
+
+    public String getCloneName() {
+        return cloneName;
+    }
+
+    public void setCloneName(String cloneName) {
+        this.cloneName = cloneName;
+    }
+
+    public String getClonePath() {
+        return clonePath;
+    }
+
+    public void setClonePath(String path) {
+        this.clonePath = StringUtils.normalizePath(path);
+    }
+
+    public Set<RepositoryKey> getPushesTo() {
+        return pushesTo;
     }
     
-    public void addClone(CloneInfo clone) {
-        this.clones.add(clone);
+    public void addPushesTo(RepositoryKey key) {
+        this.pushesTo.add(key);
     }
     
-    public void removeClone(CloneKey cloneKey) {
-        if (cloneKey == null) return;
-        
-        for(CloneInfo clone: clones) {
-            if (clone.getHostName().equals(cloneKey.getHostName())
-                    && clone.getCloneName().equals(cloneKey.getCloneName())) {
-                clones.remove(clone);
-                return;
-            }
-        }
+    public void addPullsFrom(RepositoryKey key) {
+        this.pullsFrom.add(key);
+    }
+
+    public void setPushesTo(Set<RepositoryKey> pushesTo) {
+        this.pushesTo = pushesTo;
+    }
+
+    public Set<RepositoryKey> getPullsFrom() {
+        return pullsFrom;
+    }
+
+    public void setPullsFrom(Set<RepositoryKey> pullsFrom) {
+        this.pullsFrom = pullsFrom;
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 83 * hash + (this.name != null ? this.name.hashCode() : 0);
+        hash = 83 * hash + (this.systemName != null ? this.systemName.hashCode() : 0);
+        hash = 83 * hash + (this.hostName != null ? this.hostName.hashCode() : 0);
+        hash = 83 * hash + (this.cloneName != null ? this.cloneName.hashCode() : 0);
         return hash;
     }
 
@@ -64,7 +97,9 @@ public class RepositoryInfo implements Comparable<RepositoryInfo>{
             return false;
         }
         final RepositoryInfo other = (RepositoryInfo) obj;
-        if (!other.getName().equalsIgnoreCase(getName())) {
+        if (!(other.getSystemName().equalsIgnoreCase(getSystemName()) 
+                || other.getHostName().equalsIgnoreCase(getHostName()) 
+                || other.getCloneName().equalsIgnoreCase(getCloneName()))) {
             return false;
         }
         return true;
@@ -76,13 +111,33 @@ public class RepositoryInfo implements Comparable<RepositoryInfo>{
         if (o == null) {
             throw new NullPointerException("Cannot compare to a null commit object.");
         }
-        if (this.getName().compareToIgnoreCase(o.getName()) < 0) {
+        if (this.getSystemName().compareToIgnoreCase(o.getSystemName()) < 0) {
             result = -1;
         }
-        if (this.getName().compareToIgnoreCase(o.getName()) > 0) {
+        if (this.getSystemName().compareToIgnoreCase(o.getSystemName()) > 0) {
+            result = 1;
+        }
+        if (this.getHostName().compareToIgnoreCase(o.getHostName()) < 0) {
+            result = -1;
+        }
+        if (this.getHostName().compareToIgnoreCase(o.getHostName()) > 0) {
+            result = 1;
+        }
+        if (this.getCloneName().compareToIgnoreCase(o.getCloneName()) < 0) {
+            result = -1;
+        }
+        if (this.getCloneName().compareToIgnoreCase(o.getCloneName()) > 0) {
             result = 1;
         }
         return result;
     }
-    
+
+    @Override
+    public String toString() {
+        super.toString();
+        return "RepositoryInfo{" + "systemName=" + systemName + 
+                "hostName=" + hostName + 
+                ", cloneName=" + cloneName + 
+                ", path=" + clonePath + '}';
+    }   
 }

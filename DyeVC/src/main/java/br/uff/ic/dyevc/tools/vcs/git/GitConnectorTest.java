@@ -36,7 +36,8 @@ public class GitConnectorTest {
 
     public static void main(String[] args) {
         GitConnectorTest test = new GitConnectorTest();
-        test.testGetBase();
+        test.testGetURIs();
+//        test.testGetBase();
 //        test.testGetDiff();
 //        test.testBare();
 //        test.testGraph();
@@ -56,10 +57,28 @@ public class GitConnectorTest {
         } catch (Exception ex) {
             Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
-            if (egit != null) egit.close();
+            if (egit != null) {
+                egit.close();
+            }
         }
     }
 
+    private void testGetURIs() {
+        GitConnector dyevc = null;
+        try {
+            dyevc = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/dyevcssh", "dyevcssh");
+            List<RemoteConfig> configs = dyevc.getRemoteConfigs();
+            for (RemoteConfig config : configs) {
+                System.out.println(config.getURIs());
+            }
+        } catch (Exception ex) {
+            LoggerFactory.getLogger(GitCommitTools.class).error(null, ex);
+        } finally {
+            if (dyevc != null) {
+                dyevc.close();
+            }
+        }
+    }
 
     private void testGetDiff() {
         GitConnector dyevc = null;
@@ -102,13 +121,19 @@ public class GitConnectorTest {
             } catch (Exception ex) {
                 LoggerFactory.getLogger(GitCommitTools.class).error("Error parsing change set for commit " + commit.getName(), ex);
             } finally {
-                if (df != null) df.release();
-                if (rw != null) rw.release();
+                if (df != null) {
+                    df.release();
+                }
+                if (rw != null) {
+                    rw.release();
+                }
             }
         } catch (Exception ex) {
             Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
-            if (dyevc != null) dyevc.close();
+            if (dyevc != null) {
+                dyevc.close();
+            }
         }
     }
 

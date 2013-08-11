@@ -1,20 +1,25 @@
 package br.uff.ic.dyevc.model.topology;
 
-import java.util.ArrayList;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
- *
+ * Identifies uniquely a repository clone, as each cloneName can be used once 
+ * in a system for each hostName
  * @author Cristiano
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CloneInfo implements Comparable<CloneInfo>{
+public class RepositoryKey implements Comparable<RepositoryKey>{
     private String hostName;
     private String cloneName;
-    private String path;
-    private ArrayList<CloneKey> pushesTo;
-    private ArrayList<CloneKey> pullsFrom;
 
+    public RepositoryKey() {
+    }
+    
+    public RepositoryKey(String hostName, String cloneName) {
+        this.hostName = hostName;
+        this.cloneName = cloneName;
+    }
+    
     public String getHostName() {
         return hostName;
     }
@@ -29,30 +34,6 @@ public class CloneInfo implements Comparable<CloneInfo>{
 
     public void setCloneName(String cloneName) {
         this.cloneName = cloneName;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public ArrayList<CloneKey> getPushesTo() {
-        return pushesTo;
-    }
-
-    public void setPushesTo(ArrayList<CloneKey> pushesTo) {
-        this.pushesTo = pushesTo;
-    }
-
-    public ArrayList<CloneKey> getPullsFrom() {
-        return pullsFrom;
-    }
-
-    public void setPullsFrom(ArrayList<CloneKey> pullsFrom) {
-        this.pullsFrom = pullsFrom;
     }
 
     @Override
@@ -71,15 +52,16 @@ public class CloneInfo implements Comparable<CloneInfo>{
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final CloneInfo other = (CloneInfo) obj;
-        if (!(other.getHostName().equalsIgnoreCase(getHostName()) || other.getCloneName().equalsIgnoreCase(getCloneName()))) {
+        final RepositoryKey other = (RepositoryKey) obj;
+        if (!(other.getHostName().equalsIgnoreCase(getHostName()) 
+                || other.getCloneName().equalsIgnoreCase(getCloneName()))) {
             return false;
         }
         return true;
     }
 
     @Override
-    public int compareTo(CloneInfo o) {
+    public int compareTo(RepositoryKey o) {
         int result = 0;
         if (o == null) {
             throw new NullPointerException("Cannot compare to a null commit object.");
@@ -98,11 +80,4 @@ public class CloneInfo implements Comparable<CloneInfo>{
         }
         return result;
     }
-
-    @Override
-    public String toString() {
-        super.toString();
-        return "CloneInfo{" + "hostName=" + hostName + ", cloneName=" + cloneName + ", path=" + path + '}';
-    }
-    
 }

@@ -16,98 +16,61 @@ import java.util.Set;
 public class Topology {
 
     /**
-     * Stores the list of known repositories, mapped by its system name.
+     * Stores the list of known clones of each system, mapped by its system
+     * name.
      */
-    private HashMap<String, RepositoryInfo> repositoryMap;
-    
-    /**
-     * A map of clones of a repository, where each key is the name of a system
-     * and each value contains a map of clones for that system.
-     */
-    private HashMap<String, CloneMap> cloneMap;
-    
-    private static Topology instance;
+    private HashMap<String, CloneMap> repositoryMap;
 
     /**
      * Creates an empty topology map
      */
-    private Topology() {
-        repositoryMap = new HashMap<String, RepositoryInfo>();
-        cloneMap = new HashMap<String, CloneMap>();
-    }
-    
-    public static synchronized Topology getTopology() {
-        if (instance == null) {
-            instance = new Topology();
-        }
-        
-        return instance;
+    public Topology() {
+        repositoryMap = new HashMap<String, CloneMap>();
     }
 
     // <editor-fold defaultstate="collapsed" desc="RepositoryMap">
-    public void resetTopology(ArrayList<RepositoryInfo> repos) throws DyeVCException {
+    /**
+     * Resets the topology, replacing all existing repository information by the
+     * list informed as parameter
+     *
+     * @param repos the new list of repositories to be added to the topology
+     * @throws DyeVCException
+     */
+    public void resetTopology(ArrayList<RepositoryInfo> repos) {
+        for (CloneMap map : repositoryMap.values()) {
+            map.clear();
+        }
+
         repositoryMap.clear();
+
         for (RepositoryInfo ri : repos) {
             addRepositoryInfo(ri);
         }
     }
 
+    /**
+     * Includes info for a new repository in the topology
+     *
+     * @param repos Information to be added to topology
+     */
     public void addRepositoryInfo(RepositoryInfo repos) {
-        repositoryMap.put(repos.getName(), repos);
-        resetClonesForSystem(repos.getName());
-
-        for (CloneInfo cloneInfo : repos.getClones()) {
-            CloneMap map = cloneMap.get(repos.getName());
-            CloneKey key = new CloneKey(cloneInfo.getHostName(), cloneInfo.getCloneName());
-            map.put(key, cloneInfo);
+        if (!repositoryMap.containsKey(repos.getSystemName())) {
+            repositoryMap.put(repos.getSystemName(), new CloneMap());
         }
+        RepositoryKey key = new RepositoryKey(repos.getHostName(), repos.getCloneName());
+        repositoryMap.get(repos.getSystemName()).put(key, repos);
     }
-    // </editor-fold>
+// </editor-fold>
 
-    
     // <editor-fold defaultstate="collapsed" desc="CloneMap">
     /**
-     * Gets clone information for the given key in the given system name
+     * Gets clone information for the given key
      *
-     * @param systemName System name to look for the clone information
      * @param cloneKey Clone key to look for
      * @return The clone info requested
      */
-    public CloneInfo getCloneInfo(String systemName, CloneKey cloneKey) {
-        return cloneMap.get(systemName).get(cloneKey);
-    }
-
-    /**
-     * Includes clone information for a given system name
-     *
-     * @param systemName Name of the system where clone info will be added
-     * @param value Clone information to be added
-     * @return The clone information added
-     */
-    public void addCloneInfo(String systemName, CloneInfo value) throws DyeVCException {
-        if (!repositoryMap.containsKey(systemName)) {
-            throw new DyeVCException("System " + systemName + " is not a known system name.");
-        }
-
-        RepositoryInfo ri = repositoryMap.get(systemName);
-        ri.addClone(value);
-
-        CloneMap map = cloneMap.get(systemName);
-        CloneKey key = new CloneKey(value.getHostName(), value.getCloneName());
-        map.put(key, value);
-    }
-
-    /**
-     * Clears the clone list for the specified system
-     *
-     * @param systemName System name where the clones will be added to
-     */
-    private void resetClonesForSystem(String systemName) {
-        if (!cloneMap.containsKey(systemName)) {
-            cloneMap.put(systemName, new CloneMap());
-        } else {
-            cloneMap.get(systemName).clear();
-        }
+    public RepositoryInfo getRepositoryInfo(String systemName, RepositoryKey cloneKey) {
+        return repositoryMap.get(systemName).get(cloneKey);
     }
 
     /**
@@ -117,23 +80,23 @@ public class Topology {
      * returned
      * @return List of known clones for the given system name
      */
-    public Collection<CloneInfo> getClonesForSystem(String systemName) throws DyeVCException {
-        if (!cloneMap.containsKey(systemName)) {
+    public Collection<RepositoryInfo> getClonesForSystem(String systemName) throws DyeVCException {
+        if (!repositoryMap.containsKey(systemName)) {
             throw new DyeVCException("System " + systemName + " is not a known system name.");
         }
-        return cloneMap.get(systemName).values();
+        return repositoryMap.get(systemName).values();
     }
     // </editor-fold>
-    
 
     /**
      * Return all known systems in the topology
+     *
      * @return The set of known systems in the topology
      */
     public Set<String> getSystems() {
         return repositoryMap.keySet();
     }
-    
+
     /**
      * Gets all known relationships between clones for the given system.
      *
@@ -142,39 +105,25 @@ public class Topology {
      * @return List of known relationships for the given system name
      */
     public Collection<CloneRelationship> getRelationshipsForSystem(String systemName) throws DyeVCException {
-        if (!cloneMap.containsKey(systemName)) {
+        if (!repositoryMap.containsKey(systemName)) {
             throw new DyeVCException("System " + systemName + " is not a known system name.");
         }
 
         ArrayList<CloneRelationship> cis = new ArrayList<CloneRelationship>();
-        CloneMap map = cloneMap.get(systemName);
-        for (CloneInfo cloneInfo : map.values()) {
+        CloneMap map = repositoryMap.get(systemName);
+        for (RepositoryInfo repositoryInfo : map.values()) {
             //Clonekey of "pullsFrom" is the origin and this cloneInfo is the destination
-            for (CloneKey cloneKey : cloneInfo.getPullsFrom()) {
-                PullRelationship cloneRelationship = new PullRelationship(map.get(cloneKey), cloneInfo);
+            for (RepositoryKey cloneKey : repositoryInfo.getPullsFrom()) {
+                PullRelationship cloneRelationship = new PullRelationship(map.get(cloneKey), repositoryInfo);
                 cis.add(cloneRelationship);
             }
-            // CloneKey of "pushesTo" is the destination and this cloneInfo is the origin
-            for (CloneKey cloneKey : cloneInfo.getPushesTo()) {
-                PushRelationship cloneRelationship = new PushRelationship(cloneInfo, map.get(cloneKey));
+            // RepositoryKey of "pushesTo" is the destination and this cloneInfo is the origin
+            for (RepositoryKey cloneKey : repositoryInfo.getPushesTo()) {
+                PushRelationship cloneRelationship = new PushRelationship(repositoryInfo, map.get(cloneKey));
                 cis.add(cloneRelationship);
             }
         }
         return cis;
-    }
-
-    /**
-     * Removes all topology data for the given system name
-     *
-     * @param systemName System name for which data will be removed
-     */
-    public void remove(String systemName) {
-        repositoryMap.remove(systemName);
-        if (cloneMap.containsKey(systemName)) {
-            CloneMap map = cloneMap.get(systemName);
-            map.clear();
-            cloneMap.remove(systemName);
-        }
     }
 
     /**
@@ -186,13 +135,9 @@ public class Topology {
      * @param cloneKey Clone key of the clone to be erased
      * @return The clone information erased
      */
-    public void removeCloneInfo(String systemName, CloneKey cloneKey) {
+    public void removeCloneInfo(String systemName, RepositoryKey cloneKey) {
         if (repositoryMap.containsKey(systemName)) {
-            repositoryMap.get(systemName).removeClone(cloneKey);
-        }
-
-        if (cloneMap.containsKey(systemName)) {
-            cloneMap.get(systemName).remove(cloneKey);
+            repositoryMap.get(systemName).remove(cloneKey);
         }
     }
 
@@ -203,7 +148,7 @@ public class Topology {
      * @author Cristiano
      */
     @SuppressWarnings("serial")
-    private class CloneMap extends HashMap<CloneKey, CloneInfo> {
+    private class CloneMap extends HashMap<RepositoryKey, RepositoryInfo> {
     }
 
     @Override

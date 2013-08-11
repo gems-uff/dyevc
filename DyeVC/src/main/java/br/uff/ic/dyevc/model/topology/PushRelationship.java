@@ -5,7 +5,7 @@ package br.uff.ic.dyevc.model.topology;
  * @author Cristiano
  */
 public class PushRelationship extends CloneRelationship {
-    public PushRelationship(CloneInfo origin, CloneInfo destination) {
+    public PushRelationship(RepositoryInfo origin, RepositoryInfo destination) {
         super(origin, destination);
     }
 

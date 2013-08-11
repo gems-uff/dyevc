@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  */
 public class GitConnector {
 
-    private static final String GIT_DIR = ".git";
+    public static final String GIT_DIR = ".git";
     public static final String DEFAULT_REMOTE = "remote";
     public static final String REFS_REMOTES = "refs/remotes/";
     public static final String FETCH_REFS_HEADS = "+refs/heads/*";
@@ -158,9 +158,15 @@ public class GitConnector {
      * @return the list of remote configurations for the connected repository
      * @throws URISyntaxException
      */
-    public List<RemoteConfig> getRemoteConfigs() throws URISyntaxException {
+    public List<RemoteConfig> getRemoteConfigs() throws VCSException {
         LoggerFactory.getLogger(GitConnector.class).trace("getRemoteConfigs -> Entry.");
-        List<RemoteConfig> remoteConfigs = RemoteConfig.getAllRemoteConfigs(repository.getConfig());
+        List<RemoteConfig> remoteConfigs = null;
+        try {
+            remoteConfigs = RemoteConfig.getAllRemoteConfigs(repository.getConfig());
+        } catch (URISyntaxException ex) {
+            LoggerFactory.getLogger(GitConnector.class).error("Error reading remote confis.", ex);
+            throw new VCSException("Error reading remote configs.", ex);
+        }
         LoggerFactory.getLogger(GitConnector.class).trace("getRemoteConfigs -> Exit.");
         return remoteConfigs;
     }
@@ -279,19 +285,14 @@ public class GitConnector {
     public FetchResult fetchAllRemotes(boolean pruneBranch) throws VCSException {
         LoggerFactory.getLogger(GitConnector.class).trace("fetchAllRemotes -> Entry. Repository: {}", getId());
         FetchResult result = null;
-        try {
-            List<RemoteConfig> remotes = getRemoteConfigs();
-            LoggerFactory.getLogger(GitConnector.class).info("Found {} remotes for repository {}", remotes.size(), getId());
-            for (Iterator<RemoteConfig> it = remotes.iterator(); it.hasNext();) {
-                RemoteConfig remoteConfig = it.next();
-                RefSpec refSpec = remoteConfig.getFetchRefSpecs().get(0);
-                URIish urish = remoteConfig.getURIs().get(0);
-                boolean prune = pruneBranch && (remoteConfig.getName().equals(getId()));
-                result = fetch(urish, refSpec, pruneBranch);
-            }
-        } catch (URISyntaxException ex) {
-            LoggerFactory.getLogger(GitConnector.class).error("Error when fetching all remotes.", ex);
-            throw new VCSException("Error fetching all remotes.", ex);
+        List<RemoteConfig> remotes = getRemoteConfigs();
+        LoggerFactory.getLogger(GitConnector.class).info("Found {} remotes for repository {}", remotes.size(), getId());
+        for (Iterator<RemoteConfig> it = remotes.iterator(); it.hasNext();) {
+            RemoteConfig remoteConfig = it.next();
+            RefSpec refSpec = remoteConfig.getFetchRefSpecs().get(0);
+            URIish urish = remoteConfig.getURIs().get(0);
+            boolean prune = pruneBranch && (remoteConfig.getName().equals(getId()));
+            result = fetch(urish, refSpec, pruneBranch);
         }
         LoggerFactory.getLogger(GitConnector.class).trace("fetchAllRemotes -> Exit. Repository: {}", getId());
         return result;
@@ -545,7 +546,7 @@ public class GitConnector {
     }
 
     /**
-     * Gets an iterator with all commits that happened to this repository, in 
+     * Gets an iterator with all commits that happened to this repository, in
      * all branches, whether they are local or remote.
      *
      * @return the commit history
@@ -557,17 +558,17 @@ public class GitConnector {
             LogCommand logcmd = git.log();
             Map<String, Ref> mapRefsHeads = repository.getRefDatabase().getRefs(IConstants.REFS_HEADS);
             Map<String, Ref> mapRefsRemotes = repository.getRefDatabase().getRefs(IConstants.REFS_REMOTES);
-            
+
             for (Map.Entry<String, Ref> entry : mapRefsHeads.entrySet()) {
                 Ref ref = entry.getValue();
                 logcmd.add(ref.getObjectId());
             }
-            
+
             for (Map.Entry<String, Ref> entry : mapRefsRemotes.entrySet()) {
                 Ref ref = entry.getValue();
                 logcmd.add(ref.getObjectId());
             }
-            
+
             result = logcmd.call().iterator();
 
         } catch (Exception ex) {
@@ -600,11 +601,13 @@ public class GitConnector {
         LoggerFactory.getLogger(GitConnector.class).trace("checkRepositoryPathName -> Entry.");
 
         String gitPath = path;
-        
+
         if (!path.endsWith(GIT_DIR)) {
             if (path.startsWith("http")) {
                 gitPath = path + GIT_DIR;
-            } else if (new File(path + "/" + GIT_DIR).exists()) gitPath = path + "/" + GIT_DIR;
+            } else if (new File(path + "/" + GIT_DIR).exists()) {
+                gitPath = path + "/" + GIT_DIR;
+            }
         }
         LoggerFactory.getLogger(GitConnector.class).trace("checkRepositoryPathName -> Exit.");
         return gitPath;
@@ -616,7 +619,7 @@ public class GitConnector {
         LoggerFactory.getLogger(GitConnector.class).trace("getRepositoryPath -> Exit.");
         return gitPath;
     }
-    
+
     /**
      * Returns an object id for a given revision string.
      *

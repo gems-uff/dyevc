@@ -5,6 +5,7 @@ import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.StringUtils;
 import java.beans.*;
 import java.io.Serializable;
 
@@ -45,6 +46,12 @@ public class MonitoredRepository implements Serializable {
      * Address where the monitored repository is located.
      */
     private String cloneAddress;
+    
+    /**
+     * Clone address in normalized form (no double or leading backslashes)
+     */
+    private String normalizedCloneAddress;
+    
     /**
      * Status of the monitored repository.
      *
@@ -62,6 +69,15 @@ public class MonitoredRepository implements Serializable {
      */
     private GitConnector cloneConnection;
 
+    /**
+     * Get the value of normalizedCloneAddress
+     *
+     * @return the value of normalizedCloneAddress
+     */
+    public String getNormalizedCloneAddress() {
+        return normalizedCloneAddress;
+    }
+    
     /**
      * Get the value of cloneAddress
      *
@@ -93,6 +109,7 @@ public class MonitoredRepository implements Serializable {
     public void setCloneAddress(String cloneAddress) {
         String oldCloneAddress = this.cloneAddress;
         this.cloneAddress = cloneAddress;
+        this.normalizedCloneAddress = StringUtils.normalizePath(cloneAddress);
         propertySupport.firePropertyChange(PROP_CLONEADDRESS, oldCloneAddress, cloneAddress);
     }
     private PropertyChangeSupport propertySupport;
@@ -124,6 +141,12 @@ public class MonitoredRepository implements Serializable {
         String oldValue = systemName;
         systemName = value;
         propertySupport.firePropertyChange(SYSTEM_NAME, oldValue, systemName);
+    }
+    
+    public boolean hasSystemName() {
+        return (systemName != null &&
+                !systemName.equals("") &&
+                !systemName.equals("no name"));
     }
 
     public void addPropertyChangeListener(PropertyChangeListener listener) {

@@ -1,19 +1,31 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.monitor;
 
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
+import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.gui.MainWindow;
 import br.uff.ic.dyevc.gui.MessageManager;
+import br.uff.ic.dyevc.model.MonitoredRepositories;
+import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.model.topology.RepositoryFilter;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
+import br.uff.ic.dyevc.model.topology.RepositoryKey;
+import br.uff.ic.dyevc.model.topology.Topology;
+import br.uff.ic.dyevc.persistence.TopologyDAO;
+import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.StringUtils;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import org.eclipse.jgit.transport.RemoteConfig;
+import org.eclipse.jgit.transport.URIish;
 import org.slf4j.LoggerFactory;
 
-
 /**
- * This class continuously monitors the topology, according to the
- * specified refresh rate.
+ * This class continuously monitors the topology, according to the specified
+ * refresh rate.
  *
  * @author Cristiano
  */
@@ -21,6 +33,7 @@ public class TopologyMonitor extends Thread {
 
     private ApplicationSettingsBean settings;
     private MainWindow container;
+    private ArrayList<RepositoryInfo> repsToProcess;
 
     /**
      * Associates the specified window container and continuously monitors the
@@ -48,209 +61,159 @@ public class TopologyMonitor extends Thread {
         while (true) {
             try {
                 MessageManager.getInstance().addMessage("Topology monitor is running.");
-                
-//                if (repositoryToMonitor == null) { //monitor all repositories
-//                    LoggerFactory.getLogger(TopologyMonitor.class).debug("Found {} repositories to monitor.", MonitoredRepositories.getMonitoredProjects().size());
-//                    for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
-//                        checkRepository(monitoredRepository);
-//                    }
-//                } else { //monitor specified repository
-//                    LoggerFactory.getLogger(TopologyMonitor.class).debug("Manual monitoring requested for repository {}.", repositoryToMonitor.getName());
-//                    checkRepository(repositoryToMonitor);
-//                    setRepositoryToMonitor(null);
-//                }
-//                container.notifyMessages(statusList);
-//                LoggerFactory.getLogger(TopologyMonitor.class).debug("Will now sleep for {} seconds.", sleepTime);
-//                MessageManager.getInstance().addMessage("Repository monitor is sleeping.");
-//                Thread.sleep(settings.getRefreshInterval() * 1000);
-//                LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
-//            } catch (DyeVCException dex) {
-//                try {
-//                    MessageManager.getInstance().addMessage(dex.getMessage());
-//                    Thread.sleep(settings.getRefreshInterval() * 1000);
-//                    LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
-//                } catch (InterruptedException ex) {
-//                    LoggerFactory.getLogger(TopologyMonitor.class).info("Waking up due to interruption received.");
-//                }
-            } catch (RuntimeException re) {
+                updateLocalTopology();
+                MessageManager.getInstance().addMessage("Topology monitor is sleeping.");
+                Thread.sleep(sleepTime);
+                LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+            } catch (DyeVCException dex) {
                 try {
-                    MessageManager.getInstance().addMessage(re.getMessage());
-                    LoggerFactory.getLogger(TopologyMonitor.class).error("Error during monitoring.", re);
+                    MessageManager.getInstance().addMessage(dex.getMessage());
                     Thread.sleep(settings.getRefreshInterval() * 1000);
                     LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
                 } catch (InterruptedException ex) {
                     LoggerFactory.getLogger(TopologyMonitor.class).info("Waking up due to interruption received.");
                 }
-//            } catch (InterruptedException ex) {
-//                LoggerFactory.getLogger(TopologyMonitor.class).info("Waking up due to interruption received.");
+            } catch (RuntimeException re) {
+                try {
+                    MessageManager.getInstance().addMessage(re.getMessage());
+                    LoggerFactory.getLogger(TopologyMonitor.class).error("Error during monitoring.", re);
+                    Thread.sleep(sleepTime);
+                    LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+                } catch (InterruptedException ex) {
+                    LoggerFactory.getLogger(TopologyMonitor.class).info("Waking up due to interruption received.");
+                }
+            } catch (InterruptedException ex) {
+                LoggerFactory.getLogger(TopologyMonitor.class).info("Waking up due to interruption received.");
+            }
+        }
+    }
+
+    private void updateLocalTopology() throws DyeVCException {
+        LoggerFactory.getLogger(TopologyMonitor.class).trace("updateLocalTopology -> Entry.");
+        Topology localTopology = new Topology();
+        ArrayList<RepositoryInfo> repositories = new ArrayList<RepositoryInfo>();
+        repsToProcess = new ArrayList<RepositoryInfo>();
+
+        for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
+            try {
+                if (!monitoredRepository.hasSystemName()) {
+                    MessageManager.getInstance().addMessage("Clone <" + monitoredRepository.getName()
+                            + "> has no system name configured and will not be added to the topology.");
+                    continue;
+                }
+                RepositoryInfo info = new RepositoryInfo();
+                info.setSystemName(monitoredRepository.getSystemName());
+                info.setCloneName(monitoredRepository.getName());
+                info.setClonePath(monitoredRepository.getNormalizedCloneAddress());
+                info.setHostName(getLocalHostname());
+                verifyRelationships(monitoredRepository, info);
+                repositories.add(info);
+            } catch (UnknownHostException ex) {
+                LoggerFactory.getLogger(TopologyMonitor.class).error("Exception trying to read configuration for clone <."
+                        + monitoredRepository.getName() + ">", ex);
+                throw new DyeVCException("Exception trying to read configuration for clone <."
+                        + monitoredRepository.getName() + ">", ex);
             }
         }
 
-
+        for (RepositoryInfo rep : repsToProcess) {
+            repositories.add(rep);
+        }
+        localTopology.resetTopology(repositories);
+        LoggerFactory.getLogger(TopologyMonitor.class).trace("updateLocalTopology -> Exit.");
     }
-//
-//    /**
-//     * Checks if a given repository is behind and/or ahead its tracking remotes,
-//     * populating a status list according to the results.
-//     *
-//     * @param monitoredRepository the repository to be checked
-//     */
-//    private void checkRepository(MonitoredRepository monitoredRepository) {
-//        LoggerFactory.getLogger(TopologyMonitor.class)
-//                .trace("checkRepository -> Entry. Repository: {}, id:{}", monitoredRepository.getName(), monitoredRepository.getId());
-//
-//        RepositoryStatus repStatus = new RepositoryStatus(monitoredRepository.getId());
-//        String cloneAddress = monitoredRepository.getCloneAddress();
-//
-//        if (!GitConnector.isValidRepository(cloneAddress)) {
-//            repStatus.setInvalid("<" + cloneAddress + "> is not a valid repository path.");
-//        } else {
-//            try {
-//                List<BranchStatus> status = processRepository(monitoredRepository);
-//                repStatus.addBranchStatusList(status);
-//            } catch (VCSException ex) {
-//                MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <"
-//                        + monitoredRepository.getName() + "> with id <" + monitoredRepository.getId() + ">.");
-//                LoggerFactory.getLogger(TopologyMonitor.class)
-//                        .error("It was not possible to finish monitoring of repository <{}> with id <{}>",
-//                        monitoredRepository.getName(), monitoredRepository.getId());
-//                repStatus.setInvalid(ex.getCause().toString());
-//            }
-//        }
-//
-//        monitoredRepository.setRepStatus(repStatus);
-//
-//        statusList.add(repStatus);
-//
-//        LoggerFactory.getLogger(TopologyMonitor.class).trace("checkRepository -> Exit. Repository: {}", monitoredRepository.getName());
-//    }
-//
-//    /**
-//     * Process a valid repository to check its behind and ahead status
-//     *
-//     * @param monitoredRepository the repository to be processed
-//     * @return a list of status for the given repository
-//     */
-//    private List<BranchStatus> processRepository(MonitoredRepository monitoredRepository) throws VCSException {
-//        LoggerFactory.getLogger(TopologyMonitor.class).trace("processRepository -> Entry. Repository: {}", monitoredRepository.getName());
-//        GitConnector sourceConnector = null;
-//        GitConnector tempConnector = null;
-//        List<BranchStatus> result = null;
-//        try {
-//
-//            sourceConnector = monitoredRepository.getConnection();
-//            LoggerFactory.getLogger(TopologyMonitor.class)
-//                    .debug("processRepository -> created gitConnector for repository {}, id={}", monitoredRepository.getName(), monitoredRepository.getId());
-//
-//            String pathTemp = monitoredRepository.getWorkingCloneAddress();
-//
-//            if (!GitConnector.isValidRepository(pathTemp)) {
-//                LoggerFactory.getLogger(TopologyMonitor.class)
-//                        .debug("There is no temp repository at {}. Will create a temp by cloning {}.",
-//                        pathTemp, monitoredRepository.getId());
-//                monitoredRepository.setWorkingCloneConnection(createWorkingClone(pathTemp, sourceConnector));
-//            }
-//            tempConnector = monitoredRepository.getWorkingCloneConnection();
-//            GitTools.adjustTargetConfiguration(sourceConnector, tempConnector);
-//
-//            tempConnector.fetchAllRemotes(true);
-//            result = tempConnector.testAhead();
-//        } finally {
-//            if (sourceConnector != null) {
-//                LoggerFactory.getLogger(TopologyMonitor.class)
-//                        .debug("About to close connection with repository <{}> with id <{}>",
-//                        monitoredRepository.getName(), monitoredRepository.getId());
-//                sourceConnector.close();
-//            }
-//            if (tempConnector != null) {
-//                LoggerFactory.getLogger(TopologyMonitor.class)
-//                        .debug("About to close connection with temp repository for <{}> with id <{}>",
-//                        monitoredRepository.getName(), monitoredRepository.getId());
-//                tempConnector.close();
-//            }
-//        }
-//        LoggerFactory.getLogger(TopologyMonitor.class).trace("processRepository -> Exit. Repository: {}", monitoredRepository.getName());
-//        return result;
-//    }
-//
-//    /**
-//     * Deletes folders with clones related to projects that are not monitored
-//     * anymore.
-//     *
-//     * @param pointer to the working folder
-//     */
-//    private void checkOrphanedFolders(File workingFolder) {
-//        LoggerFactory.getLogger(TopologyMonitor.class).trace("checkOrphanedFolders -> Entry.");
-//        String[] tmpFolders = workingFolder.list();
-//        for (int i = 0; i < tmpFolders.length; i++) {
-//            String tmpFolder = tmpFolders[i];
-//            if (MonitoredRepositories.getMonitoredProjectById(tmpFolder) == null) {
-//                LoggerFactory.getLogger(TopologyMonitor.class)
-//                        .debug("Repository with id={} is not being monitored anymore. Temp folder will be deleted.", tmpFolder);
-//                deleteDirectory(workingFolder, tmpFolder);
-//            }
-//        }
-//        LoggerFactory.getLogger(TopologyMonitor.class).trace("checkOrphanedFolders -> Exit.");
-//    }
-//
-//    /**
-//     * Creates a working clone for the repository and copies the source
-//     * configuration to the clone
-//     *
-//     * @param pathTemp the path where the clone will be created
-//     * @param source the source to be cloned
-//     * @return a GitConnector pointing to temp clone
-//     * @throws VCSException
-//     */
-//    private GitConnector createWorkingClone(String pathTemp, GitConnector source) throws VCSException {
-//        LoggerFactory.getLogger(TopologyMonitor.class).trace("createWorkingClone -> Entry.");
-//        GitConnector target = null;
-//        try {
-//            if (new File(pathTemp).exists()) {
-//                FileUtils.cleanDirectory(new File(pathTemp));
-//                LoggerFactory.getLogger(TopologyMonitor.class)
-//                        .debug("Removed existing content at {}. ", pathTemp);
-//            }
-//            target = source.cloneThis(pathTemp);
-//            GitTools.adjustTargetConfiguration(source, target);
-//            LoggerFactory.getLogger(TopologyMonitor.class).debug("Created temp clone.");
-//        } catch (IOException ex) {
-//            LoggerFactory.getLogger(TopologyMonitor.class).error("Error cleaning existing temp folder at" + pathTemp + ".", ex);
-//            throw new VCSException("Error cleaning existing temp folder at" + pathTemp + ".", ex);
-//        }
-//        LoggerFactory.getLogger(TopologyMonitor.class).trace("createWorkingClone -> Entry.");
-//        return target;
-//    }
-//
-//    /**
-//     * Removes pathToDelete from the specified parent folder.
-//     *
-//     * @param parentFolder Folder within path to delete resides.
-//     * @param pathToDelete path to be deleted. Can be the name of a file or
-//     * folder
-//     */
-//    private void deleteDirectory(File parentFolder, String pathToDelete) {
-//        try {
-//            FileUtils.deleteDirectory(new File(parentFolder, pathToDelete));
-//            LoggerFactory.getLogger(TopologyMonitor.class)
-//                    .debug("Folder {} was successfully deleted.", pathToDelete);
-//        } catch (IOException ex) {
-//            LoggerFactory.getLogger(TopologyMonitor.class)
-//                    .error("It was not possible to delete folder " + pathToDelete, ex);
-//        }
-//    }
-//
-//    /**
-//     * @param repositoryToMonitor the repositoryToMonitor to set
-//     */
-//    public synchronized void setRepositoryToMonitor(MonitoredRepository repos) {
-//        repositoryToMonitor = repos;
-//    }
-//
-//    /**
-//     * @return the repositoryToMonitor
-//     */
-//    public synchronized MonitoredRepository getRepositoryToMonitor() {
-//        return repositoryToMonitor;
-//    }
+
+    private void verifyRelationships(MonitoredRepository monitoredRepository, RepositoryInfo info) throws DyeVCException, UnknownHostException {
+        if (!GitConnector.isValidRepository(monitoredRepository.getCloneAddress())) {
+            throw new DyeVCException("<" + monitoredRepository.getCloneAddress() + "> is not a valid repository path.");
+        }
+
+        List<RemoteConfig> configs = monitoredRepository.getConnection().getRemoteConfigs();
+        for (RemoteConfig config : configs) {
+            List<URIish> pushUris = config.getPushURIs();
+            boolean createOnlyPushUris = pushUris.size() > 0;
+
+            for (URIish pushUri : config.getPushURIs()) {
+                addRelationship(info, pushUri, createOnlyPushUris);
+            }
+            for (URIish uri : config.getURIs()) {
+                addRelationship(info, uri, createOnlyPushUris);
+            }
+        }
+    }
+
+    /**
+     * Finds out the clone name of a referenced repository. If repository is not
+     * local, tries to find this information in the database
+     *
+     * @param info The Repository that references this repository
+     * @param uri The URIish that points to this repository
+     * @param createOnlyPushRelation If true, create only a PushesTo
+     * relationship. Otherwise, create both PushesTo and PullsFrom relationships
+     * @throws ServiceException
+     * @throws UnknownHostException
+     */
+    private void addRelationship(RepositoryInfo info, URIish uri, boolean createOnlyPushRelation) throws ServiceException, UnknownHostException {
+        String cloneName = null;
+        String scheme = uri.getScheme();
+        String hostName = uri.getHost();
+        boolean isLocal = (scheme == null && hostName == null)
+                || (hostName != null && (hostName.equalsIgnoreCase("localhost")
+                || hostName.equals("127.0.0.1")));
+        if (isLocal) {
+            hostName = getLocalHostname();
+        }
+        
+        //Takes out leading slashes and changes double backslashes by slashes
+        String strippedPath = StringUtils.normalizePath(uri.getPath());
+        //Remove ".git" in the end of the path
+        if (strippedPath.endsWith(GitConnector.GIT_DIR)) {
+            strippedPath = strippedPath.substring(0, strippedPath.lastIndexOf(GitConnector.GIT_DIR));
+        }
+
+        if (isLocal) {
+            //Checks if there is a monitored repository to get the clone name from
+            MonitoredRepository rep = MonitoredRepositories.getMonitoredProjectByPath(uri.getPath());
+            if (rep != null) {
+                cloneName = rep.getName();
+            }
+        } else {
+            RepositoryFilter filter = new RepositoryFilter();
+            filter.setHostName(hostName);
+            filter.setClonePath(strippedPath);
+            TopologyDAO dao = new TopologyDAO();
+            List<RepositoryInfo> rep = dao.getRepositoriesByQuery(filter);
+
+            if (!rep.isEmpty()) {
+                cloneName = rep.get(0).getCloneName();
+            } else {
+                cloneName = strippedPath;
+                addRepositoryToProcess(info, hostName, strippedPath);
+            }
+        }
+        if (cloneName == null) {
+            cloneName = strippedPath;
+            addRepositoryToProcess(info, hostName, strippedPath);
+        }
+
+        RepositoryKey key = new RepositoryKey(hostName, cloneName);
+        info.addPushesTo(key);
+        if (!createOnlyPushRelation) {
+            info.addPullsFrom(key);
+        }
+    }
+
+    private String getLocalHostname() throws UnknownHostException {
+        return InetAddress.getLocalHost().getCanonicalHostName().toLowerCase();
+    }
+
+    private void addRepositoryToProcess(RepositoryInfo info, String hostName, String strippedPath) {
+        //Creates a new repository info to be sent to database. 
+        RepositoryInfo toProcess = new RepositoryInfo();
+        toProcess.setSystemName(info.getSystemName());
+        toProcess.setHostName(hostName);
+        toProcess.setClonePath(strippedPath);
+        toProcess.setCloneName(strippedPath);
+        repsToProcess.add(toProcess);
+    }
 }

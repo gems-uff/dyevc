@@ -1,11 +1,13 @@
 package br.uff.ic.dyevc.gui;
 
+import br.uff.ic.dyevc.utils.TableColumnAdjuster;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.application.branchhistory.controller.BranchesHistoryController;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
+import br.uff.ic.dyevc.monitor.TopologyMonitor;
 import br.uff.ic.dyevc.utils.ImageUtils;
 import br.uff.ic.dyevc.utils.LimitLinesDocumentListener;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
@@ -50,7 +52,7 @@ public class MainWindow extends javax.swing.JFrame {
         initComponents();
         addListeners();
         minimizeToTray();
-        startMonitor();
+        startMonitors();
     }
     // <editor-fold defaultstate="collapsed" desc="private variables">      
     private javax.swing.JDialog dlgAbout;
@@ -69,7 +71,8 @@ public class MainWindow extends javax.swing.JFrame {
     private JPopupMenu jPopupTextAreaMessages;
     private PopupMenu trayPopup;
     private TrayIcon trayIcon;
-    private RepositoryMonitor monitor;
+    private RepositoryMonitor repositoryMonitor;
+    private TopologyMonitor topologyMonitor;
     private int lastMessagesCount = 0;
     private LimitLinesDocumentListener documentListener;
     // </editor-fold>
@@ -455,8 +458,8 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     private void mntCheckAllNowActionPerformed(ActionEvent evt) {
-        if (monitor.getState().equals(Thread.State.TIMED_WAITING)) {
-            monitor.interrupt();
+        if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
+            repositoryMonitor.interrupt();
         } else {
             JOptionPane.showMessageDialog(repoTable, "Monitor is busy now. Please try again later.", "Information", JOptionPane.OK_OPTION);
         }
@@ -464,9 +467,9 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntCheckProjectActionPerformed(ActionEvent evt) {
         MonitoredRepository rep = getSelectedRepository();
-        if (monitor.getState().equals(Thread.State.TIMED_WAITING)) {
-            monitor.setRepositoryToMonitor(rep);
-            monitor.interrupt();
+        if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
+            repositoryMonitor.setRepositoryToMonitor(rep);
+            repositoryMonitor.interrupt();
         } else {
             JOptionPane.showMessageDialog(repoTable, "Monitor is busy now. Please try again later.", "Information", JOptionPane.OK_OPTION);
         }
@@ -617,8 +620,9 @@ public class MainWindow extends javax.swing.JFrame {
     /**
      * Starts the repository monitor.
      */
-    private void startMonitor() {
-        monitor = new RepositoryMonitor(this);
+    private void startMonitors() {
+        repositoryMonitor = new RepositoryMonitor(this);
+        topologyMonitor = new TopologyMonitor(this);
     }
 
     /**

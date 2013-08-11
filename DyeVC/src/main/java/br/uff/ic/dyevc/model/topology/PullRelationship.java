@@ -5,7 +5,7 @@ package br.uff.ic.dyevc.model.topology;
  * @author Cristiano
  */
 public class PullRelationship extends CloneRelationship {
-    public PullRelationship(CloneInfo origin, CloneInfo destination) {
+    public PullRelationship(RepositoryInfo origin, RepositoryInfo destination) {
         super(origin, destination);
     }
 

@@ -8,19 +8,19 @@ package br.uff.ic.dyevc.model.topology;
  */
 public class CloneRelationship {
 
-    private CloneInfo origin;
-    private CloneInfo destination;
+    private RepositoryInfo origin;
+    private RepositoryInfo destination;
 
-    public CloneRelationship(CloneInfo origin, CloneInfo destination) {
+    public CloneRelationship(RepositoryInfo origin, RepositoryInfo destination) {
         this.origin = origin;
         this.destination = destination;
     }
 
-    public CloneInfo getOrigin() {
+    public RepositoryInfo getOrigin() {
         return origin;
     }
 
-    public CloneInfo getDestination() {
+    public RepositoryInfo getDestination() {
         return destination;
     }
 }

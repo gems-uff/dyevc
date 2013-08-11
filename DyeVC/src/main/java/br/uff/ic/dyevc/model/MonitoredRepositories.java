@@ -1,5 +1,6 @@
 package br.uff.ic.dyevc.model;
 
+import br.uff.ic.dyevc.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.table.AbstractTableModel;
@@ -34,6 +35,22 @@ public final class MonitoredRepositories extends AbstractTableModel {
     public static MonitoredRepository getMonitoredProjectById(String id) {
         for (MonitoredRepository monitoredRepository : monitoredRepositories) {
             if (monitoredRepository.getId().equals(id)) {
+                return monitoredRepository;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get an instance of a monitored repository by clone address
+     * @param cloneAddress Clone address of the desired monitored repository
+     * @return the required monitored repository
+     */
+    public static MonitoredRepository getMonitoredProjectByPath(String cloneAddress) {
+        for (MonitoredRepository monitoredRepository : monitoredRepositories) {
+            if (monitoredRepository.getNormalizedCloneAddress()
+                    .equals(StringUtils.normalizePath(cloneAddress))) {
                 return monitoredRepository;
             }
         }

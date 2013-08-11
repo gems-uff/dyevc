@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.utils;
 
 import java.awt.*;
 import java.awt.event.*;

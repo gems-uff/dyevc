@@ -6,8 +6,6 @@ import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
 import org.jboss.resteasy.util.GenericType;
@@ -35,7 +33,7 @@ public class MongoLabProvider {
      * @throws DyeVCException In case of any exception during the service
      * invocation
      */
-    public static ArrayList<RepositoryInfo> getRepositories(HashMap<String, Object> params) throws DyeVCException {
+    public static ArrayList<RepositoryInfo> getRepositories(HashMap<String, Object> params) throws ServiceException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("getRepositories -> Entry");
         ArrayList<RepositoryInfo> result = null;
         ClientRequest req;
@@ -53,7 +51,7 @@ public class MongoLabProvider {
             throw se;
         } catch (Exception ex) {
             LoggerFactory.getLogger(MongoLabProvider.class).error("Error getting repositories.", ex);
-            throw new DyeVCException(ex);
+            throw new ServiceException(ex);
         }
         LoggerFactory.getLogger(MongoLabProvider.class).trace("getRepositories -> Exit");
         return result;
@@ -89,7 +87,7 @@ public class MongoLabProvider {
         } catch (ServiceException se) {
             throw se;
         } catch (Exception ex) {
-            Logger.getLogger(MongoLabProvider.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerFactory.getLogger(MongoLabProvider.class).error(null, ex);
             throw new DyeVCException(ex);
         }
         LoggerFactory.getLogger(MongoLabProvider.class).trace("Constructor -> Entry");
@@ -127,7 +125,7 @@ public class MongoLabProvider {
         } catch (ServiceException se) {
             throw se;
         } catch (Exception ex) {
-            Logger.getLogger(MongoLabProvider.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerFactory.getLogger(MongoLabProvider.class).error(null, ex);
             throw new DyeVCException(ex);
         }
         LoggerFactory.getLogger(MongoLabProvider.class).trace("Constructor -> Entry");
@@ -165,7 +163,7 @@ public class MongoLabProvider {
         } catch (ServiceException se) {
             throw se;
         } catch (Exception ex) {
-            Logger.getLogger(MongoLabProvider.class.getName()).log(Level.SEVERE, null, ex);
+            LoggerFactory.getLogger(MongoLabProvider.class).error(null, ex);
             throw new DyeVCException(ex);
         }
         LoggerFactory.getLogger(MongoLabProvider.class).trace("Constructor -> Entry");

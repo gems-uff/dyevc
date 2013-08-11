@@ -5,7 +5,7 @@ import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.graph.GraphBuilder;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
-import br.uff.ic.dyevc.model.topology.CloneInfo;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.model.topology.CloneRelationship;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
@@ -149,7 +149,7 @@ public class TopologyWindow extends javax.swing.JFrame {
         graph = GraphBuilder.createTopologyGraph(systemName);
 
         // Choosing layout
-        layout = new FRLayout<CloneInfo, CloneRelationship>(graph);
+        layout = new FRLayout<RepositoryInfo, CloneRelationship>(graph);
         Dimension preferredSize = new Dimension(580, 580);
 
         final VisualizationModel visualizationModel =
@@ -177,8 +177,8 @@ public class TopologyWindow extends javax.swing.JFrame {
         //</editor-fold>
 
         // <editor-fold defaultstate="collapsed" desc="vertex label transformer">
-        vv.getRenderContext().setVertexLabelTransformer(new Transformer<CloneInfo,String>(){
-            public String transform(CloneInfo c) {
+        vv.getRenderContext().setVertexLabelTransformer(new Transformer<RepositoryInfo,String>(){
+            public String transform(RepositoryInfo c) {
                 return c.getCloneName();
             }
         });

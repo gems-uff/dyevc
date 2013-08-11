@@ -6,7 +6,7 @@ import br.uff.ic.dyevc.gui.MessageManager;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
-import br.uff.ic.dyevc.model.topology.CloneInfo;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.model.topology.CloneRelationship;
 import br.uff.ic.dyevc.model.topology.PullRelationship;
 import br.uff.ic.dyevc.model.topology.PushRelationship;
@@ -50,20 +50,28 @@ public class GraphBuilder {
         return graph;
     }
 
+    private static ArrayList<RepositoryInfo> clones = new ArrayList<RepositoryInfo>();
+    private static ArrayList<CloneRelationship> relations = new ArrayList<CloneRelationship>();
+    
     private static void createSampleData() {
-        CloneInfo dyevcssh = new CloneInfo();
+        RepositoryInfo dyevcssh = new RepositoryInfo();
+        dyevcssh.setSystemName("dyevc");
         dyevcssh.setHostName("cmcdell");
         dyevcssh.setCloneName("dyevcssh");
-        CloneInfo dyevc = new CloneInfo();
+        RepositoryInfo dyevc = new RepositoryInfo();
+        dyevc.setSystemName("dyevc");
         dyevc.setHostName("cmcdell");
         dyevc.setCloneName("dyevc");
-        CloneInfo dyevc3 = new CloneInfo();
+        RepositoryInfo dyevc3 = new RepositoryInfo();
+        dyevc3.setSystemName("dyevc");
         dyevc3.setHostName("cmcdell");
         dyevc3.setCloneName("dyevc3");
-        CloneInfo dyevc2 = new CloneInfo();
+        RepositoryInfo dyevc2 = new RepositoryInfo();
+        dyevc2.setSystemName("dyevc");
         dyevc2.setHostName("cmcdell");
         dyevc2.setCloneName("dyevc2");
-        CloneInfo gems = new CloneInfo();
+        RepositoryInfo gems = new RepositoryInfo();
+        gems.setSystemName("dyevc");
         gems.setHostName("github");
         gems.setCloneName("gems/dyevc");
         
@@ -96,22 +104,20 @@ public class GraphBuilder {
         relations.add(r10);
     }
     
-    private static ArrayList<CloneInfo> clones = new ArrayList<CloneInfo>();
-    private static ArrayList<CloneRelationship> relations = new ArrayList<CloneRelationship>();
     /**
      * Creates a dag representing the topology of a given system
      * @param systemName the name of the system for which the graph will be created
      * @return a graph representing the topology
      */
-    public static DirectedSparseMultigraph<CloneInfo, CloneRelationship> createTopologyGraph(String systemName) throws DyeVCException {
+    public static DirectedSparseMultigraph<RepositoryInfo, CloneRelationship> createTopologyGraph(String systemName) throws DyeVCException {
         LoggerFactory.getLogger(GraphBuilder.class).trace("createTopologyGraph -> Entry");
-        final DirectedSparseMultigraph<CloneInfo, CloneRelationship> graph = new DirectedSparseMultigraph<CloneInfo, CloneRelationship>();
+        final DirectedSparseMultigraph<RepositoryInfo, CloneRelationship> graph = new DirectedSparseMultigraph<RepositoryInfo, CloneRelationship>();
         try {
             TopologyDAO dao = new TopologyDAO();
             Topology top = dao.readTopology();
             createSampleData();
 //            for (CloneInfo cloneInfo : top.getClonesForSystem(systemName)) {
-            for (CloneInfo cloneInfo : clones) {
+            for (RepositoryInfo cloneInfo : clones) {
                 graph.addVertex(cloneInfo);
                 LoggerFactory.getLogger(GraphBuilder.class).debug("Vertex added: " + cloneInfo);
                 System.out.println(cloneInfo);
