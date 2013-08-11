@@ -14,4 +14,8 @@ public class StringUtils {
         }
         return result.replace("\\", "/");
     }
+    
+    public static String generateRepositoryId() {
+        return "rep" + System.currentTimeMillis();
+    }
 }

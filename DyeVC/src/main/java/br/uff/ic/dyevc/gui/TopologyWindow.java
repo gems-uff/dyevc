@@ -75,11 +75,13 @@ public class TopologyWindow extends javax.swing.JFrame {
             splash.dispose();
             JOptionPane.showMessageDialog(null, "Application received the following exception trying to show topology:\n" +
                     ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+            this.dispose();
         } catch(RuntimeException ex) {
             ex.printStackTrace(System.err);
             splash.dispose();
             JOptionPane.showMessageDialog(null, "Application received the following exception trying to show topology:\n" +
                     ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+            this.dispose();
         }            
     }
 

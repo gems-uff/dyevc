@@ -1,9 +1,11 @@
 package br.uff.ic.dyevc.model.topology;
 
+import br.uff.ic.dyevc.persistence.Oid;
 import br.uff.ic.dyevc.utils.StringUtils;
 import java.util.HashSet;
 import java.util.Set;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
  *
@@ -11,6 +13,7 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RepositoryInfo implements Comparable<RepositoryInfo>{
+    private String id;
     private String systemName;
     private String hostName;
     private String cloneName;
@@ -21,8 +24,20 @@ public class RepositoryInfo implements Comparable<RepositoryInfo>{
     public RepositoryInfo() {
         pushesTo = new HashSet<RepositoryKey>();
         pullsFrom = new HashSet<RepositoryKey>();
+        id = StringUtils.generateRepositoryId();
     }
 
+    @JsonProperty(value = "_id")
+    public String getId() {
+        return id;
+    }
+    
+    @JsonProperty(value = "_id")
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    
     public String getSystemName() {
         return systemName;
     }
@@ -135,9 +150,11 @@ public class RepositoryInfo implements Comparable<RepositoryInfo>{
     @Override
     public String toString() {
         super.toString();
-        return "RepositoryInfo{" + "systemName=" + systemName + 
-                "hostName=" + hostName + 
-                ", cloneName=" + cloneName + 
-                ", path=" + clonePath + '}';
+        return "<html><b>RepositoryInfo{</b>" + 
+                "<br>&nbsp;&nbsp;&nbsp;<b>id = </b>" + id +
+                "<br>&nbsp;&nbsp;&nbsp;<b>systemName = </b>" + systemName + 
+                "<br>&nbsp;&nbsp;&nbsp;<b>hostName = </b>" + hostName + 
+                "<br>&nbsp;&nbsp;&nbsp;<b>cloneName = </b>" + cloneName + 
+                "<br>&nbsp;&nbsp;&nbsp;<b>path = </b>" + clonePath + "<br><b>}</b></html>";
     }   
 }

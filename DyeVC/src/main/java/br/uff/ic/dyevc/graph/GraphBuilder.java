@@ -50,6 +50,36 @@ public class GraphBuilder {
         return graph;
     }
 
+    /**
+     * Creates a dag representing the topology of a given system
+     * @param systemName the name of the system for which the graph will be created
+     * @return a graph representing the topology
+     */
+    public static DirectedSparseMultigraph<RepositoryInfo, CloneRelationship> createTopologyGraph(String systemName) throws DyeVCException {
+        LoggerFactory.getLogger(GraphBuilder.class).trace("createTopologyGraph -> Entry");
+        final DirectedSparseMultigraph<RepositoryInfo, CloneRelationship> graph = new DirectedSparseMultigraph<RepositoryInfo, CloneRelationship>();
+        try {
+            TopologyDAO dao = new TopologyDAO();
+            Topology top = dao.readTopology();
+//            createSampleData();
+            for (RepositoryInfo cloneInfo : top.getClonesForSystem(systemName)) {
+                graph.addVertex(cloneInfo);
+                LoggerFactory.getLogger(GraphBuilder.class).debug("Vertex added: " + cloneInfo);
+                System.out.println(cloneInfo);
+            }
+            for (CloneRelationship cloneRelationship : top.getRelationshipsForSystem(systemName)) {
+                graph.addEdge(cloneRelationship, cloneRelationship.getOrigin(), cloneRelationship.getDestination(), EdgeType.DIRECTED);
+                LoggerFactory.getLogger(GraphBuilder.class).debug("Edge added: " + cloneRelationship);
+                System.out.println(cloneRelationship);
+            }
+        } catch (DyeVCException ex) {
+            MessageManager.getInstance().addMessage("Error during graph creation: " + ex);
+            throw ex;
+        }
+        LoggerFactory.getLogger(GraphBuilder.class).trace("createTopologyGraph -> Exit");
+        return graph;
+    }
+    
     private static ArrayList<RepositoryInfo> clones = new ArrayList<RepositoryInfo>();
     private static ArrayList<CloneRelationship> relations = new ArrayList<CloneRelationship>();
     
@@ -102,37 +132,5 @@ public class GraphBuilder {
         relations.add(r8);
         relations.add(r9);
         relations.add(r10);
-    }
-    
-    /**
-     * Creates a dag representing the topology of a given system
-     * @param systemName the name of the system for which the graph will be created
-     * @return a graph representing the topology
-     */
-    public static DirectedSparseMultigraph<RepositoryInfo, CloneRelationship> createTopologyGraph(String systemName) throws DyeVCException {
-        LoggerFactory.getLogger(GraphBuilder.class).trace("createTopologyGraph -> Entry");
-        final DirectedSparseMultigraph<RepositoryInfo, CloneRelationship> graph = new DirectedSparseMultigraph<RepositoryInfo, CloneRelationship>();
-        try {
-            TopologyDAO dao = new TopologyDAO();
-            Topology top = dao.readTopology();
-            createSampleData();
-//            for (CloneInfo cloneInfo : top.getClonesForSystem(systemName)) {
-            for (RepositoryInfo cloneInfo : clones) {
-                graph.addVertex(cloneInfo);
-                LoggerFactory.getLogger(GraphBuilder.class).debug("Vertex added: " + cloneInfo);
-                System.out.println(cloneInfo);
-            }
-//            for (CloneRelationship cloneRelationship : top.getRelationshipsForSystem(systemName)) {
-            for (CloneRelationship cloneRelationship : relations) {
-                graph.addEdge(cloneRelationship, cloneRelationship.getOrigin(), cloneRelationship.getDestination(), EdgeType.DIRECTED);
-                LoggerFactory.getLogger(GraphBuilder.class).debug("Edge added: " + cloneRelationship);
-                System.out.println(cloneRelationship);
-            }
-        } catch (DyeVCException ex) {
-            MessageManager.getInstance().addMessage("Error during graph creation: " + ex);
-            throw ex;
-        }
-        LoggerFactory.getLogger(GraphBuilder.class).trace("createTopologyGraph -> Exit");
-        return graph;
     }
 }

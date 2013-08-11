@@ -10,6 +10,7 @@ import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.StringUtils;
 import java.io.File;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -39,7 +40,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             repositoryBean = repository;
         } else {
             create = true;
-            repositoryBean = new MonitoredRepository("rep" + System.currentTimeMillis());
+            repositoryBean = new MonitoredRepository(StringUtils.generateRepositoryId());
         }
         initComponents();
     }

@@ -4,7 +4,7 @@
 
     <groupId>UFF</groupId>
     <artifactId>DyeVC</artifactId>
-    <version>0.1.25-alpha1</version>
+    <version>0.1.26-alpha2</version>
     <packaging>jar</packaging>
 
     <name>DyeVC</name>

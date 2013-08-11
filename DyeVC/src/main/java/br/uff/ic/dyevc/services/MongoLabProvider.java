@@ -4,8 +4,11 @@ import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
+import br.uff.ic.dyevc.persistence.MongoLabServiceParms;
 import java.util.ArrayList;
 import java.util.HashMap;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
 import org.jboss.resteasy.util.GenericType;
@@ -21,19 +24,18 @@ public class MongoLabProvider {
 
     private static final String API_KEY = "X90TQA2NqU53IpEg5WmRnE_R76EOd4Cj";
     private static final String BASE_URL = "https://api.mongolab.com/api/1/databases/dyevc";
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     /**
-     * Gets a list of repository information from the database
+     * Retrieves a list of repositories from the database
      *
-     * @param service The service to be invoked. All services must begin with
-     * slashes ("/")
      * @param params A mapping of parameter names and parameter values to be
      * used in the service invocation
-     * @return The result of the service invocation
+     * @return The list of repositories retrieved from the database
      * @throws DyeVCException In case of any exception during the service
      * invocation
      */
-    public static ArrayList<RepositoryInfo> getRepositories(HashMap<String, Object> params) throws ServiceException {
+    public static ArrayList<RepositoryInfo> getRepositories(MongoLabServiceParms params) throws ServiceException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("getRepositories -> Entry");
         ArrayList<RepositoryInfo> result = null;
         ClientRequest req;
@@ -57,116 +59,39 @@ public class MongoLabProvider {
         return result;
     }
 
-
     /**
-     * Invokes a GET service in mongolab
+     * Upserts a repository to the database, this is, if the specified id does not exist,
+     * inserts it, otherwise, updates it
      *
-     * @param <T> The type returned as a result of the service invocation
-     * @param service The service to be invoked. All services must begin with
-     * slashes ("/")
-     * @param params A mapping of parameter names and parameter values to be
-     * used in the service invocation
+     * @param body The repository to be upserted
      * @return The result of the service invocation
      * @throws DyeVCException In case of any exception during the service
      * invocation
      */
-    public static <T> T getService(String service, HashMap<String, Object> params) throws DyeVCException {
-        LoggerFactory.getLogger(MongoLabProvider.class).trace("Constructor -> Entry");
-        T result = null;
+    public static Object upsertRepository(RepositoryInfo body) throws DyeVCException {
+        LoggerFactory.getLogger(MongoLabProvider.class).trace("putRepositories -> Entry");
+        Object result = null;
+
         ClientRequest req;
-        ClientResponse<T> res;
+        ClientResponse res;
         try {
-            req = prepareRequest(service, params);
-            res = req.get(new GenericType<T>() {
+            mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
+            String serviceName = COLLECTION_REPOSITORIES + "/" + body.getId();
+            req = prepareRequest(serviceName, null, mapper.writeValueAsString(body));
+            res = req.put(new GenericType<RepositoryInfo>() {
             });
             if (res.getStatus() == 200) {
                 result = res.getEntity();
             } else {
-                throwErrorMessage(service, res.getStatus(), params);
+                throwErrorMessage(serviceName, res.getStatus(), null);
             }
         } catch (ServiceException se) {
             throw se;
         } catch (Exception ex) {
-            LoggerFactory.getLogger(MongoLabProvider.class).error(null, ex);
-            throw new DyeVCException(ex);
+            LoggerFactory.getLogger(MongoLabProvider.class).error("Error updating repositories.", ex);
+            throw new ServiceException(ex);
         }
-        LoggerFactory.getLogger(MongoLabProvider.class).trace("Constructor -> Entry");
-        return result;
-    }
-
-    /**
-     * Invokes a POST service in mongolab
-     *
-     * @param <T> The type returned as a result of the service invocation
-     * @param service The service to be invoked. All services must begin with
-     * slashes ("/")
-     * @param params A mapping of parameter names and parameter values to be
-     * used in the service invocation
-     * @param body The body of the POST message
-     * @return The result of the service invocation
-     * @throws DyeVCException In case of any exception during the service
-     * invocation
-     */
-    public static <T> T postService(String service, HashMap<String, Object> params, String body) throws DyeVCException {
-        LoggerFactory.getLogger(MongoLabProvider.class).trace("Constructor -> Entry");
-        T result = null;
-        ClientRequest req;
-        ClientResponse<T> res;
-        try {
-            req = prepareRequest(service, params);
-
-            res = req.post(new GenericType<T>() {
-            });
-            if (res.getStatus() == 200) {
-                result = res.getEntity();
-            } else {
-                throwErrorMessage(service, res.getStatus(), params, body);
-            }
-        } catch (ServiceException se) {
-            throw se;
-        } catch (Exception ex) {
-            LoggerFactory.getLogger(MongoLabProvider.class).error(null, ex);
-            throw new DyeVCException(ex);
-        }
-        LoggerFactory.getLogger(MongoLabProvider.class).trace("Constructor -> Entry");
-        return result;
-    }
-
-    /**
-     * Invokes a PUT service in mongolab
-     *
-     * @param <T> The type returned as a result of the service invocation
-     * @param service The service to be invoked. All services must begin with
-     * slashes ("/")
-     * @param params A mapping of parameter names and parameter values to be
-     * used in the service invocation
-     * @param body The body of the POST message
-     * @return The result of the service invocation
-     * @throws DyeVCException In case of any exception during the service
-     * invocation
-     */
-    public static <T> T putService(String service, HashMap<String, Object> params, String body) throws DyeVCException {
-        LoggerFactory.getLogger(MongoLabProvider.class).trace("Constructor -> Entry");
-        T result = null;
-        ClientRequest req;
-        ClientResponse<T> res;
-        try {
-            req = prepareRequest(service, params);
-
-            res = req.put(new GenericType<T>() {
-            });
-            if (res.getStatus() == 200) {
-                result = res.getEntity();
-            } else {
-                throwErrorMessage(service, res.getStatus(), params, body);
-            }
-        } catch (ServiceException se) {
-            throw se;
-        } catch (Exception ex) {
-            LoggerFactory.getLogger(MongoLabProvider.class).error(null, ex);
-            throw new DyeVCException(ex);
-        }
-        LoggerFactory.getLogger(MongoLabProvider.class).trace("Constructor -> Entry");
+        LoggerFactory.getLogger(MongoLabProvider.class).trace("putRepositories -> Exit");
         return result;
     }
 
@@ -187,7 +112,7 @@ public class MongoLabProvider {
         ClientRequest req;
         req = prepareRequest(service, params);
 
-        if (body != null && !"".equals(body)) {
+        if (body != null) {
             req.body("application/json", body);
         }
 
@@ -211,7 +136,7 @@ public class MongoLabProvider {
                 .append(service)
                 .append(". Return code received on service invocation: ")
                 .append(status);
-        if (!params.isEmpty()) {
+        if (params != null && !params.isEmpty()) {
             message.append(IConstants.LINE_SEPARATOR)
                     .append("\tParams used on invocation: ").append(IConstants.LINE_SEPARATOR);
             for (String key : params.keySet()) {
