@@ -53,8 +53,8 @@
                         </jnlp>
                         <sign>
                             <keystore>${project.basedir}/keystore/dyevc.jks</keystore>
-                            <keypass>hijaack</keypass>
-                            <storepass>hijaack</storepass>
+                            <keypass>pVeLypc4W67S229VwNA9</keypass>
+                            <storepass>PhnPJFt3cBC9CSX6PPMP</storepass>
                             <storetype>jks</storetype>
                             <alias>dyevc</alias>
                             <verify>true</verify>

@@ -8,9 +8,11 @@ import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.model.topology.CloneRelationship;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
+import edu.uci.ics.jung.algorithms.layout.CircleLayout;
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
+import edu.uci.ics.jung.graph.SparseMultigraph;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -32,7 +34,10 @@ import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
+import edu.uci.ics.jung.visualization.decorators.PickableEdgePaintTransformer;
+import edu.uci.ics.jung.visualization.decorators.PickableVertexPaintTransformer;
 import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
+import java.awt.Color;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.logging.Level;
@@ -51,7 +56,7 @@ public class TopologyWindow extends javax.swing.JFrame {
 
     private static final long serialVersionUID = 1689885032823010309L;
     private String systemName;
-    private DirectedSparseMultigraph graph;
+    private SparseMultigraph graph;
     private VisualizationViewer vv;
     private Layout layout;
     private JComboBox edgeLineShapeCombo;
@@ -151,12 +156,13 @@ public class TopologyWindow extends javax.swing.JFrame {
         graph = GraphBuilder.createTopologyGraph(systemName);
 
         // Choosing layout
-        layout = new FRLayout<RepositoryInfo, CloneRelationship>(graph);
+//        layout = new FRLayout<RepositoryInfo, CloneRelationship>(graph);
+        layout = new CircleLayout<RepositoryInfo, CloneRelationship>(graph);
         Dimension preferredSize = new Dimension(580, 580);
 
-        final VisualizationModel visualizationModel =
-                new DefaultVisualizationModel(layout, preferredSize);
-        vv = new VisualizationViewer(visualizationModel, preferredSize);
+//        final VisualizationModel visualizationModel =
+//                new DefaultVisualizationModel(layout, preferredSize);
+        vv = new VisualizationViewer(layout, preferredSize);
 
         //Scales the graph to show more nodes
         scaler.scale(vv, 0.4761905F, vv.getCenter());
@@ -170,10 +176,11 @@ public class TopologyWindow extends javax.swing.JFrame {
 
         // <editor-fold defaultstate="collapsed" desc="vertex tooltip transformer">
         vv.setVertexToolTipTransformer(new ToStringLabeller());
-        ToolTipManager.sharedInstance().setDismissDelay(5000);
+//        ToolTipManager.sharedInstance().setDismissDelay(5000);
         //</editor-fold>
 
         // <editor-fold defaultstate="collapsed" desc="vertex fillPaint transformer">
+        vv.getRenderContext().setVertexFillPaintTransformer(new PickableVertexPaintTransformer<Integer>(vv.getPickedVertexState(), Color.red, Color.yellow));
 //        Transformer<Object, Paint> vertexPaint = new CHVertexPaintTransformer();
 //        vv.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
         //</editor-fold>
@@ -189,8 +196,10 @@ public class TopologyWindow extends javax.swing.JFrame {
         // <editor-fold defaultstate="collapsed" desc="edge label transformer">
         vv.getRenderContext().setEdgeLabelTransformer(new ToStringLabeller());
         //</editor-fold>
-
-        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
+        
+        vv.getRenderContext().setEdgeDrawPaintTransformer(new PickableEdgePaintTransformer<Number>(vv.getPickedEdgeState(), Color.black, Color.cyan));
+        
+        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.QuadCurve());
 //        vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeTransformer());
     }
     //</editor-fold>

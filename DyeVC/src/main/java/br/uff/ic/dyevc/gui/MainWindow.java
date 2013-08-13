@@ -299,7 +299,6 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
-    
     // <editor-fold defaultstate="collapsed" desc="main menu">                          
     /**
      * This method creates the menu bar
@@ -397,7 +396,6 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
-    
     // <editor-fold defaultstate="collapsed" desc="main menu events">                          
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
@@ -712,48 +710,32 @@ public class MainWindow extends javax.swing.JFrame {
 
     /**
      * Displays messages from the status list as a balloon in tray icon.
-     * 
+     *
      * @param repStatusList the list of messages to be displayed.
      */
-    public 
-
-void notifyMessages(List<RepositoryStatus> repStatusList) {
-        LoggerFactory.getLogger(MainWindow.class  
-
-    ).trace("notifyMessages -> Entry");
+    public void notifyMessages(List<RepositoryStatus> repStatusList) {
+        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Entry");
 
         int countRepsWithMessages = 0;
-    for (Iterator<RepositoryStatus> it = repStatusList.iterator();
-
-    it.hasNext ();
-
-    
-        ) {
+        for (Iterator<RepositoryStatus> it = repStatusList.iterator();
+                it.hasNext();) {
             RepositoryStatus repositoryStatus = it.next();
-        if (repositoryStatus.isInvalid()) {
-            countRepsWithMessages++;
-        } else {
-            if (repositoryStatus.getInvalidBranchesCount() > 0
-                    || repositoryStatus.getNonSyncedBranchesCount() > 0) {
+            if (repositoryStatus.isInvalid()) {
                 countRepsWithMessages++;
+            } else {
+                if (repositoryStatus.getInvalidBranchesCount() > 0
+                        || repositoryStatus.getNonSyncedBranchesCount() > 0) {
+                    countRepsWithMessages++;
+                }
             }
         }
-    }
-    if (countRepsWithMessages != lastMessagesCount
-
-    
-        ) {
+        if (countRepsWithMessages != lastMessagesCount) {
             notifyMessage("There are messages on " + countRepsWithMessages + " repositories.");
-        lastMessagesCount = countRepsWithMessages;
-    }
+            lastMessagesCount = countRepsWithMessages;
+        }
 
-    repoTable.repaint ();
+        repoTable.repaint();
 
-    LoggerFactory.getLogger (MainWindow.
-
-    class  
-    
-
-).trace("notifyMessages -> Exit");
+        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Exit");
     }
 }

@@ -15,6 +15,7 @@ import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
+import edu.uci.ics.jung.graph.SparseMultigraph;
 import edu.uci.ics.jung.graph.util.EdgeType;
 import java.util.ArrayList;
 import org.slf4j.LoggerFactory;
@@ -55,9 +56,9 @@ public class GraphBuilder {
      * @param systemName the name of the system for which the graph will be created
      * @return a graph representing the topology
      */
-    public static DirectedSparseMultigraph<RepositoryInfo, CloneRelationship> createTopologyGraph(String systemName) throws DyeVCException {
+    public static SparseMultigraph<RepositoryInfo, CloneRelationship> createTopologyGraph(String systemName) throws DyeVCException {
         LoggerFactory.getLogger(GraphBuilder.class).trace("createTopologyGraph -> Entry");
-        final DirectedSparseMultigraph<RepositoryInfo, CloneRelationship> graph = new DirectedSparseMultigraph<RepositoryInfo, CloneRelationship>();
+        final SparseMultigraph<RepositoryInfo, CloneRelationship> graph = new SparseMultigraph<RepositoryInfo, CloneRelationship>();
         try {
             TopologyDAO dao = new TopologyDAO();
             Topology top = dao.readTopology();
