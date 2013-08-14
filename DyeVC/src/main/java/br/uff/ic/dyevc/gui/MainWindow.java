@@ -451,7 +451,6 @@ public class MainWindow extends javax.swing.JFrame {
         int n = JOptionPane.showConfirmDialog(repoTable, "Do you really want to stop monitoring " + rep.getName() + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (n == JOptionPane.YES_OPTION) {
             monitoredRepositories.removeMonitoredRepository(rep);
-            PreferencesUtils.persistRepositories();
         }
     }
 

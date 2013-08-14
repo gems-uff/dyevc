@@ -15,6 +15,10 @@ public class MongoLabServiceParms extends HashMap<String, Object> {
     private static final String PARAM_RETURN_FIELDS = "f";
     private static final String PARAM_SORT_ORDER = "s";
 
+    public void setQuery(String query) throws ServiceException {
+        put(PARAM_QUERY, query);
+    }
+    
     public void setQuery(GenericFilter filter) throws ServiceException {
         put(PARAM_QUERY, filter.serialize(true));
     }

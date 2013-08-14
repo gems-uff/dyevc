@@ -88,10 +88,47 @@ public class MongoLabProvider {
         } catch (ServiceException se) {
             throw se;
         } catch (Exception ex) {
-            LoggerFactory.getLogger(MongoLabProvider.class).error("Error updating repositories.", ex);
+            LoggerFactory.getLogger(MongoLabProvider.class).error("Error updating repository <" + body.getId() + ">", ex);
             throw new ServiceException(ex);
         }
         LoggerFactory.getLogger(MongoLabProvider.class).trace("putRepositories -> Exit");
+        return result;
+    }
+
+
+    /**
+     * Deletes a repository from the database. The application should first check
+     * if the repository is not referenced anywhere, otherwise there will be inconsistency
+     * in the database
+     *
+     * @param body The repository to be deleted
+     * @return The result of the service invocation
+     * @throws DyeVCException In case of any exception during the service
+     * invocation
+     */
+    public static Object deleteRepository(RepositoryInfo body) throws DyeVCException {
+        LoggerFactory.getLogger(MongoLabProvider.class).trace("deleteRepository -> Entry");
+        Object result = null;
+
+        ClientRequest req;
+        ClientResponse res;
+        try {
+            String serviceName = COLLECTION_REPOSITORIES + "/" + body.getId();
+            req = prepareRequest(serviceName, null);
+            res = req.delete(new GenericType<RepositoryInfo>() {
+            });
+            if (res.getStatus() == 200) {
+                result = res.getEntity();
+            } else {
+                throwErrorMessage(serviceName, res.getStatus(), null);
+            }
+        } catch (ServiceException se) {
+            throw se;
+        } catch (Exception ex) {
+            LoggerFactory.getLogger(MongoLabProvider.class).error("Error deleting repository <" + body.getId() + ">", ex);
+            throw new ServiceException(ex);
+        }
+        LoggerFactory.getLogger(MongoLabProvider.class).trace("deleteRepository -> Exit");
         return result;
     }
 

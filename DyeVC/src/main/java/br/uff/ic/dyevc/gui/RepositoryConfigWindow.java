@@ -1,13 +1,12 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package br.uff.ic.dyevc.gui;
 
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.model.topology.Topology;
+import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.StringUtils;
@@ -25,6 +24,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
 
     private static final long serialVersionUID = -5327813882224088396L;
     private ApplicationSettingsBean settings;
+    private Topology topology;
 
     /**
      * Creates new form RepositoryConfigWindow
@@ -49,6 +49,12 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     @SuppressWarnings("unchecked")
     private void initComponents() {
         settings = PreferencesUtils.loadPreferences();
+        try {
+            topology = new TopologyDAO().readTopology();
+        } catch (ServiceException ex) {
+            LoggerFactory.getLogger(RepositoryConfigWindow.class).warn("Could not retrieve topology from database. It will not be possible to show the list of known systems.", ex);
+            topology = new Topology();
+        }
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         if (create) {
@@ -76,8 +82,9 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         lblCloneAddress.setText("Repository Address:");
         lblCloneAddress.setToolTipText("Click on the button to select the path to a local repository you want to monitor.");
 
-        txtSystemName = new javax.swing.JTextField();
-        txtSystemName.setText(repositoryBean.getSystemName());
+        cmbSystemName = new javax.swing.JComboBox<String>(topology.getSystems().toArray(new String[0]));
+        cmbSystemName.setEditable(true);
+        cmbSystemName.setSelectedItem(repositoryBean.getSystemName());
         txtRepositoryName = new javax.swing.JTextField();
         txtRepositoryName.setText(repositoryBean.getName());
         txtCloneAddres = new javax.swing.JTextField();
@@ -123,15 +130,14 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
 
     private void btnSaveRepositoryActionPerformed(java.awt.event.ActionEvent evt) {
         //Verify if system name was specified.
-        if (txtSystemName.getText() == null || "".equals(txtSystemName.getText()) || "no name".equals(txtSystemName.getText())){
+        if (cmbSystemName.getSelectedItem() == null || "".equals(cmbSystemName.getSelectedItem().toString()) || "no name".equalsIgnoreCase(cmbSystemName.getSelectedItem().toString())){
             JOptionPane.showMessageDialog(this, "Repository name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
-            txtSystemName.requestFocus();
-            txtSystemName.selectAll();
+            cmbSystemName.requestFocus();
             return;
         }
         
         //Verify if clone name was specified.
-        if (txtRepositoryName.getText() == null || "".equals(txtRepositoryName.getText()) || "no name".equals(txtRepositoryName.getText())){
+        if (txtRepositoryName.getText() == null || "".equals(txtRepositoryName.getText()) || "no name".equalsIgnoreCase(txtRepositoryName.getText())){
             JOptionPane.showMessageDialog(this, "Clone name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
             txtRepositoryName.requestFocus();
             txtRepositoryName.selectAll();
@@ -148,7 +154,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             }
         }
             
-        repositoryBean.setSystemName(txtSystemName.getText());
+        repositoryBean.setSystemName(cmbSystemName.getSelectedItem().toString().toLowerCase());
         repositoryBean.setName(txtRepositoryName.getText());
         repositoryBean.setCloneAddress(txtCloneAddres.getText());
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
@@ -199,7 +205,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private javax.swing.JLabel lblRepositoryName;
     private javax.swing.JLabel lblCloneAddress;
     private javax.swing.JTextField txtCloneAddres;
-    private javax.swing.JTextField txtSystemName;
+    private javax.swing.JComboBox<String> cmbSystemName;
     private javax.swing.JTextField txtRepositoryName;
     private javax.swing.JPanel pnlTop;
     private javax.swing.JPanel pnlBottom;
@@ -217,7 +223,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addComponent(lblCloneAddress, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(txtSystemName)
+                .addComponent(cmbSystemName)
                 .addComponent(txtRepositoryName)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addComponent(btnExploreCloneAddress)
@@ -230,7 +236,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                 .addComponent(lblSystemName)
-                .addComponent(txtSystemName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(cmbSystemName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                 .addComponent(lblRepositoryName)

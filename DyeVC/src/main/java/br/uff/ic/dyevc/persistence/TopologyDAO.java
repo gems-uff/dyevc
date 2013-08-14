@@ -51,6 +51,30 @@ public class TopologyDAO {
     }
 
     /**
+     * Retrieves the number of repositories related to the specified parameter, either
+     * by a pushesTo or by a pullsFrom dependency
+     *
+     * @param repository Repository to look for
+     * @return List of repositories that relates to the specified repository
+     * @throws ServiceException
+     */
+    public int countRelatedRepositories(RepositoryInfo repository) throws ServiceException {
+        LoggerFactory.getLogger(TopologyDAO.class).trace("countRelatedRepositories -> Entry");
+
+        String query = "{\"$or\": [{\"pushesTo.hostName\": \"" + repository.getHostName() + "\", "
+                + "\"pushesTo.cloneName\": \"" + repository.getCloneName() + "\"}, "
+                + "{\"pullsFrom.hostName\": \"" + repository.getHostName() + "\", "
+                + "\"pullsFrom.cloneName\": \"" + repository.getCloneName() + "\"}]}";
+        
+        MongoLabServiceParms parms = new MongoLabServiceParms();
+        parms.setQuery(query);
+        ArrayList<RepositoryInfo> result = MongoLabProvider.getRepositories(parms);
+
+        LoggerFactory.getLogger(TopologyDAO.class).trace("countRelatedRepositories -> Exit");
+        return result.size();
+    }
+    
+    /**
      * Update all the elements in the specified topology. If an element does not
      * yet exists, then create it
      *
@@ -74,7 +98,18 @@ public class TopologyDAO {
      * @throws DyeVCException 
      */
     public void updateRepository(RepositoryInfo repository) throws DyeVCException{
-        Object result;
-        result = MongoLabProvider.upsertRepository(repository);
+        MongoLabProvider.upsertRepository(repository);
+    }
+    
+    /**
+     * Delete a repository in the database. The application should first check
+     * if the repository is not referenced anywhere, otherwise there will be inconsistency
+     * @param repository The repository to be deleted
+     * @throws DyeVCException 
+     */
+    public void deleteRepository(RepositoryInfo repository) throws DyeVCException{
+        if (countRelatedRepositories(repository) == 0) {
+            MongoLabProvider.deleteRepository(repository);
+        }
     }
 }

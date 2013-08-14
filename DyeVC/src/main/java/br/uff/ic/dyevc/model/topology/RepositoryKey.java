@@ -53,8 +53,8 @@ public class RepositoryKey implements Comparable<RepositoryKey>{
             return false;
         }
         final RepositoryKey other = (RepositoryKey) obj;
-        if (!(other.getHostName().equalsIgnoreCase(getHostName()) 
-                || other.getCloneName().equalsIgnoreCase(getCloneName()))) {
+        if (!(other.getHostName().equals(getHostName()) 
+                && other.getCloneName().equals(getCloneName()))) {
             return false;
         }
         return true;

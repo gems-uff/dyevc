@@ -1,6 +1,11 @@
 package br.uff.ic.dyevc.model;
 
+import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
+import br.uff.ic.dyevc.persistence.TopologyDAO;
+import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.StringUtils;
+import br.uff.ic.dyevc.utils.SystemUtils;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.table.AbstractTableModel;
@@ -82,11 +87,16 @@ public final class MonitoredRepositories extends AbstractTableModel {
      * 
      * @return true, if the instance existed and false otherwise
      */
-    public boolean removeMonitoredRepository(MonitoredRepository repository) {
+    public boolean removeMonitoredRepository(MonitoredRepository repository) throws DyeVCException {
         int index = monitoredRepositories.indexOf(repository);
         boolean rv = monitoredRepositories.remove(repository);
         if (index >= 0) {
             fireTableRowsDeleted(index, index);
+            TopologyDAO dao = new TopologyDAO();
+            RepositoryInfo info = new RepositoryInfo();
+            info.setHostName(SystemUtils.getLocalHostname());
+            dao.deleteRepository(info);
+            PreferencesUtils.persistRepositories();
         }
         return rv;
     }

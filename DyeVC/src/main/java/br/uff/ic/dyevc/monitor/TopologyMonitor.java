@@ -15,6 +15,7 @@ import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.StringUtils;
+import br.uff.ic.dyevc.utils.SystemUtils;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -116,7 +117,7 @@ public class TopologyMonitor extends Thread {
                 info.setSystemName(monitoredRepository.getSystemName());
                 info.setCloneName(monitoredRepository.getName());
                 info.setClonePath(monitoredRepository.getNormalizedCloneAddress());
-                info.setHostName(getLocalHostname());
+                info.setHostName(SystemUtils.getLocalHostname());
                 verifyRelationships(monitoredRepository, info);
                 repositories.add(info);
             } catch (UnknownHostException ex) {
@@ -184,7 +185,7 @@ public class TopologyMonitor extends Thread {
                 || (hostName != null && (hostName.equalsIgnoreCase("localhost")
                 || hostName.equals("127.0.0.1")));
         if (isLocal) {
-            hostName = getLocalHostname();
+            hostName = SystemUtils.getLocalHostname();
         }
         
         //Takes out leading slashes and changes double backslashes by slashes
@@ -225,15 +226,6 @@ public class TopologyMonitor extends Thread {
         if (!createOnlyPushRelation) {
             info.addPullsFrom(key);
         }
-    }
-
-    /**
-     * Gets the hostname of the local computer, in canonical form (hostname + connection suffix)
-     * @return The hostname of the local computer
-     * @throws UnknownHostException 
-     */
-    private String getLocalHostname() throws UnknownHostException {
-        return InetAddress.getLocalHost().getCanonicalHostName().toLowerCase();
     }
 
     /**

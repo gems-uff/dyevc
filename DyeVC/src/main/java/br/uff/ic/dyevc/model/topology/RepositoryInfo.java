@@ -112,9 +112,9 @@ public class RepositoryInfo implements Comparable<RepositoryInfo>{
             return false;
         }
         final RepositoryInfo other = (RepositoryInfo) obj;
-        if (!(other.getSystemName().equalsIgnoreCase(getSystemName()) 
-                || other.getHostName().equalsIgnoreCase(getHostName()) 
-                || other.getCloneName().equalsIgnoreCase(getCloneName()))) {
+        if (!(other.getSystemName().equals(getSystemName()) 
+                && other.getHostName().equals(getHostName()) 
+                && other.getCloneName().equals(getCloneName()))) {
             return false;
         }
         return true;
