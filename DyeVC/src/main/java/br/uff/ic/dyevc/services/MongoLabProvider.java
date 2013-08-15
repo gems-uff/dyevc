@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class MongoLabProvider {
     public static final String COLLECTION_REPOSITORIES = "/collections/repositories";
 
-    private static final String API_KEY = "X90TQA2NqU53IpEg5WmRnE_R76EOd4Cj";
+    private static final String API_KEY = "dgOZbb9cNfzHSfuANRekokGrWCYWYCEs";
     private static final String BASE_URL = "https://api.mongolab.com/api/1/databases/dyevc";
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -101,19 +101,19 @@ public class MongoLabProvider {
      * if the repository is not referenced anywhere, otherwise there will be inconsistency
      * in the database
      *
-     * @param body The repository to be deleted
+     * @param id The id of the repository to be deleted
      * @return The result of the service invocation
      * @throws DyeVCException In case of any exception during the service
      * invocation
      */
-    public static Object deleteRepository(RepositoryInfo body) throws DyeVCException {
+    public static Object deleteRepository(String id) throws DyeVCException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("deleteRepository -> Entry");
         Object result = null;
 
         ClientRequest req;
         ClientResponse res;
         try {
-            String serviceName = COLLECTION_REPOSITORIES + "/" + body.getId();
+            String serviceName = COLLECTION_REPOSITORIES + "/" + id;
             req = prepareRequest(serviceName, null);
             res = req.delete(new GenericType<RepositoryInfo>() {
             });
@@ -125,7 +125,7 @@ public class MongoLabProvider {
         } catch (ServiceException se) {
             throw se;
         } catch (Exception ex) {
-            LoggerFactory.getLogger(MongoLabProvider.class).error("Error deleting repository <" + body.getId() + ">", ex);
+            LoggerFactory.getLogger(MongoLabProvider.class).error("Error deleting repository <" + id + ">", ex);
             throw new ServiceException(ex);
         }
         LoggerFactory.getLogger(MongoLabProvider.class).trace("deleteRepository -> Exit");

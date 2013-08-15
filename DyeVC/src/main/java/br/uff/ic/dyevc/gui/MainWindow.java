@@ -450,7 +450,11 @@ public class MainWindow extends javax.swing.JFrame {
         MonitoredRepository rep = getSelectedRepository();
         int n = JOptionPane.showConfirmDialog(repoTable, "Do you really want to stop monitoring " + rep.getName() + "?", "Confirm removal", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (n == JOptionPane.YES_OPTION) {
-            monitoredRepositories.removeMonitoredRepository(rep);
+            try {
+                monitoredRepositories.removeMonitoredRepository(rep);
+            } catch (DyeVCException ex) {
+                JOptionPane.showMessageDialog(this, "An error occurred while removing the repository. See the log for details. Please try again later.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 

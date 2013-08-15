@@ -89,14 +89,13 @@ public final class MonitoredRepositories extends AbstractTableModel {
      */
     public boolean removeMonitoredRepository(MonitoredRepository repository) throws DyeVCException {
         int index = monitoredRepositories.indexOf(repository);
-        boolean rv = monitoredRepositories.remove(repository);
+        boolean rv = false;
         if (index >= 0) {
-            fireTableRowsDeleted(index, index);
             TopologyDAO dao = new TopologyDAO();
-            RepositoryInfo info = new RepositoryInfo();
-            info.setHostName(SystemUtils.getLocalHostname());
-            dao.deleteRepository(info);
+            dao.deleteRepository(repository.getId());
             PreferencesUtils.persistRepositories();
+            rv = monitoredRepositories.remove(repository);
+            fireTableRowsDeleted(index, index);
         }
         return rv;
     }

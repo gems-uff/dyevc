@@ -57,7 +57,7 @@ public class Topology {
         if (!repositoryMap.containsKey(repos.getSystemName())) {
             repositoryMap.put(repos.getSystemName(), new CloneMap());
         }
-        RepositoryKey key = new RepositoryKey(repos.getHostName(), repos.getCloneName());
+        String key = repos.getId();
         repositoryMap.get(repos.getSystemName()).put(key, repos);
     }
 // </editor-fold>
@@ -69,7 +69,7 @@ public class Topology {
      * @param cloneKey Clone key to look for
      * @return The clone info requested
      */
-    public RepositoryInfo getRepositoryInfo(String systemName, RepositoryKey cloneKey) {
+    public RepositoryInfo getRepositoryInfo(String systemName, String cloneKey) {
         return repositoryMap.get(systemName).get(cloneKey);
     }
 
@@ -113,12 +113,12 @@ public class Topology {
         CloneMap map = repositoryMap.get(systemName);
         for (RepositoryInfo repositoryInfo : map.values()) {
             //Clonekey of "pullsFrom" is the origin and this cloneInfo is the destination
-            for (RepositoryKey cloneKey : repositoryInfo.getPullsFrom()) {
+            for (String cloneKey : repositoryInfo.getPullsFrom()) {
                 PullRelationship cloneRelationship = new PullRelationship(map.get(cloneKey), repositoryInfo);
                 cis.add(cloneRelationship);
             }
             // RepositoryKey of "pushesTo" is the destination and this cloneInfo is the origin
-            for (RepositoryKey cloneKey : repositoryInfo.getPushesTo()) {
+            for (String cloneKey : repositoryInfo.getPushesTo()) {
                 PushRelationship cloneRelationship = new PushRelationship(repositoryInfo, map.get(cloneKey));
                 cis.add(cloneRelationship);
             }
@@ -135,7 +135,7 @@ public class Topology {
      * @param cloneKey Clone key of the clone to be erased
      * @return The clone information erased
      */
-    public void removeCloneInfo(String systemName, RepositoryKey cloneKey) {
+    public void removeCloneInfo(String systemName, String cloneKey) {
         if (repositoryMap.containsKey(systemName)) {
             repositoryMap.get(systemName).remove(cloneKey);
         }
@@ -148,7 +148,7 @@ public class Topology {
      * @author Cristiano
      */
     @SuppressWarnings("serial")
-    private class CloneMap extends HashMap<RepositoryKey, RepositoryInfo> {
+    private class CloneMap extends HashMap<String, RepositoryInfo> {
     }
 
     @Override
