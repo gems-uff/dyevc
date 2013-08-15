@@ -29,9 +29,9 @@ public final class PreferencesUtils {
     private static final String NODE_MONITORED_REPOSITORIES = "monitoredrepositories";
     
     /**
-     * Default interval between checks, in seconds.
+     * Default interval between checks, in seconds. Defaults to 10 minutes.
      */
-    private static final int DEFAULT_CHECK_INTERVAL = 300;
+    private static final int DEFAULT_CHECK_INTERVAL = 600;
     
     /**
      * Object the points to a preferences instance.

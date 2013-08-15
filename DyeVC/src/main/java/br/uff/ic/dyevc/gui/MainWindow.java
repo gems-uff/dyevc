@@ -453,7 +453,7 @@ public class MainWindow extends javax.swing.JFrame {
             try {
                 monitoredRepositories.removeMonitoredRepository(rep);
             } catch (DyeVCException ex) {
-                JOptionPane.showMessageDialog(this, "An error occurred while removing the repository. See the log for details. Please try again later.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "An error occurred while trying to remove the repository. Please try again later.  See the log for details.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

@@ -1,11 +1,9 @@
 package br.uff.ic.dyevc.model;
 
 import br.uff.ic.dyevc.exception.DyeVCException;
-import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.StringUtils;
-import br.uff.ic.dyevc.utils.SystemUtils;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.table.AbstractTableModel;
