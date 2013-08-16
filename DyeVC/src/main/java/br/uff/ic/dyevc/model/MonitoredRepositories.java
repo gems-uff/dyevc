@@ -1,11 +1,16 @@
 package br.uff.ic.dyevc.model;
 
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.exception.RepositoryReferencedException;
+import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.table.AbstractTableModel;
 
 /**
@@ -47,6 +52,7 @@ public final class MonitoredRepositories extends AbstractTableModel {
 
     /**
      * Get an instance of a monitored repository by clone address
+     *
      * @param cloneAddress Clone address of the desired monitored repository
      * @return the required monitored repository
      */
@@ -63,7 +69,7 @@ public final class MonitoredRepositories extends AbstractTableModel {
 
     /**
      * Add an instance of a monitored repository
-     * 
+     *
      * @param repository the instance to be added
      */
     public void addMonitoredRepository(MonitoredRepository repository) {
@@ -80,29 +86,36 @@ public final class MonitoredRepositories extends AbstractTableModel {
 
     /**
      * Remove an instance of a monitored repository
-     * 
+     *
      * @param repository the instance to be removed
-     * 
+     *
      * @return true, if the instance existed and false otherwise
      */
-    public boolean removeMonitoredRepository(MonitoredRepository repository) throws DyeVCException {
+    public boolean removeMonitoredRepository(MonitoredRepository repository) throws RepositoryReferencedException, ServiceException {
         int index = monitoredRepositories.indexOf(repository);
         boolean rv = false;
         if (index >= 0) {
             TopologyDAO dao = new TopologyDAO();
-            dao.deleteRepository(repository.getId());
-            PreferencesUtils.persistRepositories();
+            try {
+                dao.deleteRepository(repository.getId());
+            } catch (RepositoryReferencedException rre) {
+                monitoredRepositories.remove(repository);
+                PreferencesUtils.persistRepositories();
+                fireTableRowsDeleted(index, index);
+                throw rre;
+            }
             rv = monitoredRepositories.remove(repository);
+            PreferencesUtils.persistRepositories();
             fireTableRowsDeleted(index, index);
         }
         return rv;
     }
 
     /**
-     * Closes the connection established in each of the monitored repositories. 
+     * Closes the connection established in each of the monitored repositories.
      */
     public void closeRepositories() {
-        for (MonitoredRepository rep: monitoredRepositories) {
+        for (MonitoredRepository rep : monitoredRepositories) {
             rep.close();
         }
     }
@@ -120,7 +133,7 @@ public final class MonitoredRepositories extends AbstractTableModel {
     @Override
     public String getColumnName(int column) {
         String result = null;
-        switch(column) {
+        switch (column) {
             case 0:
                 result = "Status";
                 break;
@@ -143,7 +156,7 @@ public final class MonitoredRepositories extends AbstractTableModel {
     @Override
     public Class getColumnClass(int columnIndex) {
         Class result;
-        switch(columnIndex) {
+        switch (columnIndex) {
             case 0:
                 result = MonitoredRepository.class;
                 break;
@@ -152,12 +165,12 @@ public final class MonitoredRepositories extends AbstractTableModel {
         }
         return result;
     }
-    
+
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         MonitoredRepository rep = monitoredRepositories.get(rowIndex);
         Object result = null;
-        switch(columnIndex) {
+        switch (columnIndex) {
             case 0:
                 result = rep;
                 break;

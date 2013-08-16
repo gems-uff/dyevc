@@ -4,8 +4,10 @@ import br.uff.ic.dyevc.utils.TableColumnAdjuster;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.application.branchhistory.controller.BranchesHistoryController;
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.exception.RepositoryReferencedException;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
 import br.uff.ic.dyevc.monitor.TopologyMonitor;
 import br.uff.ic.dyevc.utils.ImageUtils;
@@ -452,6 +454,18 @@ public class MainWindow extends javax.swing.JFrame {
         if (n == JOptionPane.YES_OPTION) {
             try {
                 monitoredRepositories.removeMonitoredRepository(rep);
+            } catch (RepositoryReferencedException rre) {
+                StringBuilder message = new StringBuilder();
+                message.append("DyeVC has stopped monitoring clone <").append(rep.getName())
+                        .append("> with id <").append(rep.getId())
+                        .append(">\nHowever, it is still in the topology because it is referenced by the following clone(s): ");
+                for (RepositoryInfo info: rre.getRelatedRepositories()) {
+                    message.append("\n<").append(info.getCloneName())
+                            .append(">, id: <").append(info.getId())
+                            .append(">, located at host <").append(info.getHostName())
+                            .append(">");
+                }
+                JOptionPane.showMessageDialog(this, message.toString(), "Information", JOptionPane.INFORMATION_MESSAGE);                
             } catch (DyeVCException ex) {
                 JOptionPane.showMessageDialog(this, "An error occurred while trying to remove the repository. Please try again later.  See the log for details.", "Error", JOptionPane.ERROR_MESSAGE);
             }

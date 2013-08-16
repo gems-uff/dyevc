@@ -1,6 +1,7 @@
 package br.uff.ic.dyevc.persistence;
 
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.exception.RepositoryReferencedException;
 import br.uff.ic.dyevc.model.topology.RepositoryFilter;
 import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
@@ -58,7 +59,7 @@ public class TopologyDAO {
      * @return List of repositories that relates to the specified repository
      * @throws ServiceException
      */
-    public int countRelatedRepositories(String id) throws ServiceException {
+    public ArrayList<RepositoryInfo> findRelatedRepositories(String id) throws ServiceException {
         LoggerFactory.getLogger(TopologyDAO.class).trace("countRelatedRepositories -> Entry");
 
         String query = "{\"$or\": [{\"pushesTo\": \"" + id + "\"}, "
@@ -69,7 +70,7 @@ public class TopologyDAO {
         ArrayList<RepositoryInfo> result = MongoLabProvider.getRepositories(parms);
 
         LoggerFactory.getLogger(TopologyDAO.class).trace("countRelatedRepositories -> Exit");
-        return result.size();
+        return result;
     }
     
     /**
@@ -105,9 +106,12 @@ public class TopologyDAO {
      * @param id Id of the repository to be deleted
      * @throws DyeVCException 
      */
-    public void deleteRepository(String id) throws DyeVCException{
-        if (countRelatedRepositories(id) == 0) {
+    public void deleteRepository(String id) throws ServiceException, RepositoryReferencedException {
+        ArrayList<RepositoryInfo> relatedRepositories = findRelatedRepositories(id);
+        if (relatedRepositories.isEmpty()) {
             MongoLabProvider.deleteRepository(id);
+        } else {
+            throw new RepositoryReferencedException(relatedRepositories);
         }
     }
 }

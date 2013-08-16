@@ -106,7 +106,7 @@ public class MongoLabProvider {
      * @throws DyeVCException In case of any exception during the service
      * invocation
      */
-    public static Object deleteRepository(String id) throws DyeVCException {
+    public static Object deleteRepository(String id) throws ServiceException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("deleteRepository -> Entry");
         Object result = null;
 
