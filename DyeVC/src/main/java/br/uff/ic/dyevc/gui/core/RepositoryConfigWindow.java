@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.core;
 
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;

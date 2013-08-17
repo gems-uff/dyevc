@@ -1,10 +1,18 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.main;
 
+import br.uff.ic.dyevc.gui.core.MessageManager;
+import br.uff.ic.dyevc.gui.graph.TopologyWindow;
+import br.uff.ic.dyevc.gui.graph.CommitHistoryWindow;
 import br.uff.ic.dyevc.utils.TableColumnAdjuster;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.application.branchhistory.controller.BranchesHistoryController;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
+import br.uff.ic.dyevc.gui.core.AboutDialog;
+import br.uff.ic.dyevc.gui.core.LogTextArea;
+import br.uff.ic.dyevc.gui.core.RepositoryConfigWindow;
+import br.uff.ic.dyevc.gui.core.SettingsWindow;
+import br.uff.ic.dyevc.gui.core.StdOutErrWindow;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
@@ -440,7 +448,7 @@ public class MainWindow extends javax.swing.JFrame {
             return;
         }
 
-        new TopologyWindow(getSelectedRepository().getSystemName()).setVisible(true);
+        new TopologyWindow(getSelectedRepository().getSystemName(), rep.getId()).setVisible(true);
     }
 
     private void mntShowBranchesHistoryActionPerformed(ActionEvent evt) {
@@ -533,7 +541,7 @@ public class MainWindow extends javax.swing.JFrame {
         jPopupRepoTable.add(mntCheckProject);
 
         JMenuItem mntEditProject = new javax.swing.JMenuItem();
-        mntEditProject.setText("Edit Project");
+        mntEditProject.setText("View Project Configuration");
         mntEditProject.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -543,7 +551,7 @@ public class MainWindow extends javax.swing.JFrame {
         jPopupRepoTable.add(mntEditProject);
 
         JMenuItem mntShowLog = new javax.swing.JMenuItem();
-        mntShowLog.setText("Show log");
+        mntShowLog.setText("Show Log");
         mntShowLog.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -553,7 +561,7 @@ public class MainWindow extends javax.swing.JFrame {
         jPopupRepoTable.add(mntShowLog);
 
         JMenuItem mntShowTopology = new javax.swing.JMenuItem();
-        mntShowTopology.setText("Show topology");
+        mntShowTopology.setText("Show Topology");
         mntShowTopology.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {

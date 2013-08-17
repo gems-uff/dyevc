@@ -1,7 +1,7 @@
 package br.uff.ic.dyevc.graph.layout;
 
 import br.uff.ic.dyevc.exception.VCSException;
-import br.uff.ic.dyevc.gui.SplashScreen;
+import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import edu.uci.ics.jung.algorithms.layout.AbstractLayout;

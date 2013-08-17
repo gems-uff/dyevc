@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.main;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -13,7 +13,7 @@ import javax.swing.table.TableCellRenderer;
  *
  * @author Cristiano
  */
-class HeaderRenderer extends JLabel implements TableCellRenderer {
+public class HeaderRenderer extends JLabel implements TableCellRenderer {
 
     private static final long serialVersionUID = -1767445271244335267L;
 

@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.graph.transform;
+package br.uff.ic.dyevc.graph.transform.common;
 
 import br.uff.ic.dyevc.application.IConstants;
 import edu.uci.ics.jung.graph.Graph;

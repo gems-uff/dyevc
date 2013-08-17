@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.graph.transform;
+package br.uff.ic.dyevc.graph.transform.commithistory;
 
 import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.CommitInfo;

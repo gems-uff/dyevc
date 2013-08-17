@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.main;
 
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepository;
@@ -20,7 +20,7 @@ import javax.swing.table.DefaultTableCellRenderer;
  * 
  * @author Cristiano
  */
-class RepositoryRenderer extends DefaultTableCellRenderer {
+public class RepositoryRenderer extends DefaultTableCellRenderer {
 
     private static final long serialVersionUID = -1767445271244335267L;
     private final Border padBorder = new EmptyBorder(3, 3, 3, 3);

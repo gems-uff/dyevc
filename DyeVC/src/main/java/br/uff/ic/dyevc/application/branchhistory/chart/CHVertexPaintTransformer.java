@@ -1,6 +1,5 @@
 package br.uff.ic.dyevc.application.branchhistory.chart;
 
-import br.uff.ic.dyevc.graph.transform.*;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.application.branchhistory.view.ProjectValues;
 import br.uff.ic.dyevc.model.CommitInfo;

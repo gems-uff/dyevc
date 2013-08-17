@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.core;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

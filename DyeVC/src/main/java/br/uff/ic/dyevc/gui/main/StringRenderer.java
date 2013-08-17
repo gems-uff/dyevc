@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.main;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -13,7 +13,7 @@ import javax.swing.table.DefaultTableCellRenderer;
  * 
  * @author Cristiano
  */
-class StringRenderer extends DefaultTableCellRenderer {
+public class StringRenderer extends DefaultTableCellRenderer {
 
     private static final long serialVersionUID = -1767445271244335267L;
     private final Border padBorder = new EmptyBorder(3, 3, 3, 3);

@@ -84,13 +84,14 @@ public class RepositoryConverter {
         List<RemoteConfig> configs = monitoredRepository.getConnection().getRemoteConfigs();
         for (RemoteConfig config : configs) {
             List<URIish> pushUris = config.getPushURIs();
-            boolean createOnlyPushUris = pushUris.size() > 0;
+            int pushUrisSize = pushUris.size();
+            boolean createPushUris = pushUrisSize == 0;
 
             for (URIish pushUri : config.getPushURIs()) {
-                addRelationship(pushUri, createOnlyPushUris);
+                addRelationship(pushUri, true, false);
             }
             for (URIish uri : config.getURIs()) {
-                addRelationship(uri, createOnlyPushUris);
+                addRelationship(uri, createPushUris, true);
             }
         }
     }
@@ -104,7 +105,7 @@ public class RepositoryConverter {
      * relationship. Otherwise, create both PushesTo and PullsFrom relationships
      * @throws ServiceException
      */
-    private void addRelationship(URIish uri, boolean createOnlyPushRelation) throws ServiceException {
+    private void addRelationship(URIish uri, boolean createPushUri, boolean createPullUri) throws ServiceException {
         String id;
         String scheme = uri.getScheme();
         String hostName = uri.getHost();
@@ -141,11 +142,8 @@ public class RepositoryConverter {
                 id = addNewRelatedRepository(hostName, cloneName, strippedPath).getId();
             }
         }
-
-        info.addPushesTo(id);
-        if (!createOnlyPushRelation) {
-            info.addPullsFrom(id);
-        }
+        if (createPushUri) info.addPushesTo(id);
+        if (createPullUri) info.addPullsFrom(id);
     }
 
     /**

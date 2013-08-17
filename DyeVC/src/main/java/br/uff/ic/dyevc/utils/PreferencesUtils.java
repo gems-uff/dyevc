@@ -2,7 +2,7 @@ package br.uff.ic.dyevc.utils;
 
 import br.uff.ic.dyevc.application.DyeVC;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
-import br.uff.ic.dyevc.gui.MessageManager;
+import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import java.util.Iterator;

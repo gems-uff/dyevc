@@ -1,5 +1,6 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.core;
 
+import br.uff.ic.dyevc.gui.core.LogTextArea;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.utils.LimitLinesDocumentListener;
 import java.awt.Dimension;

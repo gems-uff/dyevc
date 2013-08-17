@@ -3,7 +3,7 @@ package br.uff.ic.dyevc.application.branchhistory.chart;
 import br.uff.ic.dyevc.application.branchhistory.model.ProjectRevisions;
 import br.uff.ic.dyevc.graph.*;
 import br.uff.ic.dyevc.exception.VCSException;
-import br.uff.ic.dyevc.gui.MessageManager;
+import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;

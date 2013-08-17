@@ -1,6 +1,6 @@
 package br.uff.ic.dyevc.tools.vcs.git;
 
-import br.uff.ic.dyevc.gui.CommitHistoryWindow;
+import br.uff.ic.dyevc.gui.graph.CommitHistoryWindow;
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.MonitoredRepository;

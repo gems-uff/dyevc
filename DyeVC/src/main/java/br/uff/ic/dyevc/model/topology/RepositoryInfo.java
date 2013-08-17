@@ -157,11 +157,12 @@ public class RepositoryInfo implements Comparable<RepositoryInfo>{
     @Override
     public String toString() {
         super.toString();
-        return "<html><b>RepositoryInfo{</b>" + 
-                "<br>&nbsp;&nbsp;&nbsp;<b>id = </b>" + id +
-                "<br>&nbsp;&nbsp;&nbsp;<b>systemName = </b>" + systemName + 
-                "<br>&nbsp;&nbsp;&nbsp;<b>hostName = </b>" + hostName + 
-                "<br>&nbsp;&nbsp;&nbsp;<b>cloneName = </b>" + cloneName + 
-                "<br>&nbsp;&nbsp;&nbsp;<b>path = </b>" + clonePath + "<br><b>}</b></html>";
+        return "RepositoryInfo{" + 
+                "\n    id = " + id +
+                "\n    systemName = " + systemName + 
+                "\n    hostName = " + hostName + 
+                "\n    cloneName = " + cloneName + 
+                "\n    path = " + clonePath + "" +
+                "\n}";
     }   
 }

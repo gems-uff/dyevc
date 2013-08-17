@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.core;
 
 import br.uff.ic.dyevc.utils.SystemUtils;
 import java.awt.BorderLayout;
@@ -48,7 +48,7 @@ public class AboutDialog extends javax.swing.JDialog {
 
         String textAbout = new StringBuilder("<html><body><p align='center'>")
                 .append("<img src='")
-                .append(RepositoryRenderer.class.getResource("/br/uff/ic/dyevc/images/splash.png"))
+                .append(AboutDialog.class.getResource("/br/uff/ic/dyevc/images/splash.png"))
                 .append("'/></p></body></html>").toString();
         
         JEditorPane editorPane = new JEditorPane("text/html", textAbout);

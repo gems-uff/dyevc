@@ -1,6 +1,6 @@
 package br.uff.ic.dyevc.application;
 
-import br.uff.ic.dyevc.gui.MainWindow;
+import br.uff.ic.dyevc.gui.main.MainWindow;
 import javax.swing.UIManager;
 import org.slf4j.LoggerFactory;
 
