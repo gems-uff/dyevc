@@ -52,14 +52,14 @@ public class TopologyDAO {
     }
 
     /**
-     * Retrieves the number of repositories related to the specified parameter, either
-     * by a pushesTo or by a pullsFrom dependency
+     * Retrieves the list of repositories that depends on the repository with the
+     * specified id, either by a pushesTo or by a pullsFrom dependency
      *
      * @param id Id of the repository to look for
      * @return List of repositories that relates to the specified repository
      * @throws ServiceException
      */
-    public ArrayList<RepositoryInfo> findRelatedRepositories(String id) throws ServiceException {
+    public ArrayList<RepositoryInfo> findDependentRepositories(String id) throws ServiceException {
         LoggerFactory.getLogger(TopologyDAO.class).trace("countRelatedRepositories -> Entry");
 
         String query = "{\"$or\": [{\"pushesTo\": \"" + id + "\"}, "
@@ -74,21 +74,18 @@ public class TopologyDAO {
     }
     
     /**
-     * Update all the elements in the specified topology. If an element does not
+     * Update all the repositories in the specified list. If an element does not
      * yet exists, then create it
      *
-     * @param topology Topology containing all the elements that should be
-     * updated and/or inserted (upsert)
+     * @param repositories List of repositories to be upserted
      * @exception DyeVCException
      */
-    public void updateTopology(Topology topology) throws DyeVCException {
-        LoggerFactory.getLogger(TopologyDAO.class).trace("updateTopology -> Entry");
-        for (String system : topology.getSystems()) {
-            for (RepositoryInfo repository : topology.getClonesForSystem(system)) {
-                updateRepository(repository);
-            }
+    public void upsertRepositories(ArrayList<RepositoryInfo> repositories) throws DyeVCException {
+        LoggerFactory.getLogger(TopologyDAO.class).trace("upsertRepositories -> Entry");
+            for (RepositoryInfo repository : repositories) {
+                upsertRepository(repository);
         }
-        LoggerFactory.getLogger(TopologyDAO.class).trace("updateTopology -> Exit");
+        LoggerFactory.getLogger(TopologyDAO.class).trace("upsertRepositories -> Exit");
     }
     
     /**
@@ -96,22 +93,23 @@ public class TopologyDAO {
      * @param repository The repository to be updated in the database.
      * @throws DyeVCException 
      */
-    public void updateRepository(RepositoryInfo repository) throws DyeVCException{
+    public void upsertRepository(RepositoryInfo repository) throws DyeVCException{
         MongoLabProvider.upsertRepository(repository);
     }
     
     /**
-     * Delete a repository in the database. The application should first check
-     * if the repository is not referenced anywhere, otherwise there will be inconsistency
+     * Delete the repository in the database with the specified id. The application first checks
+     * if the repository is not referenced anywhere, otherwise throws an exception
      * @param id Id of the repository to be deleted
+     * @throws RepositoryReferencedException when other repositories reference this one
      * @throws DyeVCException 
      */
     public void deleteRepository(String id) throws ServiceException, RepositoryReferencedException {
-        ArrayList<RepositoryInfo> relatedRepositories = findRelatedRepositories(id);
-        if (relatedRepositories.isEmpty()) {
+        ArrayList<RepositoryInfo> dependentRepositories = findDependentRepositories(id);
+        if (dependentRepositories.isEmpty()) {
             MongoLabProvider.deleteRepository(id);
         } else {
-            throw new RepositoryReferencedException(relatedRepositories);
+            throw new RepositoryReferencedException(dependentRepositories);
         }
     }
 }

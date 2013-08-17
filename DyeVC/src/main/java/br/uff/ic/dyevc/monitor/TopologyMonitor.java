@@ -2,24 +2,16 @@ package br.uff.ic.dyevc.monitor;
 
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
-import br.uff.ic.dyevc.exception.ServiceException;
+import br.uff.ic.dyevc.exception.RepositoryReferencedException;
 import br.uff.ic.dyevc.gui.MainWindow;
 import br.uff.ic.dyevc.gui.MessageManager;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
-import br.uff.ic.dyevc.model.topology.RepositoryFilter;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
-import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
-import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
-import br.uff.ic.dyevc.utils.StringUtils;
-import br.uff.ic.dyevc.utils.SystemUtils;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import org.eclipse.jgit.transport.RemoteConfig;
-import org.eclipse.jgit.transport.URIish;
+import br.uff.ic.dyevc.utils.RepositoryConverter;
+import java.util.Iterator;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -32,8 +24,9 @@ public class TopologyMonitor extends Thread {
 
     private ApplicationSettingsBean settings;
     private MainWindow container;
-    private ArrayList<RepositoryInfo> repsToProcess;
     private TopologyDAO topologyDAO;
+    MonitoredRepositories monitoredRepositories;
+    private MonitoredRepository repositoryToMonitor;
 
     /**
      * Associates the specified window container and continuously monitors the
@@ -42,11 +35,12 @@ public class TopologyMonitor extends Thread {
      * @param container the container for this monitor. It will be used to send
      * messages during monitoring.
      */
-    public TopologyMonitor(MainWindow container) {
+    public TopologyMonitor(MainWindow container, MonitoredRepositories monitoredRepositories) {
         LoggerFactory.getLogger(TopologyMonitor.class).trace("Constructor -> Entry.");
         settings = PreferencesUtils.loadPreferences();
         topologyDAO = new TopologyDAO();
         this.container = container;
+        this.monitoredRepositories = monitoredRepositories;
         this.start();
         LoggerFactory.getLogger(TopologyMonitor.class).trace("Constructor -> Exit.");
     }
@@ -62,7 +56,15 @@ public class TopologyMonitor extends Thread {
         while (true) {
             try {
                 MessageManager.getInstance().addMessage("Topology monitor is running.");
-                updateLocalTopology();
+                if (repositoryToMonitor == null) {
+                    for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
+                        updateLocalTopology(monitoredRepository);
+                    }
+                    verifyDeletedRepositories();
+                } else {
+                    updateLocalTopology(repositoryToMonitor);
+                    setRepositoryToMonitor(null);
+                }
                 MessageManager.getInstance().addMessage("Topology monitor is sleeping.");
                 Thread.sleep(sleepTime);
                 LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
@@ -90,163 +92,68 @@ public class TopologyMonitor extends Thread {
     }
 
     /**
-     * Creates a subset of the topology containing the local known monitored
-     * repositories and the remote repositories related to the local
-     * repositories that were not found in the database. This list is then sent
-     * to the database, updating the existing repositories and inserting the
-     * ones that do not exist.
+     * Creates a list with a subset of the topology containing the specified
+     * monitored repository and the remote repositories related to it. This list
+     * is then sent to the database, updating the existing repositories and
+     * inserting the ones that do not exist.
      *
      * @throws DyeVCException
      */
-    private void updateLocalTopology() throws DyeVCException {
+    private void updateLocalTopology(MonitoredRepository monitoredRepository) throws DyeVCException {
         LoggerFactory.getLogger(TopologyMonitor.class).trace("updateLocalTopology -> Entry.");
-        Topology localTopology = new Topology();
-        ArrayList<RepositoryInfo> repositories = new ArrayList<RepositoryInfo>();
-        repsToProcess = new ArrayList<RepositoryInfo>();
 
-        for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
-            try {
-                if (!monitoredRepository.hasSystemName()) {
-                    MessageManager.getInstance().addMessage("Clone <" + monitoredRepository.getName()
-                            + "> has no system name configured and will not be added to the topology.");
-                    continue;
-                }
-                RepositoryInfo info = new RepositoryInfo();
-                info.setId(monitoredRepository.getId());
-                info.setSystemName(monitoredRepository.getSystemName());
-                info.setCloneName(monitoredRepository.getName());
-                info.setClonePath(monitoredRepository.getNormalizedCloneAddress());
-                info.setHostName(SystemUtils.getLocalHostname());
-                verifyRelationships(monitoredRepository, info);
-                repositories.add(info);
-            } catch (UnknownHostException ex) {
-                LoggerFactory.getLogger(TopologyMonitor.class).error("Exception trying to read configuration for clone <."
-                        + monitoredRepository.getName() + ">", ex);
-                throw new DyeVCException("Exception trying to read configuration for clone <."
-                        + monitoredRepository.getName() + ">", ex);
-            }
+        if (!monitoredRepository.hasSystemName()) {
+            MessageManager.getInstance().addMessage("Clone <" + monitoredRepository.getName()
+                    + "> has no system name configured and will not be added to the topology.");
+            return;
         }
 
-        for (RepositoryInfo rep : repsToProcess) {
-            repositories.add(rep);
-        }
-        localTopology.resetTopology(repositories);
-        sendTopologyToDatabase(localTopology);
+        RepositoryConverter converter = new RepositoryConverter(monitoredRepository);
+        topologyDAO.upsertRepository(converter.toRepositoryInfo());
+        topologyDAO.upsertRepositories(converter.getRelatedNew());
+
         LoggerFactory.getLogger(TopologyMonitor.class).trace("updateLocalTopology -> Exit.");
     }
 
     /**
-     * Verifies the relations between the specified monitored repository and
-     * other clones, pushing to or pulling from them. The relations are
-     * discovered by looking at the git configuration file
+     * Verifies if the local monitored repositories marked for deletion are
+     * referenced in the topology. If not, delete them.
      *
-     * @param monitoredRepository The monitored repository for which the
-     * relations will be verified
-     * @param info The repository info for the topology, where the relations
-     * will be inserted
      * @throws DyeVCException
-     * @throws UnknownHostException
      */
-    private void verifyRelationships(MonitoredRepository monitoredRepository, RepositoryInfo info) throws DyeVCException, UnknownHostException {
-        if (!GitConnector.isValidRepository(monitoredRepository.getCloneAddress())) {
-            throw new DyeVCException("<" + monitoredRepository.getCloneAddress() + "> is not a valid repository path.");
-        }
-
-        List<RemoteConfig> configs = monitoredRepository.getConnection().getRemoteConfigs();
-        for (RemoteConfig config : configs) {
-            List<URIish> pushUris = config.getPushURIs();
-            boolean createOnlyPushUris = pushUris.size() > 0;
-
-            for (URIish pushUri : config.getPushURIs()) {
-                addRelationship(info, pushUri, createOnlyPushUris);
+    private void verifyDeletedRepositories() throws DyeVCException {
+        LoggerFactory.getLogger(TopologyMonitor.class).trace("removeMarkedForDeletion -> Entry.");
+        for (Iterator<MonitoredRepository> it = MonitoredRepositories.getMarkedForDeletion().iterator(); it.hasNext();) {
+            MonitoredRepository monitoredRepository = it.next();
+            if (!monitoredRepository.hasSystemName()) {
+                MessageManager.getInstance().addMessage("Clone <" + monitoredRepository.getName()
+                        + "> has no system name configured and will cannot be removed from the topology.");
+                continue;
             }
-            for (URIish uri : config.getURIs()) {
-                addRelationship(info, uri, createOnlyPushUris);
-            }
-        }
-    }
-
-    /**
-     * Finds out the clone name of a referenced repository. If repository is not
-     * local, tries to find this information in the database
-     *
-     * @param info The Repository that references this repository
-     * @param uri The URIish that points to this repository
-     * @param createOnlyPushRelation If true, create only a PushesTo
-     * relationship. Otherwise, create both PushesTo and PullsFrom relationships
-     * @throws ServiceException
-     * @throws UnknownHostException
-     */
-    private void addRelationship(RepositoryInfo info, URIish uri, boolean createOnlyPushRelation) throws ServiceException, UnknownHostException {
-        String id;
-        String scheme = uri.getScheme();
-        String hostName = uri.getHost();
-        boolean isLocal = (scheme == null && hostName == null)
-                || (hostName != null && (hostName.equalsIgnoreCase("localhost")
-                || hostName.equals("127.0.0.1")));
-        if (isLocal) {
-            hostName = SystemUtils.getLocalHostname();
-        }
-
-        //Takes out leading slashes and changes double backslashes by slashes
-        String strippedPath = StringUtils.normalizePath(uri.getPath());
-        //Remove ".git" in the end of the path
-        if (strippedPath.endsWith(GitConnector.GIT_DIR)) {
-            strippedPath = strippedPath.substring(0, strippedPath.lastIndexOf(GitConnector.GIT_DIR));
-        }
-
-        //Checks if there is a monitored repository to get the clone name from
-        MonitoredRepository rep = MonitoredRepositories.getMonitoredProjectByPath(uri.getPath());
-        if (rep != null) {
-            id = rep.getId();
-        } else {
-            //If not, checks if there is a repository in the database to get the clone name from
-            RepositoryFilter filter = new RepositoryFilter();
-            filter.setHostName(hostName);
-            filter.setClonePath(strippedPath);
-            List<RepositoryInfo> listRepo = topologyDAO.getRepositoriesByQuery(filter);
-
-            if (!listRepo.isEmpty()) {
-                id = listRepo.get(0).getId();
-            } else {
-                //if not, adds a new repository that is referenced but not monitored
-                String cloneName = SystemUtils.getFilenameOrLastPath(strippedPath);
-                id = addRepositoryToProcess(info, hostName, cloneName, strippedPath).getId();
+            try {
+                monitoredRepositories.removeMarkedForDeletion(monitoredRepository);
+            } catch (RepositoryReferencedException rre) {
+                StringBuilder message = new StringBuilder();
+                message.append("Repository <").append(monitoredRepository.getName())
+                        .append("> with id <").append(monitoredRepository.getId())
+                        .append("> could not be deleted because it is still referenced by the following clone(s): ");
+                for (RepositoryInfo info : rre.getRelatedRepositories()) {
+                    message.append("\n<").append(info.getCloneName())
+                            .append(">, id: <").append(info.getId())
+                            .append(">, located at host <").append(info.getHostName())
+                            .append(">");
+                }
+                LoggerFactory.getLogger(TopologyMonitor.class).warn(message.toString());
             }
         }
 
-        info.addPushesTo(id);
-        if (!createOnlyPushRelation) {
-            info.addPullsFrom(id);
-        }
+        LoggerFactory.getLogger(TopologyMonitor.class).trace("removeMarkedForDeletion -> Exit.");
     }
 
     /**
-     * Adds a remote repository (toProcess) to be included in the database.
-     *
-     * @param info The repository with which toProcess relates to
-     * @param hostName The hostname of the remote repository
-     * @param strippedPath The Path to the remote repository (also used as its
-     * clone name)
+     * @param repositoryToMonitor the repositoryToMonitor to set
      */
-    private RepositoryInfo addRepositoryToProcess(RepositoryInfo info, String hostName, String cloneName, String strippedPath) {
-        //Creates a new repository info to be sent to database. 
-        RepositoryInfo toProcess = new RepositoryInfo();
-        toProcess.setId(StringUtils.generateRepositoryId());
-        toProcess.setSystemName(info.getSystemName());
-        toProcess.setHostName(hostName);
-        toProcess.setClonePath(strippedPath);
-        toProcess.setCloneName(cloneName);
-        repsToProcess.add(toProcess);
-        return toProcess;
-    }
-
-    /**
-     * Updates the local topology information in the database
-     *
-     * @param localTopology The topology to be updated
-     */
-    private void sendTopologyToDatabase(Topology localTopology) throws DyeVCException {
-        topologyDAO.updateTopology(localTopology);
+    public synchronized void setRepositoryToMonitor(MonitoredRepository repos) {
+        repositoryToMonitor = repos;
     }
 }

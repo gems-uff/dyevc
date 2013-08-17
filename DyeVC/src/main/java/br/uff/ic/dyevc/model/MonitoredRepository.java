@@ -29,6 +29,7 @@ public class MonitoredRepository implements Serializable {
      * How the attribute "cloneAddress" is called
      */
     public static final String PROP_CLONEADDRESS = "cloneAddress";
+    private PropertyChangeSupport propertySupport;
     private static final long serialVersionUID = -8604175800390199323L;
     /**
      * Name of the system (global known name of the repository).
@@ -46,24 +47,26 @@ public class MonitoredRepository implements Serializable {
      * Address where the monitored repository is located.
      */
     private String cloneAddress;
-    
     /**
      * Clone address in normalized form (no double or leading backslashes)
      */
     private String normalizedCloneAddress;
-    
     /**
      * Status of the monitored repository.
      *
      * @see RepositoryStatus
      */
     private RepositoryStatus repStatus;
-    
+    /**
+     * Status of the monitored repository.
+     *
+     * @see RepositoryStatus
+     */
+    private boolean markedForDeletion;
     /**
      * Connection with the working clone for this monitored repository
      */
     private GitConnector workingCloneConnection;
-    
     /**
      * Connection with the clone for this monitored repository
      */
@@ -77,7 +80,7 @@ public class MonitoredRepository implements Serializable {
     public String getNormalizedCloneAddress() {
         return normalizedCloneAddress;
     }
-    
+
     /**
      * Get the value of cloneAddress
      *
@@ -86,7 +89,6 @@ public class MonitoredRepository implements Serializable {
     public String getCloneAddress() {
         return cloneAddress;
     }
-    
 
     /**
      * Get the path to working clone
@@ -112,7 +114,6 @@ public class MonitoredRepository implements Serializable {
         this.normalizedCloneAddress = StringUtils.normalizePath(cloneAddress);
         propertySupport.firePropertyChange(PROP_CLONEADDRESS, oldCloneAddress, cloneAddress);
     }
-    private PropertyChangeSupport propertySupport;
 
     public MonitoredRepository(String id) {
         this.name = "";
@@ -120,6 +121,7 @@ public class MonitoredRepository implements Serializable {
         this.cloneAddress = "";
         this.id = id;
         this.repStatus = new RepositoryStatus("");
+        this.markedForDeletion = false;
         propertySupport = new PropertyChangeSupport(this);
     }
 
@@ -142,11 +144,11 @@ public class MonitoredRepository implements Serializable {
         systemName = value;
         propertySupport.firePropertyChange(SYSTEM_NAME, oldValue, systemName);
     }
-    
+
     public boolean hasSystemName() {
-        return (systemName != null &&
-                !systemName.equals("") &&
-                !systemName.equals("no name"));
+        return (systemName != null
+                && !systemName.equals("")
+                && !systemName.equals("no name"));
     }
 
     public void addPropertyChangeListener(PropertyChangeListener listener) {
@@ -184,6 +186,7 @@ public class MonitoredRepository implements Serializable {
 
     /**
      * Gets the git connector for this monitored repository
+     *
      * @return the git connector for this monitored repository
      * @throws VCSException
      */
@@ -195,8 +198,11 @@ public class MonitoredRepository implements Serializable {
     }
 
     /**
-     * Gets the git connection for the working clone of this monitored repository
-     * @return the git connector for the working clone of this monitored repository
+     * Gets the git connection for the working clone of this monitored
+     * repository
+     *
+     * @return the git connector for the working clone of this monitored
+     * repository
      * @throws VCSException
      */
     public synchronized GitConnector getWorkingCloneConnection() throws VCSException {
@@ -207,19 +213,31 @@ public class MonitoredRepository implements Serializable {
     }
 
     /**
-     * Sets the git connection for the working clone of this monitored repository.
-     * If a connection is already set, then close it before setting the new one.
+     * Sets the git connection for the working clone of this monitored
+     * repository. If a connection is already set, then close it before setting
+     * the new one.
+     *
      * @param connection the connection to be set
      * @throws VCSException
      */
     public synchronized void setWorkingCloneConnection(GitConnector connection) throws VCSException {
-        if (this.workingCloneConnection != null) this.workingCloneConnection.close();
+        if (this.workingCloneConnection != null) {
+            this.workingCloneConnection.close();
+        }
         this.workingCloneConnection = connection;
     }
-    
+
+    public boolean isMarkedForDeletion() {
+        return markedForDeletion;
+    }
+
+    public void setMarkedForDeletion(boolean markedForDeletion) {
+        this.markedForDeletion = markedForDeletion;
+    }
+
     /**
-     * Close connection established with the working clone
-     * If a connection is not established for a particular monitored, does nothing.
+     * Close connection established with the working clone If a connection is
+     * not established for a particular monitored, does nothing.
      */
     public void close() {
         if (workingCloneConnection != null) {

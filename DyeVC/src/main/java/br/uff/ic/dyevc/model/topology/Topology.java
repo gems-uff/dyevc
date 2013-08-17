@@ -36,7 +36,7 @@ public class Topology {
      * @param repos the new list of repositories to be added to the topology
      * @throws DyeVCException
      */
-    public void resetTopology(ArrayList<RepositoryInfo> repos) {
+    public Topology resetTopology(ArrayList<RepositoryInfo> repos) {
         for (CloneMap map : repositoryMap.values()) {
             map.clear();
         }
@@ -46,6 +46,7 @@ public class Topology {
         for (RepositoryInfo ri : repos) {
             addRepositoryInfo(ri);
         }
+        return this;
     }
 
     /**

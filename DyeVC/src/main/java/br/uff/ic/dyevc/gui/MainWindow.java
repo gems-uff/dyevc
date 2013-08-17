@@ -301,6 +301,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
+    
     // <editor-fold defaultstate="collapsed" desc="main menu">                          
     /**
      * This method creates the menu bar
@@ -398,10 +399,11 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     // </editor-fold>
+    
     // <editor-fold defaultstate="collapsed" desc="main menu events">                          
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
-            new RepositoryConfigWindow(monitoredRepositories, null).setVisible(true);
+            new RepositoryConfigWindow(monitoredRepositories, null, topologyMonitor).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -414,7 +416,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntEditProjectActionPerformed(ActionEvent evt) {
         try {
-            new RepositoryConfigWindow(monitoredRepositories, getSelectedRepository()).setVisible(true);
+            new RepositoryConfigWindow(monitoredRepositories, getSelectedRepository(), topologyMonitor).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -459,13 +461,13 @@ public class MainWindow extends javax.swing.JFrame {
                 message.append("DyeVC has stopped monitoring clone <").append(rep.getName())
                         .append("> with id <").append(rep.getId())
                         .append(">\nHowever, it is still in the topology because it is referenced by the following clone(s): ");
-                for (RepositoryInfo info: rre.getRelatedRepositories()) {
+                for (RepositoryInfo info : rre.getRelatedRepositories()) {
                     message.append("\n<").append(info.getCloneName())
                             .append(">, id: <").append(info.getId())
                             .append(">, located at host <").append(info.getHostName())
                             .append(">");
                 }
-                JOptionPane.showMessageDialog(this, message.toString(), "Information", JOptionPane.INFORMATION_MESSAGE);                
+                JOptionPane.showMessageDialog(this, message.toString(), "Information", JOptionPane.INFORMATION_MESSAGE);
             } catch (DyeVCException ex) {
                 JOptionPane.showMessageDialog(this, "An error occurred while trying to remove the repository. Please try again later.  See the log for details.", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -637,7 +639,7 @@ public class MainWindow extends javax.swing.JFrame {
      */
     private void startMonitors() {
         repositoryMonitor = new RepositoryMonitor(this);
-        topologyMonitor = new TopologyMonitor(this);
+        topologyMonitor = new TopologyMonitor(this, monitoredRepositories);
     }
 
     /**

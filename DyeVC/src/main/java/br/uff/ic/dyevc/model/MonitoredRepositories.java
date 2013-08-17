@@ -1,6 +1,5 @@
 package br.uff.ic.dyevc.model;
 
-import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
 import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
@@ -8,9 +7,6 @@ import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 import javax.swing.table.AbstractTableModel;
 
 /**
@@ -22,7 +18,17 @@ public final class MonitoredRepositories extends AbstractTableModel {
 
     private static final long serialVersionUID = -7567721142354738718L;
     private static List<MonitoredRepository> monitoredRepositories = new ArrayList<MonitoredRepository>();
+    private static List<MonitoredRepository> markedForDeletion = new ArrayList<MonitoredRepository>();
     public static final String MONITORED_PROJECTS = "monitoredProjects";
+
+    /**
+     * Get the value of monitoredProjects
+     *
+     * @return the value of monitoredProjects
+     */
+    public static List<MonitoredRepository> getMarkedForDeletion() {
+        return markedForDeletion;
+    }
 
     /**
      * Get the value of monitoredProjects
@@ -72,26 +78,36 @@ public final class MonitoredRepositories extends AbstractTableModel {
      *
      * @param repository the instance to be added
      */
-    public void addMonitoredRepository(MonitoredRepository repository) {
+    public synchronized void addMonitoredRepository(MonitoredRepository repository) {
         int index = monitoredRepositories.indexOf(repository);
         if (index >= 0) {
             monitoredRepositories.set(index, repository);
             fireTableRowsUpdated(index, index);
         } else {
-            index = monitoredRepositories.size();
-            monitoredRepositories.add(repository);
-            fireTableRowsInserted(index, index);
+            if (repository.isMarkedForDeletion()) {
+                markedForDeletion.add(repository);
+            } else {
+                index = monitoredRepositories.size();
+                monitoredRepositories.add(repository);
+                fireTableRowsInserted(index, index);
+            }
         }
     }
 
     /**
-     * Remove an instance of a monitored repository
+     * Stops monitoring a repository and remove it from the database. If it is
+     * still referenced, then only marks it for deletion. The TopologyMonitor
+     * will later verify if it can be removed
      *
-     * @param repository the instance to be removed
+     * @param repository the repository to be removed
      *
-     * @return true, if the instance existed and false otherwise
+     * @return true, if the repository existed and false otherwise
+     * @throws RepositoryReferencedException when there are references to this
+     * repositories
+     * @throws ServiceException when it is not possible to access the underlying
+     * database
      */
-    public boolean removeMonitoredRepository(MonitoredRepository repository) throws RepositoryReferencedException, ServiceException {
+    public synchronized boolean removeMonitoredRepository(MonitoredRepository repository) throws RepositoryReferencedException, ServiceException {
         int index = monitoredRepositories.indexOf(repository);
         boolean rv = false;
         if (index >= 0) {
@@ -100,6 +116,8 @@ public final class MonitoredRepositories extends AbstractTableModel {
                 dao.deleteRepository(repository.getId());
             } catch (RepositoryReferencedException rre) {
                 monitoredRepositories.remove(repository);
+                repository.setMarkedForDeletion(true);
+                markedForDeletion.add(repository);
                 PreferencesUtils.persistRepositories();
                 fireTableRowsDeleted(index, index);
                 throw rre;
@@ -112,9 +130,35 @@ public final class MonitoredRepositories extends AbstractTableModel {
     }
 
     /**
+     * Remove an instance of a monitored repository previously marked for
+     * deletion that is not referenced anymore. If the repository is still still
+     * referenced, then throws an exception.
+     *
+     * @param repository the repository to be removed
+     *
+     * @return true, if the instance existed and false otherwise
+     */
+    public synchronized boolean removeMarkedForDeletion(MonitoredRepository repository) throws RepositoryReferencedException, ServiceException {
+        int index = markedForDeletion.indexOf(repository);
+        boolean rv = false;
+        if (index >= 0) {
+            TopologyDAO dao = new TopologyDAO();
+            try {
+                dao.deleteRepository(repository.getId());
+            } catch (RepositoryReferencedException rre) {
+                throw rre;
+            }
+            rv = markedForDeletion.remove(repository);
+            PreferencesUtils.persistRepositories();
+            fireTableRowsDeleted(index, index);
+        }
+        return rv;
+    }
+
+    /**
      * Closes the connection established in each of the monitored repositories.
      */
-    public void closeRepositories() {
+    public synchronized void closeRepositories() {
         for (MonitoredRepository rep : monitoredRepositories) {
             rep.close();
         }
