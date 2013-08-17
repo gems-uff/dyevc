@@ -1,4 +1,4 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.core;
 
 import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;

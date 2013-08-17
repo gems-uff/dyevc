@@ -26,4 +26,5 @@ public interface IConstants {
     public static final Color COLOR_COLLAPSED = Color.MAGENTA;
     public static final int GRAPH_VERTEX_SINGLE_SIZE = 40;
     public static final int GRAPH_VERTEX_CLUSTER_SIZE = 60;
+    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 }

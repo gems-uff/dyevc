@@ -1,13 +1,14 @@
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.graph;
 
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.VCSException;
-import br.uff.ic.dyevc.graph.BasicRepositoryHistoryGraph;
+import br.uff.ic.dyevc.graph.GraphBuilder;
 import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
-import br.uff.ic.dyevc.graph.transform.CHVertexLabelTransformer;
-import br.uff.ic.dyevc.graph.transform.ClusterVertexShapeTransformer;
-import br.uff.ic.dyevc.graph.transform.CHVertexTooltipTransformer;
-import br.uff.ic.dyevc.graph.transform.CHVertexPaintTransformer;
+import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexLabelTransformer;
+import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
+import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexTooltipTransformer;
+import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexPaintTransformer;
+import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
@@ -199,7 +200,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="initGraphComponent">
     private void initGraphComponent() throws VCSException {
         // create the commit history graph with all commits from repository
-        graph = BasicRepositoryHistoryGraph.createBasicRepositoryHistoryGraph(rep);
+        graph = GraphBuilder.createBasicRepositoryHistoryGraph(rep);
         collapsedGraph = graph;
 
         // Choosing layout

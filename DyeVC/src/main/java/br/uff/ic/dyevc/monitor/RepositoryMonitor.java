@@ -3,8 +3,8 @@ package br.uff.ic.dyevc.monitor;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.VCSException;
-import br.uff.ic.dyevc.gui.MainWindow;
-import br.uff.ic.dyevc.gui.MessageManager;
+import br.uff.ic.dyevc.gui.main.MainWindow;
+import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
@@ -38,9 +38,8 @@ public class RepositoryMonitor extends Thread {
      *
      * @param container the container for this monitor. It will be used to send
      * messages during monitoring.
-     * @param mr the model of monitored repositories to be checked.
      */
-    public RepositoryMonitor(MainWindow container, MonitoredRepositories mr) {
+    public RepositoryMonitor(MainWindow container) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
         settings = PreferencesUtils.loadPreferences();
         this.container = container;

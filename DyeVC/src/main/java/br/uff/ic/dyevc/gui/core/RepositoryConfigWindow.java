@@ -1,16 +1,25 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package br.uff.ic.dyevc.gui;
+package br.uff.ic.dyevc.gui.core;
 
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.model.topology.RepositoryFilter;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
+import br.uff.ic.dyevc.model.topology.Topology;
+import br.uff.ic.dyevc.monitor.TopologyMonitor;
+import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.RepositoryConverter;
+import br.uff.ic.dyevc.utils.StringUtils;
+import br.uff.ic.dyevc.utils.SystemUtils;
+import java.awt.HeadlessException;
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
@@ -24,36 +33,49 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
 
     private static final long serialVersionUID = -5327813882224088396L;
     private ApplicationSettingsBean settings;
+    private Topology topology;
+    private TopologyMonitor topologyMonitor;
 
     /**
      * Creates new form RepositoryConfigWindow
      */
-    public RepositoryConfigWindow(MonitoredRepositories monBean, MonitoredRepository repository) throws DyeVCException {
+    public RepositoryConfigWindow(MonitoredRepositories monBean, MonitoredRepository repository, TopologyMonitor monitor) throws DyeVCException {
         if (monBean == null) {
             LoggerFactory.getLogger(RepositoryConfigWindow.class).error("Received a null list of monitored repositories");
             throw new DyeVCException("Received a null list of monitored repositories");
         }
         monitoredRepositoriesBean = monBean;
+        topologyMonitor = monitor;
         if (repository != null) {
             create = false;
             repositoryBean = repository;
         } else {
             create = true;
-            repositoryBean = new MonitoredRepository("rep" + System.currentTimeMillis());
+            repositoryBean = new MonitoredRepository(StringUtils.generateRepositoryId());
         }
         initComponents();
+        if (!create) {
+            JOptionPane.showMessageDialog(this, "Configurations can only be viewed.\n"
+                    + "Remove it and create a new one if you want to change it.", "Information", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="initComponents">
+    @SuppressWarnings("unchecked")
     private void initComponents() {
         settings = PreferencesUtils.loadPreferences();
+        try {
+            topology = new TopologyDAO().readTopology();
+        } catch (ServiceException ex) {
+            LoggerFactory.getLogger(RepositoryConfigWindow.class).warn("Could not retrieve topology from database. It will not be possible to show the list of known systems.", ex);
+            topology = new Topology();
+        }
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         if (create) {
             setTitle("Creating a new monitoring configuration");
         } else {
-            setTitle("Changing a monitoring configuration");
+            setTitle("Viewing a monitoring configuration");
         }
         setSize(new java.awt.Dimension(528, 180));
         setMinimumSize(new java.awt.Dimension(528, 180));
@@ -66,25 +88,31 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         pnlTop.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         lblSystemName = new javax.swing.JLabel();
-        lblSystemName.setText("Repository Name:");
+        lblSystemName.setText("System Name:");
         lblSystemName.setToolTipText("Enter the globally known name to recognize this repository.");
         lblRepositoryName = new javax.swing.JLabel();
         lblRepositoryName.setText("Clone Name:");
-        lblRepositoryName.setToolTipText("Enter a name to recognize this clone in your machine.");
+        lblRepositoryName.setToolTipText("Clone name is extracted from the path to your clone.");
         lblCloneAddress = new javax.swing.JLabel();
-        lblCloneAddress.setText("Repository Address:");
-        lblCloneAddress.setToolTipText("Click on the button to select the path to a local repository you want to monitor.");
+        lblCloneAddress.setText("Clone Address:");
+        lblCloneAddress.setToolTipText("Click on the button to select the path to a clone you want to monitor.");
 
-        txtSystemName = new javax.swing.JTextField();
-        txtSystemName.setText(repositoryBean.getSystemName());
+        cmbSystemName = new javax.swing.JComboBox<String>(topology.getSystems().toArray(new String[0]));
+        cmbSystemName.setEditable(true);
+        cmbSystemName.setSelectedItem(repositoryBean.getSystemName());
+        cmbSystemName.setEditable(create);
+        cmbSystemName.setEnabled(create);
         txtRepositoryName = new javax.swing.JTextField();
         txtRepositoryName.setText(repositoryBean.getName());
+        txtRepositoryName.setEditable(false);
+        txtRepositoryName.setEnabled(false);
         txtCloneAddres = new javax.swing.JTextField();
         txtCloneAddres.setText(repositoryBean.getCloneAddress());
         txtCloneAddres.setEditable(false);
 
         btnExploreCloneAddress = new javax.swing.JButton();
         btnExploreCloneAddress.setText("Explore");
+        btnExploreCloneAddress.setEnabled(create);
         btnExploreCloneAddress.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -113,6 +141,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         buildUI();
 
     }
+    //</editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="event handlers">    
     private void btnCancelActionPerformed(java.awt.event.ActionEvent evt) {
@@ -120,25 +149,109 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     }
 
     private void btnSaveRepositoryActionPerformed(java.awt.event.ActionEvent evt) {
-        if (txtSystemName.getText() == null || "".equals(txtSystemName.getText()) || "no name".equals(txtSystemName.getText())){
-            JOptionPane.showMessageDialog(this, "Repository name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
-            txtSystemName.requestFocus();
-            txtSystemName.selectAll();
+        //Verify if system name was specified.
+        if (cmbSystemName.getSelectedItem() == null || "".equals(cmbSystemName.getSelectedItem().toString()) || "no name".equalsIgnoreCase(cmbSystemName.getSelectedItem().toString())) {
+            JOptionPane.showMessageDialog(this, "System name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
+            cmbSystemName.requestFocus();
             return;
-        }            
-        if (txtRepositoryName.getText() == null || "".equals(txtRepositoryName.getText()) || "no name".equals(txtRepositoryName.getText())){
+        }
+        String systemName = cmbSystemName.getSelectedItem().toString().toLowerCase();
+
+        //Verify if clone name was specified.
+        if (txtRepositoryName.getText() == null || "".equals(txtRepositoryName.getText()) || "no name".equalsIgnoreCase(txtRepositoryName.getText())) {
             JOptionPane.showMessageDialog(this, "Clone name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
             txtRepositoryName.requestFocus();
             txtRepositoryName.selectAll();
             return;
         }
-            
-        repositoryBean.setSystemName(txtSystemName.getText());
+
+        //Verify if clone name is unique in this host.
+        for (MonitoredRepository rep : MonitoredRepositories.getMonitoredProjects()) {
+            if (rep.getName().equalsIgnoreCase(txtRepositoryName.getText()) && !rep.getId().equals(repositoryBean.getId())) {
+                JOptionPane.showMessageDialog(this, "There is a clone defined with this name. Please choose another clone name.", "Error", JOptionPane.ERROR_MESSAGE);
+                txtRepositoryName.requestFocus();
+                txtRepositoryName.selectAll();
+                return;
+            }
+        }
+
+        //Verify if there is a repository in the database for this system / host / clone
+        RepositoryInfo repoSameClone;
+        RepositoryInfo repoSamePath;
+        RepositoryFilter filterSameClone = new RepositoryFilter();
+        filterSameClone.setSystemName(systemName);
+        filterSameClone.setHostName(SystemUtils.getLocalHostname());
+        filterSameClone.setCloneName(txtRepositoryName.getText());
+
+        //Verify if there is a repository in the database for this system / host / path
+        RepositoryFilter filterSamePath = new RepositoryFilter();
+        filterSamePath.setSystemName(systemName);
+        filterSamePath.setHostName(SystemUtils.getLocalHostname());
+        filterSamePath.setClonePath(StringUtils.normalizePath(txtRepositoryName.getText()));
+
+        TopologyDAO dao = new TopologyDAO();
+        ArrayList<RepositoryInfo> listSameClone;
+        ArrayList<RepositoryInfo> listSamePath;
+        try {
+            listSameClone = dao.getRepositoriesByQuery(filterSameClone);
+            listSamePath = dao.getRepositoriesByQuery(filterSamePath);
+        } catch (ServiceException ex) {
+            StringWriter s = new StringWriter();
+            PrintWriter p = new PrintWriter(s);
+            ex.printStackTrace(p);
+            JOptionPane.showMessageDialog(this, "It was not possible to contact the database due to the following exception."
+                    + "\nPlease try again later.\n\n" + s.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (!listSameClone.isEmpty()) {
+            repoSameClone = listSameClone.get(0);
+            StringBuilder message = createMessage("clone name", repoSameClone);
+
+            int n = showOption(message);
+            if (n == JOptionPane.NO_OPTION) {
+                return;
+            } else {
+                repositoryBean.setId(repoSameClone.getId());
+                txtCloneAddres.setText(repoSameClone.getClonePath());
+            }
+        }
+
+        if (!listSamePath.isEmpty()) {
+            repoSamePath = listSamePath.get(0);
+            StringBuilder message = createMessage("path", repoSamePath);
+
+            int n = showOption(message);
+            if (n == JOptionPane.NO_OPTION) {
+                return;
+            } else {
+                repositoryBean.setId(repoSamePath.getId());
+                txtRepositoryName.setText(repoSamePath.getCloneName());
+            }
+        }
+
+        repositoryBean.setSystemName(systemName);
         repositoryBean.setName(txtRepositoryName.getText());
         repositoryBean.setCloneAddress(txtCloneAddres.getText());
+        try {
+            updateTopology(repositoryBean);
+        } catch (DyeVCException ex) {
+            JOptionPane.showMessageDialog(this, "An error occurred while trying to include a repository in the topology."
+                    + " Please try again later.  See the log for details.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
         PreferencesUtils.persistRepositories();
         PreferencesUtils.storePreferences(settings);
+        if (topologyMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
+            topologyMonitor.setRepositoryToMonitor(repositoryBean);
+            topologyMonitor.interrupt();
+        } else {
+            JOptionPane.showMessageDialog(this, "Started monitoring clone <" + repositoryBean.getName()
+                    + "> with id <" + repositoryBean.getId() + ">.\nTopology will be updated on the next topology monitor cycle.",
+                    "Information", JOptionPane.OK_OPTION);
+        }
         dispose();
     }
 
@@ -153,7 +266,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 fileChooser.setCurrentDirectory(null);
             }
         }
-        fileChooser.setDialogTitle("Select path to repository.");
+        fileChooser.setDialogTitle("Select path to clone.");
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
         int returnVal = fileChooser.showOpenDialog(this);
@@ -164,6 +277,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             settings.setLastUsedPath(pathChosen);
             if (GitConnector.isValidRepository(pathChosen)) {
                 field.setText(file.getAbsolutePath());
+                txtRepositoryName.setText(SystemUtils.getFilenameOrLastPath(file.getAbsolutePath()));
             } else {
                 JOptionPane.showMessageDialog(txtCloneAddres, "The specified path does not contain a valid git repository.", "Message", JOptionPane.ERROR_MESSAGE);
             }
@@ -176,7 +290,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     /**
      * If true, bean will be created. Otherwise it will be modified.
      */
-    boolean create;
+    private boolean create;
     private javax.swing.JButton btnExploreCloneAddress;
     private javax.swing.JButton btnSaveRepository;
     private javax.swing.JButton btnCancel;
@@ -184,7 +298,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private javax.swing.JLabel lblRepositoryName;
     private javax.swing.JLabel lblCloneAddress;
     private javax.swing.JTextField txtCloneAddres;
-    private javax.swing.JTextField txtSystemName;
+    private javax.swing.JComboBox<String> cmbSystemName;
     private javax.swing.JTextField txtRepositoryName;
     private javax.swing.JPanel pnlTop;
     private javax.swing.JPanel pnlBottom;
@@ -202,7 +316,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addComponent(lblCloneAddress, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(txtSystemName)
+                .addComponent(cmbSystemName)
                 .addComponent(txtRepositoryName)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addComponent(btnExploreCloneAddress)
@@ -215,7 +329,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                 .addComponent(lblSystemName)
-                .addComponent(txtSystemName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(cmbSystemName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                 .addComponent(lblRepositoryName)
@@ -245,5 +359,38 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 .addComponent(pnlTop, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(pnlBottom, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)));
+    }
+
+    private StringBuilder createMessage(String type, RepositoryInfo info) {
+        StringBuilder message = new StringBuilder();
+        message.append("There is a repository for this system in the topology with the same")
+                .append("\nhostname and ").append(type).append(":")
+                .append("\n\nId: ").append(info.getId())
+                .append("\nHostname: ").append(info.getHostName())
+                .append("\nClone name: ").append(info.getCloneName())
+                .append("\nPath: ").append(info.getClonePath())
+                .append("\n\nWhat would you like to do?");
+        return message;
+    }
+
+    private int showOption(StringBuilder message) throws HeadlessException {
+        Object[] options = {"Use the existing",
+            "Provide new information"};
+        int n = JOptionPane.showOptionDialog(this,
+                message.toString(),
+                "Confirmation",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[1]);
+        return n;
+    }
+
+    private void updateTopology(MonitoredRepository monitoredRepository) throws DyeVCException {
+        TopologyDAO dao = new TopologyDAO();
+        RepositoryConverter converter = new RepositoryConverter(monitoredRepository);
+        dao.upsertRepository(converter.toRepositoryInfo());
+        dao.upsertRepositories(converter.getRelatedNew());
     }
 }

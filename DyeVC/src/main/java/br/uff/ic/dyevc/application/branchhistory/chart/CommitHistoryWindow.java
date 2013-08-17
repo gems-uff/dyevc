@@ -1,6 +1,5 @@
 package br.uff.ic.dyevc.application.branchhistory.chart;
 
-import br.uff.ic.dyevc.gui.*;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.application.branchhistory.view.CreateProjectValuesService;
 import br.uff.ic.dyevc.application.branchhistory.view.ProjectService;
@@ -14,8 +13,8 @@ import br.uff.ic.dyevc.application.branchhistory.model.ProjectRevisions;
 import br.uff.ic.dyevc.application.branchhistory.model.VersionedProject;
 import br.uff.ic.dyevc.application.branchhistory.chart.RepositoryHistoryLayout;
 import br.uff.ic.dyevc.application.branchhistory.metric.MetricBucket;
-import br.uff.ic.dyevc.graph.transform.CHVertexLabelTransformer;
-import br.uff.ic.dyevc.graph.transform.ClusterVertexShapeTransformer;
+import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexLabelTransformer;
+import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
