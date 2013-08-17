@@ -54,6 +54,10 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             repositoryBean = new MonitoredRepository(StringUtils.generateRepositoryId());
         }
         initComponents();
+        if (!create) {
+            JOptionPane.showMessageDialog(this, "Configurations can only be viewed.\n"
+                    + "Remove it and create a new one if you want to change it.", "Information", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">
@@ -71,7 +75,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         if (create) {
             setTitle("Creating a new monitoring configuration");
         } else {
-            setTitle("Changing a monitoring configuration");
+            setTitle("Viewing a monitoring configuration");
         }
         setSize(new java.awt.Dimension(528, 180));
         setMinimumSize(new java.awt.Dimension(528, 180));
@@ -84,26 +88,31 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         pnlTop.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         lblSystemName = new javax.swing.JLabel();
-        lblSystemName.setText("Repository Name:");
+        lblSystemName.setText("System Name:");
         lblSystemName.setToolTipText("Enter the globally known name to recognize this repository.");
         lblRepositoryName = new javax.swing.JLabel();
         lblRepositoryName.setText("Clone Name:");
-        lblRepositoryName.setToolTipText("Enter a name to recognize this clone in your machine.");
+        lblRepositoryName.setToolTipText("Clone name is extracted from the path to your clone.");
         lblCloneAddress = new javax.swing.JLabel();
-        lblCloneAddress.setText("Repository Address:");
-        lblCloneAddress.setToolTipText("Click on the button to select the path to a local repository you want to monitor.");
+        lblCloneAddress.setText("Clone Address:");
+        lblCloneAddress.setToolTipText("Click on the button to select the path to a clone you want to monitor.");
 
         cmbSystemName = new javax.swing.JComboBox<String>(topology.getSystems().toArray(new String[0]));
         cmbSystemName.setEditable(true);
         cmbSystemName.setSelectedItem(repositoryBean.getSystemName());
+        cmbSystemName.setEditable(create);
+        cmbSystemName.setEnabled(create);
         txtRepositoryName = new javax.swing.JTextField();
         txtRepositoryName.setText(repositoryBean.getName());
+        txtRepositoryName.setEditable(false);
+        txtRepositoryName.setEnabled(false);
         txtCloneAddres = new javax.swing.JTextField();
         txtCloneAddres.setText(repositoryBean.getCloneAddress());
         txtCloneAddres.setEditable(false);
 
         btnExploreCloneAddress = new javax.swing.JButton();
         btnExploreCloneAddress.setText("Explore");
+        btnExploreCloneAddress.setEnabled(create);
         btnExploreCloneAddress.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -142,7 +151,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private void btnSaveRepositoryActionPerformed(java.awt.event.ActionEvent evt) {
         //Verify if system name was specified.
         if (cmbSystemName.getSelectedItem() == null || "".equals(cmbSystemName.getSelectedItem().toString()) || "no name".equalsIgnoreCase(cmbSystemName.getSelectedItem().toString())) {
-            JOptionPane.showMessageDialog(this, "Repository name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "System name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
             cmbSystemName.requestFocus();
             return;
         }
@@ -257,7 +266,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 fileChooser.setCurrentDirectory(null);
             }
         }
-        fileChooser.setDialogTitle("Select path to repository.");
+        fileChooser.setDialogTitle("Select path to clone.");
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
         int returnVal = fileChooser.showOpenDialog(this);
@@ -268,12 +277,14 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             settings.setLastUsedPath(pathChosen);
             if (GitConnector.isValidRepository(pathChosen)) {
                 field.setText(file.getAbsolutePath());
+                txtRepositoryName.setText(SystemUtils.getFilenameOrLastPath(file.getAbsolutePath()));
             } else {
                 JOptionPane.showMessageDialog(txtCloneAddres, "The specified path does not contain a valid git repository.", "Message", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
     //</editor-fold>
+    
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositoriesBean;
     private br.uff.ic.dyevc.model.MonitoredRepository repositoryBean;
     /**
