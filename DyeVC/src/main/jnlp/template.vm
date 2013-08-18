@@ -14,7 +14,7 @@
             <menu submenu="DyeVC"/>
         </shortcut>
     </information>
-    <update check="timeout"/>
+    <update check="timeout" policy="always"/>
     <security>
         <all-permissions/>
     </security>
