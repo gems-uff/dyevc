@@ -337,7 +337,7 @@ public class TopologyWindow extends javax.swing.JFrame {
             + "<ul>"
             + "<li>Green vertex: the vertex that represents your clone</li>"
             + "<li>Red vertices: ordinary clones</li>"
-            + "<li>Blue vertices: central repositories (do not pull of push "
+            + "<li>Blue vertices: central repositories (do not pull or push "
             + "to any other clone</li>"
             + "<li>Yellow vertices: picked vertices</li>"
             + "</ul>"
