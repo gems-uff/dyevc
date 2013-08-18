@@ -237,7 +237,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             updateTopology(repositoryBean);
         } catch (DyeVCException ex) {
             JOptionPane.showMessageDialog(this, "An error occurred while trying to include a repository in the topology."
-                    + " Please try again later.  See the log for details.", "Error", JOptionPane.ERROR_MESSAGE);
+                    + " Please try again later.  Access \"View -> Console Window\" for details.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 

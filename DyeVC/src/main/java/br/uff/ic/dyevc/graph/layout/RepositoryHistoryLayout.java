@@ -142,12 +142,12 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
             }
             splash.setVisible(false);
         } catch (VCSException vcse) {
-            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
+            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository commit history:\n" +
                     vcse + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
             
         } catch(RuntimeException ex) {
             ex.printStackTrace(System.err);
-            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
+            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository commit history:\n" +
                     ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
         } finally {
             splash.dispose();

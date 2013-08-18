@@ -477,7 +477,7 @@ public class MainWindow extends javax.swing.JFrame {
                 }
                 JOptionPane.showMessageDialog(this, message.toString(), "Information", JOptionPane.INFORMATION_MESSAGE);
             } catch (DyeVCException ex) {
-                JOptionPane.showMessageDialog(this, "An error occurred while trying to remove the repository. Please try again later.  See the log for details.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "An error occurred while trying to remove the repository. Please try again later.  Access \"View -> Console Window\" for details.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -551,7 +551,7 @@ public class MainWindow extends javax.swing.JFrame {
         jPopupRepoTable.add(mntEditProject);
 
         JMenuItem mntShowLog = new javax.swing.JMenuItem();
-        mntShowLog.setText("Show Log");
+        mntShowLog.setText("Show Commit History");
         mntShowLog.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
