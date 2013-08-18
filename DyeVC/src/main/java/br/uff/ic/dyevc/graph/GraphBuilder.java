@@ -62,7 +62,7 @@ public class GraphBuilder {
         final DirectedSparseMultigraph<RepositoryInfo, CloneRelationship> graph = new DirectedSparseMultigraph<RepositoryInfo, CloneRelationship>();
         try {
             TopologyDAO dao = new TopologyDAO();
-            Topology top = dao.readTopology();
+            Topology top = dao.readTopologyForSystem(systemName);
 //            createSampleData();
             for (RepositoryInfo cloneInfo : top.getClonesForSystem(systemName)) {
                 graph.addVertex(cloneInfo);

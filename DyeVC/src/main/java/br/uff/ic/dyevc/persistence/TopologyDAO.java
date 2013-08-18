@@ -19,6 +19,29 @@ import org.slf4j.LoggerFactory;
 public class TopologyDAO {
 
     /**
+     * Retrieves the topology for a specific system
+     *
+     * @param systemName the name of the system to retrieve the topology
+     * @return the known topology for the specified system
+     * @throws ServiceException
+     */
+    public Topology readTopologyForSystem(String systemName) throws ServiceException {
+        LoggerFactory.getLogger(TopologyDAO.class).trace("readTopologyForSystem -> Entry");
+        Topology result = new Topology();
+        MongoLabServiceParms parms = new MongoLabServiceParms();
+        
+        RepositoryFilter filter = new RepositoryFilter();
+        filter.setSystemName(systemName);
+        parms.setQuery(filter);
+        
+        ArrayList<RepositoryInfo> repositories = MongoLabProvider.getRepositories(parms);
+        result.resetTopology(repositories);
+
+        LoggerFactory.getLogger(TopologyDAO.class).trace("readTopologyForSystem -> Exit");
+        return result;
+    }
+
+    /**
      * Retrieves the entire topology for all known systems from the database
      *
      * @return the entire known topology for all systems

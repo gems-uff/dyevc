@@ -44,6 +44,7 @@ import edu.uci.ics.jung.visualization.decorators.AbstractEdgeShapeTransformer;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
 import java.awt.Color;
+import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.logging.Level;
@@ -98,13 +99,19 @@ public class TopologyWindow extends javax.swing.JFrame {
             splash.dispose();
             JOptionPane.showMessageDialog(null, "Application received the following exception trying to show topology:\n"
                     + ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
-            this.dispose();
+            WindowEvent wev = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
+            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+            setVisible(false);
+            dispose();
         } catch (RuntimeException ex) {
             ex.printStackTrace(System.err);
             splash.dispose();
             JOptionPane.showMessageDialog(null, "Application received the following exception trying to show topology:\n"
                     + ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
-            this.dispose();
+            WindowEvent wev = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
+            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+            setVisible(false);
+            dispose();
         }
     }
 
@@ -285,10 +292,10 @@ public class TopologyWindow extends javax.swing.JFrame {
      */
     public static void main(String[] args) {
         try {
-            String sysName = "dyevc";
+            String sysName = "labgc-2012.2";
 
             TopologyDAO dao = new TopologyDAO();
-            dao.readTopology();
+            dao.readTopologyForSystem(sysName);
 
             new TopologyWindow(sysName).setVisible(true);
         } catch (DyeVCException ex) {

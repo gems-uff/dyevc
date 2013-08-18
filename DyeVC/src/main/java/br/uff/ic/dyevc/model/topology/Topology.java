@@ -107,7 +107,7 @@ public class Topology {
      */
     public Collection<CloneRelationship> getRelationshipsForSystem(String systemName) throws DyeVCException {
         if (!repositoryMap.containsKey(systemName)) {
-            throw new DyeVCException("System " + systemName + " is not a known system name.");
+            throw new DyeVCException("System <" + systemName + "> is not a known system name.");
         }
 
         ArrayList<CloneRelationship> cis = new ArrayList<CloneRelationship>();
@@ -115,11 +115,21 @@ public class Topology {
         for (RepositoryInfo repositoryInfo : map.values()) {
             //Clonekey of "pullsFrom" is the origin and this cloneInfo is the destination
             for (String cloneKey : repositoryInfo.getPullsFrom()) {
+               if (!map.containsKey(cloneKey)) {
+                    throw new DyeVCException("Clone <" + repositoryInfo.getCloneName()
+                            + "> pulls from repository with id <" + cloneKey
+                            + ">, that does not belong to this system.");
+                }
                 PullRelationship cloneRelationship = new PullRelationship(map.get(cloneKey), repositoryInfo);
                 cis.add(cloneRelationship);
             }
             // RepositoryKey of "pushesTo" is the destination and this cloneInfo is the origin
             for (String cloneKey : repositoryInfo.getPushesTo()) {
+               if (!map.containsKey(cloneKey)) {
+                    throw new DyeVCException("Clone <" + repositoryInfo.getCloneName()
+                            + "> pushes to repository with id <" + cloneKey
+                            + ">, that does not belong to this system.");
+                }
                 PushRelationship cloneRelationship = new PushRelationship(repositoryInfo, map.get(cloneKey));
                 cis.add(cloneRelationship);
             }
@@ -143,8 +153,8 @@ public class Topology {
     }
 
     /**
-     * A map of clones of a repository, where each key is a pair of hostname and
-     * clone name, and each value contains information regarding a clone.
+     * A map of clones of a repository, where each key is the repository id
+     * and each value contains information regarding a clone.
      *
      * @author Cristiano
      */

@@ -52,6 +52,7 @@ import edu.uci.ics.jung.visualization.transform.MutableTransformer;
 import edu.uci.ics.jung.visualization.util.PredicatedParallelEdgeIndexFunction;
 import java.awt.Paint;
 import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.DefaultComboBoxModel;
@@ -99,11 +100,19 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             splash.dispose();
             JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
                     ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+            WindowEvent wev = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
+            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+            setVisible(false);
+            dispose();
         } catch(RuntimeException ex) {
             ex.printStackTrace(System.err);
             splash.dispose();
             JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
                     ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+            WindowEvent wev = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
+            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+            setVisible(false);
+            dispose();
         }            
     }
 

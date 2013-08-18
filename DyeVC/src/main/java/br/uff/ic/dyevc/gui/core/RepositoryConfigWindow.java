@@ -35,6 +35,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private ApplicationSettingsBean settings;
     private Topology topology;
     private TopologyMonitor topologyMonitor;
+    private RepositoryConverter converter;
 
     /**
      * Creates new form RepositoryConfigWindow
@@ -156,85 +157,25 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             return;
         }
         String systemName = cmbSystemName.getSelectedItem().toString().toLowerCase();
-
-        //Verify if clone name was specified.
-        if (txtRepositoryName.getText() == null || "".equals(txtRepositoryName.getText()) || "no name".equalsIgnoreCase(txtRepositoryName.getText())) {
-            JOptionPane.showMessageDialog(this, "Clone name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
-            txtRepositoryName.requestFocus();
-            txtRepositoryName.selectAll();
+        
+        if (!validateCloneName()) {
             return;
         }
 
-        //Verify if clone name is unique in this host.
-        for (MonitoredRepository rep : MonitoredRepositories.getMonitoredProjects()) {
-            if (rep.getName().equalsIgnoreCase(txtRepositoryName.getText()) && !rep.getId().equals(repositoryBean.getId())) {
-                JOptionPane.showMessageDialog(this, "There is a clone defined with this name. Please choose another clone name.", "Error", JOptionPane.ERROR_MESSAGE);
-                txtRepositoryName.requestFocus();
-                txtRepositoryName.selectAll();
-                return;
-            }
-        }
-
-        //Verify if there is a repository in the database for this system / host / clone
-        RepositoryInfo repoSameClone;
-        RepositoryInfo repoSamePath;
-        RepositoryFilter filterSameClone = new RepositoryFilter();
-        filterSameClone.setSystemName(systemName);
-        filterSameClone.setHostName(SystemUtils.getLocalHostname());
-        filterSameClone.setCloneName(txtRepositoryName.getText());
-
-        //Verify if there is a repository in the database for this system / host / path
-        RepositoryFilter filterSamePath = new RepositoryFilter();
-        filterSamePath.setSystemName(systemName);
-        filterSamePath.setHostName(SystemUtils.getLocalHostname());
-        filterSamePath.setClonePath(StringUtils.normalizePath(txtRepositoryName.getText()));
-
-        TopologyDAO dao = new TopologyDAO();
-        ArrayList<RepositoryInfo> listSameClone;
-        ArrayList<RepositoryInfo> listSamePath;
-        try {
-            listSameClone = dao.getRepositoriesByQuery(filterSameClone);
-            listSamePath = dao.getRepositoriesByQuery(filterSamePath);
-        } catch (ServiceException ex) {
-            StringWriter s = new StringWriter();
-            PrintWriter p = new PrintWriter(s);
-            ex.printStackTrace(p);
-            JOptionPane.showMessageDialog(this, "It was not possible to contact the database due to the following exception."
-                    + "\nPlease try again later.\n\n" + s.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+        if (!validateRepositoryAlreadyExists(systemName)) {
             return;
-        }
-
-        if (!listSameClone.isEmpty()) {
-            repoSameClone = listSameClone.get(0);
-            StringBuilder message = createMessage("clone name", repoSameClone);
-
-            int n = showOption(message);
-            if (n == JOptionPane.NO_OPTION) {
-                return;
-            } else {
-                repositoryBean.setId(repoSameClone.getId());
-                txtCloneAddres.setText(repoSameClone.getClonePath());
-            }
-        }
-
-        if (!listSamePath.isEmpty()) {
-            repoSamePath = listSamePath.get(0);
-            StringBuilder message = createMessage("path", repoSamePath);
-
-            int n = showOption(message);
-            if (n == JOptionPane.NO_OPTION) {
-                return;
-            } else {
-                repositoryBean.setId(repoSamePath.getId());
-                txtRepositoryName.setText(repoSamePath.getCloneName());
-            }
         }
 
         repositoryBean.setSystemName(systemName);
         repositoryBean.setName(txtRepositoryName.getText());
         repositoryBean.setCloneAddress(txtCloneAddres.getText());
+        
+        if (!validateRelatedSystemName(systemName)) {
+            return;
+        }
+        
         try {
-            updateTopology(repositoryBean);
+            updateTopology();
         } catch (DyeVCException ex) {
             JOptionPane.showMessageDialog(this, "An error occurred while trying to include a repository in the topology."
                     + " Please try again later.  Access \"View -> Console Window\" for details.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -387,9 +328,98 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         return n;
     }
 
-    private void updateTopology(MonitoredRepository monitoredRepository) throws DyeVCException {
+    private boolean validateCloneName() throws HeadlessException {
+        //Verify if clone name was specified.
+        if (txtRepositoryName.getText() == null || "".equals(txtRepositoryName.getText()) || "no name".equalsIgnoreCase(txtRepositoryName.getText())) {
+            JOptionPane.showMessageDialog(this, "Clone name is a required field.", "Error", JOptionPane.ERROR_MESSAGE);
+            txtRepositoryName.requestFocus();
+            txtRepositoryName.selectAll();
+            return false;
+        }
+        //Verify if clone name is unique in this host.
+        for (MonitoredRepository rep : MonitoredRepositories.getMonitoredProjects()) {
+            if (rep.getName().equalsIgnoreCase(txtRepositoryName.getText()) && !rep.getId().equals(repositoryBean.getId())) {
+                JOptionPane.showMessageDialog(this, "There is a clone defined with this name. Please choose another clone name.", "Error", JOptionPane.ERROR_MESSAGE);
+                txtRepositoryName.requestFocus();
+                txtRepositoryName.selectAll();
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean validateRepositoryAlreadyExists(String systemName) throws HeadlessException {
+        //Verify if there is a repository in the database for this system / host / clone
+        RepositoryInfo repoSameClone;
+        RepositoryInfo repoSamePath;
+        RepositoryFilter filterSameClone = new RepositoryFilter();
+        filterSameClone.setSystemName(systemName);
+        filterSameClone.setHostName(SystemUtils.getLocalHostname());
+        filterSameClone.setCloneName(txtRepositoryName.getText());
+        //Verify if there is a repository in the database for this system / host / path
+        RepositoryFilter filterSamePath = new RepositoryFilter();
+        filterSamePath.setSystemName(systemName);
+        filterSamePath.setHostName(SystemUtils.getLocalHostname());
+        filterSamePath.setClonePath(StringUtils.normalizePath(txtRepositoryName.getText()));
         TopologyDAO dao = new TopologyDAO();
-        RepositoryConverter converter = new RepositoryConverter(monitoredRepository);
+        ArrayList<RepositoryInfo> listSameClone;
+        ArrayList<RepositoryInfo> listSamePath;
+        try {
+            listSameClone = dao.getRepositoriesByQuery(filterSameClone);
+            listSamePath = dao.getRepositoriesByQuery(filterSamePath);
+        } catch (ServiceException ex) {
+            StringWriter s = new StringWriter();
+            PrintWriter p = new PrintWriter(s);
+            ex.printStackTrace(p);
+            JOptionPane.showMessageDialog(this, "It was not possible to contact the database due to the following exception."
+                    + "\nPlease try again later.\n\n" + s.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        if (!listSameClone.isEmpty()) {
+            repoSameClone = listSameClone.get(0);
+            StringBuilder message = createMessage("clone name", repoSameClone);
+            int n = showOption(message);
+            if (n == JOptionPane.NO_OPTION) {
+                return false;
+            } else {
+                repositoryBean.setId(repoSameClone.getId());
+                txtCloneAddres.setText(repoSameClone.getClonePath());
+            }
+        }
+        if (!listSamePath.isEmpty()) {
+            repoSamePath = listSamePath.get(0);
+            StringBuilder message = createMessage("path", repoSamePath);
+            int n = showOption(message);
+            if (n == JOptionPane.NO_OPTION) {
+                return false;
+            } else {
+                repositoryBean.setId(repoSamePath.getId());
+                txtRepositoryName.setText(repoSamePath.getCloneName());
+            }
+        }
+        return true;
+    }
+
+    private boolean validateRelatedSystemName(String systemName) throws HeadlessException {
+        converter = new RepositoryConverter(repositoryBean);
+        try {
+            String relatedSystem = converter.getRelatedSystem();
+            if (!relatedSystem.equals(systemName)) {
+                JOptionPane.showMessageDialog(this, "The  repository you want to monitor relates with a different system."
+                        + "\nThe system name was changed to <" + relatedSystem + "> to reflect it and cannot be changed."
+                        + "\nClick on save again to confirm it, or change the data.", "Warning", JOptionPane.WARNING_MESSAGE);
+                cmbSystemName.setSelectedItem(relatedSystem);
+                return false;
+            }
+        }catch (DyeVCException ex) {
+           JOptionPane.showMessageDialog(this, "An error occurred while validating your information."
+                   + " Please try again later.  Access \"View -> Console Window\" for details.", "Error", JOptionPane.ERROR_MESSAGE);
+       }
+       return true;
+    }
+
+    private void updateTopology() throws DyeVCException {
+        TopologyDAO dao = new TopologyDAO();
         dao.upsertRepository(converter.toRepositoryInfo());
         dao.upsertRepositories(converter.getRelatedNew());
     }

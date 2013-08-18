@@ -24,12 +24,14 @@ public class RepositoryConverter {
     private MonitoredRepository monitoredRepository;
     private TopologyDAO topologyDAO;
     private ArrayList<RepositoryInfo> relatedNew;
+    private String relatedSystem;
     private RepositoryInfo info;
     private boolean processed;
 
     public RepositoryConverter(MonitoredRepository monitoredRepository) {
         this.topologyDAO = new TopologyDAO();
         this.relatedNew = new ArrayList<RepositoryInfo>();
+        this.relatedSystem = monitoredRepository.getSystemName();
         this.monitoredRepository = monitoredRepository;
         this.processed = false;
         this.info = new RepositoryInfo();
@@ -53,6 +55,12 @@ public class RepositoryConverter {
         processed = true;
     }
 
+    public String getRelatedSystem() throws DyeVCException {
+        if (!processed) {
+            initialize();
+        }
+        return relatedSystem;
+    }
     /**
      * Returns the repositories related to this one that do not previously exist
      * in the database
@@ -127,6 +135,9 @@ public class RepositoryConverter {
         MonitoredRepository rep = MonitoredRepositories.getMonitoredProjectByPath(uri.getPath());
         if (rep != null) {
             id = rep.getId();
+            if (!rep.getSystemName().equals(info.getSystemName())) {
+                relatedSystem = rep.getSystemName();
+            }
         } else {
             //If not, checks if there is a repository in the database to get the clone name from
             RepositoryFilter filter = new RepositoryFilter();
@@ -136,6 +147,10 @@ public class RepositoryConverter {
 
             if (!listRepo.isEmpty()) {
                 id = listRepo.get(0).getId();
+                String system = listRepo.get(0).getSystemName();
+                if (!system.equals(info.getSystemName())) {
+                    relatedSystem = system;
+                }
             } else {
                 //if not, adds a new repository that is referenced but not monitored
                 String cloneName = SystemUtils.getFilenameOrLastPath(strippedPath);
