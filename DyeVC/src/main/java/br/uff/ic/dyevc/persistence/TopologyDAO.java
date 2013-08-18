@@ -4,6 +4,7 @@ import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
 import br.uff.ic.dyevc.model.topology.RepositoryFilter;
 import br.uff.ic.dyevc.exception.ServiceException;
+import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.services.MongoLabProvider;
@@ -52,8 +53,8 @@ public class TopologyDAO {
     }
 
     /**
-     * Retrieves the list of repositories that depends on the repository with the
-     * specified id, either by a pushesTo or by a pullsFrom dependency
+     * Retrieves the list of repositories that depends on the repository with
+     * the specified id, either by a pushesTo or by a pullsFrom dependency
      *
      * @param id Id of the repository to look for
      * @return List of repositories that relates to the specified repository
@@ -64,7 +65,7 @@ public class TopologyDAO {
 
         String query = "{\"$or\": [{\"pushesTo\": \"" + id + "\"}, "
                 + "{\"pullsFrom\": \"" + id + "\"}]}";
-        
+
         MongoLabServiceParms parms = new MongoLabServiceParms();
         parms.setQuery(query);
         ArrayList<RepositoryInfo> result = MongoLabProvider.getRepositories(parms);
@@ -72,7 +73,7 @@ public class TopologyDAO {
         LoggerFactory.getLogger(TopologyDAO.class).trace("countRelatedRepositories -> Exit");
         return result;
     }
-    
+
     /**
      * Update all the repositories in the specified list. If an element does not
      * yet exists, then create it
@@ -82,34 +83,44 @@ public class TopologyDAO {
      */
     public void upsertRepositories(ArrayList<RepositoryInfo> repositories) throws DyeVCException {
         LoggerFactory.getLogger(TopologyDAO.class).trace("upsertRepositories -> Entry");
-            for (RepositoryInfo repository : repositories) {
-                upsertRepository(repository);
+        for (RepositoryInfo repository : repositories) {
+            upsertRepository(repository);
         }
         LoggerFactory.getLogger(TopologyDAO.class).trace("upsertRepositories -> Exit");
     }
-    
+
     /**
-     * Update a repository in the database. If the repository does not exist, inserts it
+     * Update a repository in the database. If the repository does not exist,
+     * inserts it
+     *
      * @param repository The repository to be updated in the database.
-     * @throws DyeVCException 
+     * @throws DyeVCException
      */
-    public void upsertRepository(RepositoryInfo repository) throws DyeVCException{
+    public void upsertRepository(RepositoryInfo repository) throws DyeVCException {
         MongoLabProvider.upsertRepository(repository);
     }
-    
+
     /**
-     * Delete the repository in the database with the specified id. The application first checks
-     * if the repository is not referenced anywhere, otherwise throws an exception
-     * @param id Id of the repository to be deleted
-     * @throws RepositoryReferencedException when other repositories reference this one
-     * @throws DyeVCException 
+     * Deletes the monitored repository from the database. The
+     * application first checks if the repository is not referenced anywhere,
+     * otherwise throws an exception. If the monitored repository does not have
+     * a system name configured, ignores it and does nothing.
+     *
+     * @param repository Monitored repository to be deleted from the database
+     * @throws RepositoryReferencedException when other repositories reference
+     * this one
+     * @throws DyeVCException
      */
-    public void deleteRepository(String id) throws ServiceException, RepositoryReferencedException {
-        ArrayList<RepositoryInfo> dependentRepositories = findDependentRepositories(id);
-        if (dependentRepositories.isEmpty()) {
-            MongoLabProvider.deleteRepository(id);
-        } else {
-            throw new RepositoryReferencedException(dependentRepositories);
+    public void deleteRepository(MonitoredRepository repository) throws ServiceException, RepositoryReferencedException {
+        String systemName = repository.getSystemName();
+        if (!("".equals(systemName) || "no name".equals(systemName))) {
+            // Only repositories with system names have to be deleted from the database
+            ArrayList<RepositoryInfo> dependentRepositories = findDependentRepositories(repository.getId());
+            if (dependentRepositories.isEmpty()) {
+                MongoLabProvider.deleteRepository(repository.getId());
+            } else {
+                throw new RepositoryReferencedException(dependentRepositories);
+            }
         }
     }
 }
