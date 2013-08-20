@@ -22,6 +22,7 @@ import br.uff.ic.dyevc.utils.ImageUtils;
 import br.uff.ic.dyevc.utils.LimitLinesDocumentListener;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import java.awt.AWTException;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Image;
 import java.awt.MenuItem;
@@ -31,15 +32,23 @@ import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.WindowConstants;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -63,7 +72,9 @@ public class MainWindow extends javax.swing.JFrame {
         addListeners();
         minimizeToTray();
         startMonitors();
+        addEasternEgg();
     }
+    
     // <editor-fold defaultstate="collapsed" desc="private variables">      
     private javax.swing.JDialog dlgAbout;
     private javax.swing.JFrame frameSettings;
@@ -75,7 +86,7 @@ public class MainWindow extends javax.swing.JFrame {
     private br.uff.ic.dyevc.model.MonitoredRepositories monitoredRepositories;
     private javax.swing.JTable repoTable;
     private TableColumnAdjuster tca;
-    //Variáveis de menu
+    //Menu variables
     private javax.swing.JMenuBar jMenuBar;
     private JPopupMenu jPopupRepoTable;
     private JPopupMenu jPopupTextAreaMessages;
@@ -176,7 +187,6 @@ public class MainWindow extends javax.swing.JFrame {
                 .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))));
-
         pack();
     }// </editor-fold>                        
 
@@ -659,6 +669,37 @@ public class MainWindow extends javax.swing.JFrame {
         trayIcon.displayMessage("DyeVC", message + " Click on this balloon if you want to see details.", TrayIcon.MessageType.WARNING);
         MessageManager.getInstance().addMessage(message);
     }
+
+    /**
+     * Displays messages from the status list as a balloon in tray icon.
+     *
+     * @param repStatusList the list of messages to be displayed.
+     */
+    public void notifyMessages(List<RepositoryStatus> repStatusList) {
+        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Entry");
+
+        int countRepsWithMessages = 0;
+        for (Iterator<RepositoryStatus> it = repStatusList.iterator();
+                it.hasNext();) {
+            RepositoryStatus repositoryStatus = it.next();
+            if (repositoryStatus.isInvalid()) {
+                countRepsWithMessages++;
+            } else {
+                if (repositoryStatus.getInvalidBranchesCount() > 0
+                        || repositoryStatus.getNonSyncedBranchesCount() > 0) {
+                    countRepsWithMessages++;
+                }
+            }
+        }
+        if (countRepsWithMessages != lastMessagesCount) {
+            notifyMessage("There are messages on " + countRepsWithMessages + " repositories.");
+            lastMessagesCount = countRepsWithMessages;
+        }
+
+        repoTable.repaint();
+
+        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Exit");
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="addListeners">  
@@ -734,35 +775,34 @@ public class MainWindow extends javax.swing.JFrame {
         });
     }
     //</editor-fold>
+    
+    // <editor-fold defaultstate="collapsed" desc="eastern_egg -> CTRL + C">  
+    private Action checkAction;
 
-    /**
-     * Displays messages from the status list as a balloon in tray icon.
-     *
-     * @param repStatusList the list of messages to be displayed.
-     */
-    public void notifyMessages(List<RepositoryStatus> repStatusList) {
-        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Entry");
+    private void addEasternEgg() {
+        //Eastern egg -> Activated with CTRL+C only when mouse focus is on menu
+        checkAction = new CheckRepositoryAction("Check");
+        InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = getRootPane().getActionMap();
 
-        int countRepsWithMessages = 0;
-        for (Iterator<RepositoryStatus> it = repStatusList.iterator();
-                it.hasNext();) {
-            RepositoryStatus repositoryStatus = it.next();
-            if (repositoryStatus.isInvalid()) {
-                countRepsWithMessages++;
-            } else {
-                if (repositoryStatus.getInvalidBranchesCount() > 0
-                        || repositoryStatus.getNonSyncedBranchesCount() > 0) {
-                    countRepsWithMessages++;
-                }
-            }
-        }
-        if (countRepsWithMessages != lastMessagesCount) {
-            notifyMessage("There are messages on " + countRepsWithMessages + " repositories.");
-            lastMessagesCount = countRepsWithMessages;
-        }
-
-        repoTable.repaint();
-
-        LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Exit");
+        KeyStroke ctrlOKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_C,
+                InputEvent.CTRL_DOWN_MASK, false);
+        inputMap.put(ctrlOKeyStroke, "checkAction");
+        actionMap.put("checkAction", checkAction);
     }
+    
+    @SuppressWarnings("serial")
+    private class CheckRepositoryAction extends AbstractAction {
+
+        public CheckRepositoryAction(String name) {
+            super(name);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JOptionPane.showMessageDialog(MainWindow.this, "Pressed CTRL + C", "Key Pressed", JOptionPane.INFORMATION_MESSAGE);
+            //TODO implement jdialog to check a given git repository url;
+        }
+    }
+    //</editor-fold>
 }
