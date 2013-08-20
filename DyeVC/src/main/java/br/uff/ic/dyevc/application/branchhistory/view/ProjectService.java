@@ -86,8 +86,8 @@ public class ProjectService {
         
         while(commitRelationshipIt.hasNext()){
             CommitRelationship commitRelationship = commitRelationshipIt.next();
-            String child = commitRelationship.getChild().getId();
-            String parent = commitRelationship.getParent().getId();
+            String child = commitRelationship.getChild().getHash();
+            String parent = commitRelationship.getParent().getHash();
             Revision revisionChild = revisionsBucket.getRevisionById(child);
             if(revisionChild == null){
                 revisionChild = new Revision(child);
@@ -101,14 +101,14 @@ public class ProjectService {
             revisionChild.addPrev(revisionParent);
             revisionParent.addNext(revisionChild);
             
-//            if(hash.containsKey(commitRelationship.getChild().getId())){
-//                //System.out.println("REPETIDO: "+commitRelationship.getChild().getId());
-//                hash.put(commitRelationship.getChild().getId(), hash.get(commitRelationship.getChild().getId())+"="+commitRelationship.getParent().getId());
+//            if(hash.containsKey(commitRelationship.getChild().getHash())){
+//                //System.out.println("REPETIDO: "+commitRelationship.getChild().getHash());
+//                hash.put(commitRelationship.getChild().getHash(), hash.get(commitRelationship.getChild().getHash())+"="+commitRelationship.getParent().getHash());
 //            }else{
-//                hash.put(commitRelationship.getChild().getId(), commitRelationship.getParent().getId());
+//                hash.put(commitRelationship.getChild().getHash(), commitRelationship.getParent().getHash());
 //            }
                 
-            System.out.println(commitRelationship.getChild().getId()+"  --> "+commitRelationship.getParent().getId());
+            System.out.println(commitRelationship.getChild().getHash()+"  --> "+commitRelationship.getParent().getHash());
         }
             
         for (BranchRevisions branch : branches) {

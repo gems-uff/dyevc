@@ -41,7 +41,7 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
             if (header.length() > 0) header.append("<br>");
             
             details.append(header);
-            details.append("<b>Commit id: </b>").append(ci.getId()).append("<br>");
+            details.append("<b>Commit id: </b>").append(ci.getHash()).append("<br>");
             details.append("<b>time: </b>")
                     .append(DateUtil.format(ci.getCommitDate(), "yyyy-MM-dd HH:mm:ss.SSS"))
                     .append("<br>");

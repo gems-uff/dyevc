@@ -240,7 +240,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      */
     protected synchronized boolean calcYPositions(V v, int childHeight) {
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("calcYPositions -> Entry");
-        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("calcYPositions -> Will now calculate yPos for node <{}>, which initially received childHeight <{}>", ((CommitInfo)v).getId(), childHeight);
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("calcYPositions -> Will now calculate yPos for node <{}>, which initially received childHeight <{}>", ((CommitInfo)v).getHash(), childHeight);
         boolean result = false;
         boolean visited = false;
         while (!visited) { //Visits each node only once
@@ -491,7 +491,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
             }
 
         }
-        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("getFirstCommit -> First commit for this repository has id <{}>", ((CommitInfo)firstCommit).getId());
+        LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("getFirstCommit -> First commit for this repository has id <{}>", ((CommitInfo)firstCommit).getHash());
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("getFirstCommit -> Exit");
         return firstCommit;
     }
@@ -526,6 +526,6 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      * @return  the hash of the specified node
      */
     private String getHashFromNode(V node) {
-        return ((CommitInfo)node).getId();
+        return ((CommitInfo)node).getHash();
     }
 }

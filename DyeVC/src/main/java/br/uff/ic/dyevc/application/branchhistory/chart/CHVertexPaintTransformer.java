@@ -45,7 +45,7 @@ public class CHVertexPaintTransformer implements Transformer<Object, Paint> {
             double max = projectValues.getMaxValue();
             
             CommitInfo ci = (CommitInfo) o;
-            double value = projectValues.getValueByVersionId(ci.getId());
+            double value = projectValues.getValueByVersionId(ci.getHash());
             
             double comparacao = value/max;
             int total = ((int) (255*comparacao));

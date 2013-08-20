@@ -1,36 +1,40 @@
 package br.uff.ic.dyevc.model;
 
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
  * Stores information about a singular commit made to VCS.
  * 
  * @author Cristiano
  */
+@JsonIgnoreProperties(value = {"repositoryId", "parentsCount", "childrenCount", "changeSet", "visited", "author"}, ignoreUnknown = true)
 public class CommitInfo implements Comparable<CommitInfo> {
+
+    @JsonProperty(value = "_id")
+    public String getTopologyId() {
+        return systemName+"-"+hash;
+    }
+    
+    /**
+     * System name where this commit is found
+     */
+    private String systemName;
 
     /**
      * Commit's identification.
      */
-    private String id;
-    
-    /**
-     * The id of the repository where this commit is found.
-     */
-    private String repositoryId;
+    private String hash;
     
     /**
      * Date the commit was done.
      */
     private Date commitDate;
-    
-    /**
-     * Author of commit.
-     */
-    private String author;
     
     /**
      * Commiter (one's that effectively executed the commit action.
@@ -41,6 +45,19 @@ public class CommitInfo implements Comparable<CommitInfo> {
      * Short message written together with the commit.
      */
     private String shortMessage;
+    
+    private ArrayList<String> parents;
+    private ArrayList<String> foundIn;
+
+    /**
+     * The id of any repository where this commit was found
+     */
+    private String repositoryId;
+    
+    /**
+     * Author of commit.
+     */
+    private String author;
     
     /**
      * Number of parents this commit has. If greater than one, this was a merge. 
@@ -67,16 +84,26 @@ public class CommitInfo implements Comparable<CommitInfo> {
     private boolean visited = false;
     
     public CommitInfo(String id, String repositoryId) {
-        this.id = id;
+        this.hash = id;
         this.repositoryId = repositoryId;
+        this.parents = new ArrayList<String>();
+        this.foundIn = new ArrayList<String>();
     }
 
-    public String getId() {
-        return id;
+    public String getHash() {
+        return hash;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
+
+    public String getSystemName() {
+        return systemName;
+    }
+
+    public void setSystemName(String systemName) {
+        this.systemName = systemName;
     }
 
     public String getRepositoryId() {
@@ -119,6 +146,23 @@ public class CommitInfo implements Comparable<CommitInfo> {
         this.shortMessage = shortMessage;
     }
 
+    public ArrayList<String> getParents() {
+        return parents;
+    }
+
+    public void setParents(ArrayList<String> parents) {
+        this.parents = parents;
+        this.parentsCount = parents.size();
+    }
+
+    public ArrayList<String> getFoundIn() {
+        return foundIn;
+    }
+
+    public void setFoundIn(ArrayList<String> foundIn) {
+        this.foundIn = foundIn;
+    }
+
     public void incrementChildren() {
         synchronized (childrenCountLock) {
             childrenCount++;
@@ -133,7 +177,7 @@ public class CommitInfo implements Comparable<CommitInfo> {
 
     @Override
     public String toString() {
-        return id.substring(0, 5);
+        return hash.substring(0, 5);
     }
 
     public int getParentsCount() {
@@ -161,7 +205,7 @@ public class CommitInfo implements Comparable<CommitInfo> {
             result = 1;
         }
         if (this.getCommitDate().equals(o.getCommitDate())) {
-            result = this.getId().compareTo(o.getId());
+            result = this.getHash().compareTo(o.getHash());
         }
         return result;
     }
@@ -184,7 +228,7 @@ public class CommitInfo implements Comparable<CommitInfo> {
      * @return the changeSet
      */
     public synchronized Set<CommitChange> getChangeSet() {
-        if (changeSet == null) changeSet = GitCommitTools.getCommitChangeSet(id, repositoryId);
+        if (changeSet == null) changeSet = GitCommitTools.getCommitChangeSet(hash, repositoryId);
         return changeSet;
     }
 
@@ -195,7 +239,7 @@ public class CommitInfo implements Comparable<CommitInfo> {
         this.changeSet = changeSet;
     }
     
-    public void addChangePath(CommitChange cc) {
+    public void addChangeSet(CommitChange cc) {
         if (changeSet == null) changeSet = new TreeSet<CommitChange>();
         this.changeSet.add(cc);
     }
@@ -203,7 +247,7 @@ public class CommitInfo implements Comparable<CommitInfo> {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 37 * hash + (this.id != null ? this.id.hashCode() : 0);
+        hash = 37 * hash + (this.hash != null ? this.hash.hashCode() : 0);
         return hash;
     }
 
@@ -216,7 +260,7 @@ public class CommitInfo implements Comparable<CommitInfo> {
             return false;
         }
         final CommitInfo other = (CommitInfo) obj;
-        if ((this.id == null) ? (other.id != null) : !this.id.equals(other.id)) {
+        if ((this.hash == null) ? (other.hash != null) : !this.hash.equals(other.hash)) {
             return false;
         }
         return true;

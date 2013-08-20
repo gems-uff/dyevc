@@ -154,7 +154,7 @@ public class GitCommitTools {
         ci.setShortMessage(commit.getShortMessage());
 
 //        fillCommitDiff(commit, ci);
-        commitInfoMap.put(ci.getId(), ci);
+        commitInfoMap.put(ci.getHash(), ci);
 
 //        createCommitRelations(commit, walk);
 

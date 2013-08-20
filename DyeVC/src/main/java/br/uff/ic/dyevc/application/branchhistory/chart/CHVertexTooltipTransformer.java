@@ -34,7 +34,7 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
         }
         if (o instanceof CommitInfo) {
             CommitInfo ci = (CommitInfo) o;
-            double value = projectValues.getValueByVersionId(ci.getId());
+            double value = projectValues.getValueByVersionId(ci.getHash());
             details.append("<html>");
             if (ci.getParentsCount() == 0) {
                 details.append("<b>This is the first commit!</b>").append("<br><br>");
@@ -42,7 +42,7 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
             if (ci.getChildrenCount() == 0) {
                 details.append("<b>This is a branch's head!</b>").append("<br><br>");
             }
-            details.append("<b>Commit id: </b>").append(ci.getId()).append("<br>");
+            details.append("<b>Commit id: </b>").append(ci.getHash()).append("<br>");
             details.append("<b>time: </b>")
                     .append(DateUtil.format(ci.getCommitDate(), "yyyy-MM-dd HH:mm:ss.SSS"))
                     .append("<br>");

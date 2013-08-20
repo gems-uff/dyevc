@@ -1,6 +1,5 @@
 package br.uff.ic.dyevc.model.topology;
 
-import br.uff.ic.dyevc.persistence.Oid;
 import br.uff.ic.dyevc.utils.StringUtils;
 import java.util.HashSet;
 import java.util.Set;
