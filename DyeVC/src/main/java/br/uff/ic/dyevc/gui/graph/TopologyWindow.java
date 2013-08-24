@@ -3,10 +3,12 @@ package br.uff.ic.dyevc.gui.graph;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.graph.GraphBuilder;
-import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
 import br.uff.ic.dyevc.graph.transform.common.VertexStrokeHighlightTransformer;
 import br.uff.ic.dyevc.graph.transform.topology.TopologyEdgePaintTransformer;
 import br.uff.ic.dyevc.graph.transform.common.EdgeStrokeTransformer;
+import br.uff.ic.dyevc.graph.transform.topology.TopologyPickWithIconListener;
+import br.uff.ic.dyevc.graph.transform.topology.TopologyVertexIconShapeTransformer;
+import br.uff.ic.dyevc.graph.transform.topology.TopologyVertexIconTransformer;
 import br.uff.ic.dyevc.graph.transform.topology.TopologyVertexPaintTransformer;
 import br.uff.ic.dyevc.graph.transform.topology.TopologyVertexTooltipTransformer;
 import br.uff.ic.dyevc.gui.core.SplashScreen;
@@ -42,6 +44,7 @@ import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.AbstractEdgeShapeTransformer;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
+import edu.uci.ics.jung.visualization.picking.PickedState;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
 import java.awt.Color;
 import java.awt.Toolkit;
@@ -234,16 +237,15 @@ public class TopologyWindow extends javax.swing.JFrame {
         vv.addKeyListener(graphMouse.getModeKeyListener());
         graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
 
-        // <editor-fold defaultstate="collapsed" desc="vertex transformers">
-        //VertexShape
-        vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeTransformer());
+        PickedState<RepositoryInfo> ps = vv.getPickedVertexState();
 
+        // <editor-fold defaultstate="collapsed" desc="vertex transformers">
         //VertexToolTip
         vv.setVertexToolTipTransformer(new TopologyVertexTooltipTransformer());
         ToolTipManager.sharedInstance().setDismissDelay(15000);
 
         //VertexFillPaint
-        vv.getRenderContext().setVertexFillPaintTransformer(new TopologyVertexPaintTransformer(vv.getPickedVertexState(), callerId));
+        vv.getRenderContext().setVertexFillPaintTransformer(new TopologyVertexPaintTransformer(ps, callerId));
 
         //VertexLabel
         vv.getRenderContext().setVertexLabelTransformer(new Transformer<RepositoryInfo, String>() {
@@ -256,13 +258,30 @@ public class TopologyWindow extends javax.swing.JFrame {
 
         //VertexStroke
         vv.getRenderContext().setVertexStrokeTransformer(new VertexStrokeHighlightTransformer<RepositoryInfo, CloneRelationship>(graph, vv.getPickedVertexState()));
+        //VertexShape
+//        vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeTransformer());
+        vv.getRenderContext().setVertexShapeTransformer(new TopologyVertexIconShapeTransformer(callerId));
+
+        //VertexIcon
+        TopologyVertexIconTransformer vertexIconTransformer = new TopologyVertexIconTransformer(callerId);
+        vv.getRenderContext().setVertexIconTransformer(vertexIconTransformer);
+
+        // Adds a listener to decorate the vertex with a checkmark icon when its picked
+        ps.addItemListener(new TopologyPickWithIconListener(vertexIconTransformer));
+
         // </editor-fold>
 
         // <editor-fold defaultstate="collapsed" desc="edge transformers">
         //EdgeLabel - not defined
         //EdgeDrawPaint
-        vv.getRenderContext().setEdgeDrawPaintTransformer(new TopologyEdgePaintTransformer(vv.getPickedEdgeState()));
+        TopologyEdgePaintTransformer ept = new TopologyEdgePaintTransformer(vv.getPickedEdgeState());
+        vv.getRenderContext().setEdgeDrawPaintTransformer(ept);
+        
+        //Arrows
+        vv.getRenderContext().setArrowFillPaintTransformer(ept);
+        vv.getRenderContext().setArrowDrawPaintTransformer(ept);
 
+        //EdgeStroke
         vv.getRenderContext().setEdgeStrokeTransformer(new EdgeStrokeTransformer<CloneRelationship>());
 
         //EdgeShape - sets it as quadcurve and defines a greater offset between parallel edges
@@ -273,6 +292,7 @@ public class TopologyWindow extends javax.swing.JFrame {
         showRelationPredicate = new DirectionDisplayPredicate<RepositoryInfo, CloneRelationship>(true, true);
         vv.getRenderContext().setEdgeIncludePredicate(showRelationPredicate);
     }
+    
     //</editor-fold>
 
     private void resetGraph() {
@@ -292,7 +312,7 @@ public class TopologyWindow extends javax.swing.JFrame {
      */
     public static void main(String[] args) {
         try {
-            String sysName = "labgc-2012.2";
+            String sysName = "dyevc";
 
             TopologyDAO dao = new TopologyDAO();
             dao.readTopologyForSystem(sysName);
