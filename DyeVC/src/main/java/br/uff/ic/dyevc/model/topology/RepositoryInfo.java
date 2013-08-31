@@ -12,6 +12,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RepositoryInfo implements Comparable<RepositoryInfo>{
+    @JsonProperty(value = "_id")
     private String id;
     private String systemName;
     private String hostName;
@@ -26,12 +27,10 @@ public class RepositoryInfo implements Comparable<RepositoryInfo>{
         id = StringUtils.generateRepositoryId();
     }
 
-    @JsonProperty(value = "_id")
     public String getId() {
         return id;
     }
     
-    @JsonProperty(value = "_id")
     public void setId(String id) {
         this.id = id;
     }

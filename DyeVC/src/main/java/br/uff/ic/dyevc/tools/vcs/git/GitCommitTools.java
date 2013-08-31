@@ -7,6 +7,7 @@ import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.utils.SystemUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,11 +50,20 @@ public class GitCommitTools {
      * Collection of commit relationships, relating a parent commit and its
      * children.
      */
-    private Collection<CommitRelationship> commitRelationshipList;
+    private List<CommitRelationship> commitRelationshipList;
     /**
      * Connector used by this class to connect to a Git repository.
      */
     private GitConnector git;
+    
+    /**
+     * The monitored repository used to instantiate this class, or null if not
+     * informed.
+     */
+    private MonitoredRepository rep;
+    
+    private boolean includeTopologyData;
+    private boolean initialized = false;
 
     /**
      * The list of commits is created in this constructor.
@@ -61,10 +71,18 @@ public class GitCommitTools {
      * @param git the repository that contains a git connection
      */
     public GitCommitTools(MonitoredRepository rep) throws VCSException {
-        this.commitInfoMap = new TreeMap<String, CommitInfo>();
-        this.commitRelationshipList = new ArrayList<CommitRelationship>();
-        this.git = rep.getConnection();
-        populateHistory();
+        this(rep, false);
+    }
+
+    /**
+     * The list of commits is created in this constructor.
+     *
+     * @param git the repository that contains a git connection
+     * @param includeTopologyData If true, CommitInfo objects are filled with topology data
+     */
+    public GitCommitTools(MonitoredRepository rep, boolean includeTopologyData) throws VCSException {
+        this(rep.getConnection(), includeTopologyData);
+        this.rep = rep;
     }
 
     /**
@@ -72,11 +90,27 @@ public class GitCommitTools {
      *
      * @param git the connector to be used to connect to a Git repository.
      */
-    public GitCommitTools(GitConnector git) throws VCSException {
+    public GitCommitTools(GitConnector git) {
+        this(git, false);
+    }
+    
+    /**
+     * The list of commits is created in this constructor. DO NOT transform this
+     * constructor into a public constructor.
+     *
+     * @param git the connector to be used to connect to a Git repository.
+     * @param includeTopologyData If true, CommitInfo objects are filled with topology data
+     */
+    private GitCommitTools(GitConnector git, boolean includeTopologyData) {
+        this.git = git;
+        this.includeTopologyData = includeTopologyData;
+    }
+    
+    private void initialize() throws VCSException {
         this.commitInfoMap = new TreeMap<String, CommitInfo>();
         this.commitRelationshipList = new ArrayList<CommitRelationship>();
-        this.git = git;
         populateHistory();
+        initialized = true;
     }
 
     /**
@@ -84,7 +118,8 @@ public class GitCommitTools {
      *
      * @return the list of commit relationships
      */
-    public Collection<CommitRelationship> getCommitRelationships() {
+    public Collection<CommitRelationship> getCommitRelationships() throws VCSException {
+        if (!initialized) initialize();
         return commitRelationshipList;
     }
 
@@ -93,13 +128,14 @@ public class GitCommitTools {
      *
      * @return the list of commits
      */
-    public Collection<CommitInfo> getCommitInfos() {
+    public List<CommitInfo> getCommitInfos() throws VCSException {
+        if (!initialized) initialize();
         List<CommitInfo> cis = new ArrayList<CommitInfo>(commitInfoMap.values());
 
         Comparator<CommitInfo> comparator = new CommitInfoDateComparator();
 
         Collections.sort(cis, comparator);
-        return cis;
+        return (List)cis;
     }
 
     /**
@@ -152,11 +188,14 @@ public class GitCommitTools {
         ci.setAuthor(commit.getAuthorIdent().getName());
         ci.setCommitter(commit.getCommitterIdent().getName());
         ci.setShortMessage(commit.getShortMessage());
+        ci.setRepositoryId(rep.getId());
+        
+        if (includeTopologyData) {
+            ci.getFoundIn().add(rep.getId());
+            ci.setSystemName(rep.getSystemName());
+        }
 
-//        fillCommitDiff(commit, ci);
         commitInfoMap.put(ci.getHash(), ci);
-
-//        createCommitRelations(commit, walk);
 
         LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitInfo -> Exit.");
         return ci;
@@ -180,15 +219,14 @@ public class GitCommitTools {
         for (int j = 0; j < parents.length; j++) {
             //for each parent in the list, parses it, creating a RevCommit
             RevCommit parent = walk.parseCommit(parents[j]);
-            //if parent does not exist in map, recursively calls createCommitInfo to include it.
-//            if (!commitInfoMap.containsKey(parent.getName())) {
-//                createCommitInfo(parent, walk);
-//            }
-            //adds a new relation between the commit and its parent in commitRelationshipList
+            CommitInfo child = commitInfoMap.get(commit.getName());
             CommitRelationship relation =
-                    new CommitRelationship(commitInfoMap.get(commit.getName()),
+                    new CommitRelationship(child,
                     commitInfoMap.get(parent.getName()));
             commitRelationshipList.add(relation);
+            if (includeTopologyData) {
+                child.getParents().add(parent.getName());
+            }
         }
         LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitRelations -> Exit.");
     }
@@ -202,7 +240,7 @@ public class GitCommitTools {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder("CommitHistory:\n\t{Infos:\n");
-        for (Iterator<CommitInfo> it = getCommitInfos().iterator(); it.hasNext();) {
+        for (Iterator<CommitInfo> it = commitInfoMap.values().iterator(); it.hasNext();) {
             builder.append("\t\t").append(it.next()).append("\n");
         }
         builder.append("\tRelations:\n");
