@@ -251,10 +251,10 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
 
     /**
-     * Method description
+     * Return ids of the parents for this CommitInfo
      *
      *
-     * @return
+     * @return Set of parent ids for this CommitInfo
      */
     public Set<String> getParents() {
         return parents;
@@ -460,5 +460,28 @@ public class CommitInfo implements Comparable<CommitInfo> {
         }
 
         return true;
+    }
+
+    /** Field description */
+    private int flags;
+
+    /**
+     * Method description
+     *
+     *
+     * @return
+     */
+    public int getFlags() {
+        return flags;
+    }
+
+    /**
+     * Method description
+     *
+     *
+     * @param flags
+     */
+    public void setFlags(int flags) {
+        this.flags = flags;
     }
 }

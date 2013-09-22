@@ -1,15 +1,21 @@
 package br.uff.ic.dyevc.application.branchhistory.chart;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.application.branchhistory.model.ProjectRevisions;
-import br.uff.ic.dyevc.graph.*;
 import br.uff.ic.dyevc.exception.VCSException;
+import br.uff.ic.dyevc.graph.*;
 import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
+
 import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
+
+//~--- JDK imports ------------------------------------------------------------
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,21 +31,31 @@ public class BasicRepositoryHistoryGraph {
      * @param rep the repository for which the graph will be created
      * @return a graph representing the repository
      */
-    
-    private static String BRANCHES_HISTORY_PATH = System.getProperty("user.home")+"/.dyevc/BRANCHES_HISTORY/";
-    
-    public static DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> createBasicRepositoryHistoryGraph(ProjectRevisions rep) {
-        final DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> graph = new DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship>();
+
+    private static String BRANCHES_HISTORY_PATH = System.getProperty("user.home") + "/.dyevc/BRANCHES_HISTORY/";
+
+    /**
+     * Method description
+     *
+     * @param rep
+     * @return
+     */
+    public static DirectedOrderedSparseMultigraph<CommitInfo,
+            CommitRelationship> createBasicRepositoryHistoryGraph(ProjectRevisions rep) {
+        final DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> graph =
+            new DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship>();
         GitConnector git = null;
         try {
-            git = new GitConnector(BRANCHES_HISTORY_PATH+rep.getName(), rep.getName());
-            GitCommitTools ch = new GitCommitTools(git);
+            git = new GitConnector(BRANCHES_HISTORY_PATH + rep.getName(), rep.getName());
+            GitCommitTools ch = GitCommitTools.getInstance(git);
             for (CommitInfo commitInfo : ch.getCommitInfos()) {
                 graph.addVertex(commitInfo);
             }
+
             for (CommitRelationship commitRelationship : ch.getCommitRelationships()) {
                 graph.addEdge(commitRelationship, commitRelationship.getChild(), commitRelationship.getParent());
             }
+
             return graph;
         } catch (VCSException ex) {
             Logger.getLogger(BasicRepositoryHistoryGraph.class.getName()).log(Level.SEVERE, null, ex);
@@ -49,7 +65,7 @@ public class BasicRepositoryHistoryGraph {
                 git.close();
             }
         }
-        
+
         return graph;
     }
 }
