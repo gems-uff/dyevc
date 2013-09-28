@@ -75,6 +75,7 @@ public class GitCommitTools {
     private MonitoredRepository rep;
     private boolean             includeTopologyData;
     private boolean             initialized = false;
+    private static final int    PARSED      = 1 >> 0;
 
     /**
      * Creates a new instance of this class.
@@ -106,7 +107,7 @@ public class GitCommitTools {
      * @return An instance of GitCommitTools.
      * @throws VCSException
      */
-    public static final GitCommitTools getInstance(MonitoredRepository rep) throws VCSException {
+    public static GitCommitTools getInstance(MonitoredRepository rep) throws VCSException {
         return new GitCommitTools(rep, false);
     }
 
@@ -118,8 +119,7 @@ public class GitCommitTools {
      * @return An instance of GitCommitTools.
      * @throws VCSException
      */
-    public static final GitCommitTools getInstance(MonitoredRepository rep, boolean includeTopologyData)
-            throws VCSException {
+    public static GitCommitTools getInstance(MonitoredRepository rep, boolean includeTopologyData) throws VCSException {
         return new GitCommitTools(rep, includeTopologyData);
     }
 
@@ -129,19 +129,8 @@ public class GitCommitTools {
      * @param git the connector to be used to connect to a Git repository.
      * @return An instance of GitCommitTools.
      */
-    public static final GitCommitTools getInstance(GitConnector git) {
+    public static GitCommitTools getInstance(GitConnector git) {
         return new GitCommitTools(git, false);
-    }
-
-    /**
-     * Gets a new GitCommitTools instance.
-     *
-     * @param git the connector to be used to connect to a Git repository.
-     * @param includeTopologyData If true, CommitInfo objects are filled with topology data
-     * @return An instance of GitCommitTools.
-     */
-    public static final GitCommitTools getInstance(GitConnector git, boolean includeTopologyData) {
-        return new GitCommitTools(git, includeTopologyData);
     }
 
     /**
@@ -206,7 +195,7 @@ public class GitCommitTools {
      * Populates the commit history. This method traverses all commits in the Git repository. If commit does not yet
      * exist in the commitInfoMap, than includes it.
      */
-    private final void populateHistory() throws VCSException {
+    private void populateHistory() throws VCSException {
         LoggerFactory.getLogger(GitCommitTools.class).trace("populateHistory -> Entry.");
         RevWalk walk = null;
         try {
@@ -249,14 +238,14 @@ public class GitCommitTools {
      * @return a CommitInfo object
      * @throws IOException
      */
-    private final CommitInfo createCommitInfo(RevCommit commit, RevWalk walk) throws IOException {
+    private CommitInfo createCommitInfo(RevCommit commit, RevWalk walk) throws IOException {
         LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitInfo -> Entry.");
         CommitInfo ci = new CommitInfo(commit.getName(), git.getId());
         ci.setCommitDate(new Date(commit.getCommitTime() * 1000L));
         ci.setAuthor(commit.getAuthorIdent().getName());
         ci.setCommitter(commit.getCommitterIdent().getName());
         ci.setShortMessage(commit.getShortMessage());
-        ci.setRepositoryId(rep.getId());
+        ci.setRepositoryId(git.getId());
 
         if (includeTopologyData) {
             ci.getFoundIn().add(rep.getId());
@@ -280,7 +269,7 @@ public class GitCommitTools {
      * @throws IncorrectObjectTypeException
      * @throws IOException
      */
-    private final void createCommitRelations(RevCommit commit, RevWalk walk)
+    private void createCommitRelations(RevCommit commit, RevWalk walk)
             throws MissingObjectException, IncorrectObjectTypeException, IOException {
         LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitRelations -> Entry.");
 
@@ -328,7 +317,7 @@ public class GitCommitTools {
      * @param repositoryId the repository id to look into.
      * @return the set of changes found in the given commit.
      */
-    public final static Set<CommitChange> getCommitChangeSet(String commitId, String repositoryId) {
+    public static Set<CommitChange> getCommitChangeSet(String commitId, String repositoryId) {
         LoggerFactory.getLogger(GitCommitTools.class).trace("getCommitChangeSet -> Entry.");
         Set<CommitChange> changes = new HashSet<CommitChange>();
         RevWalk           rw      = null;
@@ -415,7 +404,8 @@ public class GitCommitTools {
             mbg.markStart(cis[i]);
         }
 
-        final CommitInfo base = mbg.getBase();
+        CommitInfo base = mbg.getBase();
+        mbg.reset();
 
         return base;
     }

@@ -257,6 +257,12 @@ public class CommitInfo implements Comparable<CommitInfo> {
      * @return Set of parent ids for this CommitInfo
      */
     public Set<String> getParents() {
+
+        // if inWalk, flags must be at least 1 to return parents.
+        if (inWalk && (flags == 0)) {
+            return null;
+        }
+
         return parents;
     }
 
@@ -462,6 +468,14 @@ public class CommitInfo implements Comparable<CommitInfo> {
         return true;
     }
 
+    /**
+     * Indicates that this CommitInfo is being walked and though should use flags to decide
+     * whether parents will be returned or not. If true, parents will be returned only if marked
+     * as PARSED.
+     * @see br.uff.ic.dyevc.tools.vcs.git.MergeBaseGenerator.PARSED
+     */
+    private boolean inWalk;
+
     /** Field description */
     private int flags;
 
@@ -483,5 +497,20 @@ public class CommitInfo implements Comparable<CommitInfo> {
      */
     public void setFlags(int flags) {
         this.flags = flags;
+    }
+
+    /**
+     * Marks this CommitInfo as being in a walk.
+     */
+    public void markInWalk() {
+        inWalk = true;
+    }
+
+    /**
+     * Resets this CommitInfo and releases it to be walked another time.
+     */
+    public void resetWalk() {
+        inWalk = false;
+        this.setFlags(0);
     }
 }

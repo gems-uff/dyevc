@@ -5,6 +5,7 @@ package br.uff.ic.dyevc.tools.vcs.git;
 import br.uff.ic.dyevc.gui.graph.CommitHistoryWindow;
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.CommitChange;
+import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.git.TrackedBranch;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 
@@ -51,7 +52,11 @@ public class GitConnectorTest {
      */
     public static void main(String[] args) {
         GitConnectorTest test = new GitConnectorTest();
-        test.testFindNewCommits();
+
+//      test.testFindNewCommits();
+//        test.testGetBase();
+
+        test.testGetBase2();
 
 //      test.testGetURIs();
 //      test.testGetBase();
@@ -105,6 +110,26 @@ public class GitConnectorTest {
             for (RevCommit commit : commits.getCommits()) {
                 System.out.println(commit.getId());
             }
+        } catch (Exception ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (egit != null) {
+                egit.close();
+            }
+        }
+    }
+
+    private void testGetBase2() {
+        GitConnector egit = null;
+        try {
+            egit = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgc-2012.2", "labgc-2012.2");
+            GitCommitTools tools = GitCommitTools.getInstance(egit);
+            CommitInfo     ci    = tools.getBase("c7f13e2d8f8f4073d9d9c7bd60751c60427d4823",
+                                       "99e739fc78c3684bf290c2b682883fd988b20c50");
+
+//          CommitInfo     ci    = tools.getBase("0e4af846a0b31045ae6dc372fdf9061cd386a774",
+//                                     "9cc61c7dac77f9a5c98d40617cb4129ff1b439fd");
+            System.out.println(ci.getHash());
         } catch (Exception ex) {
             Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
         } finally {

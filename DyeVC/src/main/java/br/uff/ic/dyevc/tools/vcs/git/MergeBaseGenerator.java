@@ -17,65 +17,59 @@ import java.util.Set;
 /**
  * Computes the merge base(s) of the starting commits.
  * <p>
- * This generator is selected if the RevFilter is only
- * {@link org.eclipse.jgit.revwalk.filter.RevFilter#MERGE_BASE}.
+ * This generator is selected if the RevFilter is only {@link org.eclipse.jgit.revwalk.filter.RevFilter#MERGE_BASE}.
  * <p>
- * To compute the merge base we assign a temporary flag to each of the starting
- * commits. The maximum number of starting commits is bounded by the number of
- * free flags available in the RevWalk when the generator is initialized. These
- * flags will be automatically released on the next reset of the RevWalk, but
- * not until then, as they are assigned to commits throughout the history.
+ * To compute the merge base we assign a temporary flag to each of the starting commits. The maximum number of starting
+ * commits is bounded by the number of free flags available in the RevWalk when the generator is initialized. These
+ * flags will be automatically released on the next reset of the RevWalk, but not until then, as they are assigned to
+ * commits throughout the history.
  * <p>
- * Several internal flags are reused here for a different purpose, but this
- * should not have any impact as this generator should be run alone, and without
- * any other generators wrapped around it.
+ * Several internal flags are reused here for a different purpose, but this should not have any impact as this generator
+ * should be run alone, and without any other generators wrapped around it.
  */
 class MergeBaseGenerator {
     /**
      * Set on objects whose important header data has been loaded.
      * <p>
-     * For a RevCommit this indicates we have pulled apart the tree and parent
-     * references from the raw bytes available in the repository and translated
-     * those to our own local RevTree and RevCommit instances. The raw buffer is
-     * also available for message and other header filtering.
+     * For a RevCommit this indicates we have pulled apart the tree and parent references from the raw bytes available
+     * in the repository and translated those to our own local RevTree and RevCommit instances. The raw buffer is also
+     * available for message and other header filtering.
      * <p>
-     * For a RevTag this indicates we have pulled part the tag references to
-     * find out who the tag refers to, and what that object's type is.
+     * For a RevTag this indicates we have pulled part the tag references to find out who the tag refers to, and what
+     * that object's type is.
      */
     static final int PARSED = 1 << 0;
 
     /**
      * Set on RevCommit instances added to our {@link #pending} queue.
      * <p>
-     * We use this flag to avoid adding the same commit instance twice to our
-     * queue, especially if we reached it by more than one path.
+     * We use this flag to avoid adding the same commit instance twice to our queue, especially if we reached it by more
+     * than one path.
      */
     static final int SEEN = 1 << 1;
 
     /**
      * Set on RevCommit instances added to our {@link #pending} queue.
      * <p>
-     * We use this flag to avoid adding the same commit instance twice to our
-     * queue, especially if we reached it by more than one path.
+     * We use this flag to avoid adding the same commit instance twice to our queue, especially if we reached it by more
+     * than one path.
      */
     private static final int IN_PENDING = 1 << 1;
 
     /**
      * Temporary mark for use within generators or filters.
      * <p>
-     * This mark is only for local use within a single scope. If someone sets
-     * the mark they must unset it before any other code can see the mark.
+     * This mark is only for local use within a single scope. If someone sets the mark they must unset it before any
+     * other code can see the mark.
      */
     private static final int POPPED = 1 << 4;
 
     /**
      * Set on a RevCommit that can collapse out of the history.
      * <p>
-     * If the {@link #treeFilter} concluded that this commit matches his
-     * parents' for all of the paths that the filter is interested in then we
-     * mark the commit REWRITE. Later we can rewrite the parents of a REWRITE
-     * child to remove chains of REWRITE commits before we produce the child to
-     * the application.
+     * If the {@link #treeFilter} concluded that this commit matches his parents' for all of the paths that the filter
+     * is interested in then we mark the commit REWRITE. Later we can rewrite the parents of a REWRITE child to remove
+     * chains of REWRITE commits before we produce the child to the application.
      *
      * @see RewriteGenerator
      */
@@ -84,26 +78,31 @@ class MergeBaseGenerator {
     /**
      * Set on RevCommit instances the caller does not want output.
      * <p>
-     * We flag commits as uninteresting if the caller does not want commits
-     * reachable from a commit given to {@link #markUninteresting(RevCommit)}.
-     * This flag is always carried into the commit's parents and is a key part
-     * of the "rev-list B --not A" feature; A is marked UNINTERESTING.
+     * We flag commits as uninteresting if the caller does not want commits reachable from a commit given to
+     * {@link #markUninteresting(RevCommit)}. This flag is always carried into the commit's parents and is a key part of
+     * the "rev-list B --not A" feature; A is marked UNINTERESTING.
      */
     static final int UNINTERESTING = 1 << 2;
 
-    /** Field description */
+    /**
+     * Field description
+     */
     static final int         RESERVED_FLAGS = 6;
     private static final int APP_FLAGS      = -1 & ~((1 << RESERVED_FLAGS) - 1);
 
-    /** Field description */
+    /**
+     * Field description
+     */
     int                                   carryFlags = UNINTERESTING;
     private int                           freeFlags  = APP_FLAGS;
     private final ArrayList<CommitInfo>   roots;
+    private DateRevQueue                  initQueue;
     private DateRevQueue                  pending;
     private final Map<String, CommitInfo> commitMap;
     private int                           branchMask;
     private int                           recarryTest;
     private int                           recarryMask;
+    private boolean                       initialized = false;
 
     /**
      * Constructs ...
@@ -114,16 +113,11 @@ class MergeBaseGenerator {
     MergeBaseGenerator(final Map<String, CommitInfo> cis) {
         commitMap = cis;
         pending   = new DateRevQueue();
+        initQueue = new DateRevQueue();
         roots     = new ArrayList<CommitInfo>();
     }
 
-    /**
-     * Method description
-     *
-     *
-     * @param p
-     */
-    void init(final DateRevQueue p) {
+    private void init(DateRevQueue p) {
         try {
             for (;;) {
                 final CommitInfo c = p.next();
@@ -134,6 +128,7 @@ class MergeBaseGenerator {
                 add(c);
             }
         } finally {
+            initialized = true;
 
             // Always free the flags immediately. This ensures the flags
             // will be available for reuse when the walk resets.
@@ -173,6 +168,12 @@ class MergeBaseGenerator {
      *
      */
     CommitInfo getBase() {
+
+        // Initializes pending queue based on initQueue (nodes marked to start from)
+        if (!initialized) {
+            init(initQueue);
+        }
+
         for (;;) {
             final CommitInfo c = pending.next();
             if (c == null) {
@@ -184,6 +185,11 @@ class MergeBaseGenerator {
 
                 if ((p.getFlags() & IN_PENDING) != 0) {
                     continue;
+                }
+
+                if ((c.getFlags() & PARSED) == 0) {
+                    c.markInWalk();
+                    c.setFlags(c.getFlags() | PARSED);
                 }
 
                 p.setFlags(p.getFlags() | IN_PENDING);
@@ -316,37 +322,36 @@ class MergeBaseGenerator {
     /**
      * Mark a commit to start graph traversal from.
      * <p>
-     * Callers are encouraged to use {@link #parseCommit(AnyObjectId)} to obtain
-     * the commit reference, rather than {@link #lookupCommit(AnyObjectId)}, as
-     * this method requires the commit to be parsed before it can be added as a
+     * Callers are encouraged to use {@link #parseCommit(AnyObjectId)} to obtain the commit reference, rather than
+     * {@link #lookupCommit(AnyObjectId)}, as this method requires the commit to be parsed before it can be added as a
      * root for the traversal.
      * <p>
-     * The method will automatically parse an unparsed commit, but error
-     * handling may be more difficult for the application to explain why a
-     * RevCommit is not actually a commit. The object pool of this walker would
-     * also be 'poisoned' by the non-commit RevCommit.
+     * The method will automatically parse an unparsed commit, but error handling may be more difficult for the
+     * application to explain why a RevCommit is not actually a commit. The object pool of this walker would also be
+     * 'poisoned' by the non-commit RevCommit.
      *
-     * @param c
-     *            the commit to start traversing from. The commit passed must be
-     *            from this same revision walker.
-     *             invocation to {@link #lookupCommit(AnyObjectId)}.
-     *             {@link #lookupCommit(AnyObjectId)}.
+     * @param c the commit to start traversing from. The commit passed must be from this same revision walker.
+     * invocation to {@link #lookupCommit(AnyObjectId)}. {@link #lookupCommit(AnyObjectId)}.
      */
     public void markStart(final CommitInfo c) {
         if ((c.getFlags() & SEEN) != 0) {
             return;
         }
 
+        if ((c.getFlags() & PARSED) == 0) {
+            c.markInWalk();
+            c.setFlags(c.getFlags() | PARSED);
+        }
+
         c.setFlags(c.getFlags() | SEEN);
         roots.add(c);
-        add(c);
+        initQueue.add(c);
     }
 
     /**
      * Resets internal state and allows this instance to be used again.
      * <p>
-     * Unlike {@link #dispose()} previously acquired CommitInfo
-     * instances are not invalidated.
+     * Unlike {@link #dispose()} previously acquired CommitInfo instances are not invalidated.
      *
      */
     protected void reset() {
@@ -370,7 +375,7 @@ class MergeBaseGenerator {
                 break;
             }
 
-            if ((c.getParents() == null) || (c.getParents().size() == 0)) {
+            if ((c.getParents() == null) || (c.getParents().isEmpty())) {
                 continue;
             }
 
@@ -383,6 +388,8 @@ class MergeBaseGenerator {
                 p.setFlags(p.getFlags() & retainFlags);
                 q.add(p);
             }
+
+            c.resetWalk();
         }
 
         roots.clear();
@@ -392,15 +399,15 @@ class MergeBaseGenerator {
     /**
      * Dispose all internal state and invalidate all RevObject instances.
      * <p>
-     * All RevObject (and thus RevCommit, etc.) instances previously acquired
-     * from this RevWalk are invalidated by a dispose call. Applications must
-     * not retain or use RevObject instances obtained prior to the dispose call.
-     * All RevFlag instances are also invalidated, and must not be reused.
+     * All RevObject (and thus RevCommit, etc.) instances previously acquired from this RevWalk are invalidated by a
+     * dispose call. Applications must not retain or use RevObject instances obtained prior to the dispose call. All
+     * RevFlag instances are also invalidated, and must not be reused.
      */
     public void dispose() {
         freeFlags  = APP_FLAGS;
         carryFlags = UNINTERESTING;
         pending    = new DateRevQueue();
+        initQueue  = new DateRevQueue();
         roots.clear();
     }
 }
