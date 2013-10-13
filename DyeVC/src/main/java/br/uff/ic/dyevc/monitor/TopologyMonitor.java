@@ -1,9 +1,10 @@
 package br.uff.ic.dyevc.monitor;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
-import br.uff.ic.dyevc.gui.main.MainWindow;
 import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
@@ -11,8 +12,12 @@ import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.RepositoryConverter;
-import java.util.Iterator;
+
 import org.slf4j.LoggerFactory;
+
+//~--- JDK imports ------------------------------------------------------------
+
+import java.util.Iterator;
 
 /**
  * This class continuously monitors the topology, according to the specified
@@ -21,25 +26,20 @@ import org.slf4j.LoggerFactory;
  * @author Cristiano
  */
 public class TopologyMonitor extends Thread {
-
     private ApplicationSettingsBean settings;
-    private MainWindow container;
-    private TopologyDAO topologyDAO;
-    MonitoredRepositories monitoredRepositories;
-    private MonitoredRepository repositoryToMonitor;
+    private TopologyDAO             topologyDAO;
+    MonitoredRepositories           monitoredRepositories;
+    private MonitoredRepository     repositoryToMonitor;
 
     /**
      * Associates the specified window container and continuously monitors the
      * topology.
      *
-     * @param container the container for this monitor. It will be used to send
-     * messages during monitoring.
      */
-    public TopologyMonitor(MainWindow container, MonitoredRepositories monitoredRepositories) {
+    public TopologyMonitor(MonitoredRepositories monitoredRepositories) {
         LoggerFactory.getLogger(TopologyMonitor.class).trace("Constructor -> Entry.");
-        settings = PreferencesUtils.loadPreferences();
-        topologyDAO = new TopologyDAO();
-        this.container = container;
+        settings                   = PreferencesUtils.loadPreferences();
+        topologyDAO                = new TopologyDAO();
         this.monitoredRepositories = monitoredRepositories;
         this.start();
         LoggerFactory.getLogger(TopologyMonitor.class).trace("Constructor -> Exit.");
@@ -56,23 +56,28 @@ public class TopologyMonitor extends Thread {
         while (true) {
             try {
                 MessageManager.getInstance().addMessage("Topology monitor is running.");
+
                 if (repositoryToMonitor == null) {
                     for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
                         updateLocalTopology(monitoredRepository);
                     }
+
                     verifyDeletedRepositories();
                 } else {
                     updateLocalTopology(repositoryToMonitor);
                     setRepositoryToMonitor(null);
                 }
+
                 MessageManager.getInstance().addMessage("Topology monitor is sleeping.");
                 Thread.sleep(sleepTime);
-                LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+                LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.",
+                                        sleepTime);
             } catch (DyeVCException dex) {
                 try {
                     MessageManager.getInstance().addMessage(dex.getMessage());
                     Thread.sleep(settings.getRefreshInterval() * 1000);
-                    LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+                    LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.",
+                                            sleepTime);
                 } catch (InterruptedException ex) {
                     LoggerFactory.getLogger(TopologyMonitor.class).info("Waking up due to interruption received.");
                 }
@@ -81,7 +86,8 @@ public class TopologyMonitor extends Thread {
                     MessageManager.getInstance().addMessage(re.getMessage());
                     LoggerFactory.getLogger(TopologyMonitor.class).error("Error during monitoring.", re);
                     Thread.sleep(sleepTime);
-                    LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+                    LoggerFactory.getLogger(TopologyMonitor.class).debug("Waking up after sleeping for {} seconds.",
+                                            sleepTime);
                 } catch (InterruptedException ex) {
                     LoggerFactory.getLogger(TopologyMonitor.class).info("Waking up due to interruption received.");
                 }
@@ -105,6 +111,7 @@ public class TopologyMonitor extends Thread {
         if (!monitoredRepository.hasSystemName()) {
             MessageManager.getInstance().addMessage("Clone <" + monitoredRepository.getName()
                     + "> has no system name configured and will not be added to the topology.");
+
             return;
         }
 
@@ -123,26 +130,30 @@ public class TopologyMonitor extends Thread {
      */
     private void verifyDeletedRepositories() throws DyeVCException {
         LoggerFactory.getLogger(TopologyMonitor.class).trace("removeMarkedForDeletion -> Entry.");
-        for (Iterator<MonitoredRepository> it = MonitoredRepositories.getMarkedForDeletion().iterator(); it.hasNext();) {
+
+        for (Iterator<MonitoredRepository> it =
+                MonitoredRepositories.getMarkedForDeletion().iterator(); it.hasNext(); ) {
             MonitoredRepository monitoredRepository = it.next();
             if (!monitoredRepository.hasSystemName()) {
                 MessageManager.getInstance().addMessage("Clone <" + monitoredRepository.getName()
                         + "> has no system name configured and will cannot be removed from the topology.");
+
                 continue;
             }
+
             try {
                 monitoredRepositories.removeMarkedForDeletion(monitoredRepository);
             } catch (RepositoryReferencedException rre) {
                 StringBuilder message = new StringBuilder();
-                message.append("Repository <").append(monitoredRepository.getName())
-                        .append("> with id <").append(monitoredRepository.getId())
-                        .append("> could not be deleted because it is still referenced by the following clone(s): ");
+                message.append("Repository <").append(monitoredRepository.getName()).append("> with id <").append(
+                    monitoredRepository.getId()).append(
+                    "> could not be deleted because it is still referenced by the following clone(s): ");
+
                 for (RepositoryInfo info : rre.getRelatedRepositories()) {
-                    message.append("\n<").append(info.getCloneName())
-                            .append(">, id: <").append(info.getId())
-                            .append(">, located at host <").append(info.getHostName())
-                            .append(">");
+                    message.append("\n<").append(info.getCloneName()).append(">, id: <").append(info.getId()).append(
+                        ">, located at host <").append(info.getHostName()).append(">");
                 }
+
                 LoggerFactory.getLogger(TopologyMonitor.class).warn(message.toString());
             }
         }
