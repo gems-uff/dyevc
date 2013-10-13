@@ -31,23 +31,22 @@ public class GraphBuilder {
      * Creates a dag representing the commit history for the specified
      * repository
      *
-     * @param rep the repository for which the graph will be created
+     * @param tools An instance of GitCommitTools to get commits history.
      * @return a graph representing the repository
      * @throws VCSException
      */
     public static DirectedOrderedSparseMultigraph<CommitInfo,
-            CommitRelationship> createBasicRepositoryHistoryGraph(MonitoredRepository rep)
+            CommitRelationship> createBasicRepositoryHistoryGraph(GitCommitTools tools)
             throws VCSException {
         LoggerFactory.getLogger(GraphBuilder.class).trace("createBasicRepositoryHistoryGraph -> Entry");
         final DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> graph =
             new DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship>();
         try {
-            GitCommitTools ch = GitCommitTools.getInstance(rep);
-            for (CommitInfo commitInfo : ch.getCommitInfos()) {
+            for (CommitInfo commitInfo : tools.getCommitInfos()) {
                 graph.addVertex(commitInfo);
             }
 
-            for (CommitRelationship commitRelationship : ch.getCommitRelationships()) {
+            for (CommitRelationship commitRelationship : tools.getCommitRelationships()) {
                 graph.addEdge(commitRelationship, commitRelationship.getChild(), commitRelationship.getParent());
             }
         } catch (VCSException ex) {

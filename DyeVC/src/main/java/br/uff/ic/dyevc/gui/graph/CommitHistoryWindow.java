@@ -1,62 +1,71 @@
 package br.uff.ic.dyevc.gui.graph;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.graph.GraphBuilder;
+import br.uff.ic.dyevc.graph.GraphDomainMapper;
 import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexLabelTransformer;
-import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
-import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexTooltipTransformer;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexPaintTransformer;
+import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexTooltipTransformer;
+import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
 import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
+
 import edu.uci.ics.jung.algorithms.filters.EdgePredicateFilter;
 import edu.uci.ics.jung.algorithms.filters.Filter;
 import edu.uci.ics.jung.algorithms.filters.VertexPredicateFilter;
-import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.geom.Point2D;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JPanel;
-
-import org.apache.commons.collections15.Predicate;
-import org.apache.commons.collections15.Transformer;
-
 import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
 import edu.uci.ics.jung.graph.Graph;
-import edu.uci.ics.jung.visualization.DefaultVisualizationModel;
-import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
-import edu.uci.ics.jung.visualization.Layer;
-import edu.uci.ics.jung.visualization.VisualizationModel;
-import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
 import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
+import edu.uci.ics.jung.visualization.DefaultVisualizationModel;
+import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
+import edu.uci.ics.jung.visualization.Layer;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
 import edu.uci.ics.jung.visualization.subLayout.GraphCollapser;
 import edu.uci.ics.jung.visualization.transform.MutableTransformer;
 import edu.uci.ics.jung.visualization.util.PredicatedParallelEdgeIndexFunction;
+import edu.uci.ics.jung.visualization.VisualizationModel;
+import edu.uci.ics.jung.visualization.VisualizationViewer;
+
+import org.apache.commons.collections15.Predicate;
+import org.apache.commons.collections15.Transformer;
+
+//~--- JDK imports ------------------------------------------------------------
+
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.geom.Point2D;
+import java.awt.GridLayout;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Toolkit;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.ToolTipManager;
 
 /**
@@ -65,26 +74,30 @@ import javax.swing.ToolTipManager;
  * @author cristiano
  */
 public class CommitHistoryWindow extends javax.swing.JFrame {
-
-    private static final long serialVersionUID = 1689885032823010309L;
-    private MonitoredRepository rep;
+    private static final long               serialVersionUID = 1689885032823010309L;
+    private MonitoredRepository             rep;
     private DirectedOrderedSparseMultigraph graph;
     private DirectedOrderedSparseMultigraph collapsedGraph;
-    private VisualizationViewer vv;
-    private RepositoryHistoryLayout layout;
-    private GraphCollapser collapser;
-    Filter<CommitInfo, CommitRelationship> edgeFilter;
-    Filter<CommitInfo, CommitRelationship> nodeFilter;
-    private JComboBox edgeLineShapeCombo;
-    private JComboBox mouseModesCombo;
-    private JButton plus;
-    private JButton minus;
-    private JButton collapse;
-    private JButton expand;
-    private JButton reset;
-    private final DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse<CommitInfo, CommitRelationship>();
-    private final ScalingControl scaler = new CrossoverScalingControl();
+    private VisualizationViewer             vv;
+    private RepositoryHistoryLayout         layout;
+    private GraphCollapser                  collapser;
+    Filter<CommitInfo, CommitRelationship>  edgeFilter;
+    Filter<CommitInfo, CommitRelationship>  nodeFilter;
+    private JComboBox                       edgeLineShapeCombo;
+    private JComboBox                       mouseModesCombo;
+    private JButton                         plus;
+    private JButton                         minus;
+    private JButton                         collapse;
+    private JButton                         expand;
+    private JButton                         reset;
+    private final DefaultModalGraphMouse    graphMouse = new DefaultModalGraphMouse<CommitInfo, CommitRelationship>();
+    private final ScalingControl            scaler     = new CrossoverScalingControl();
 
+    /**
+     * Constructs ...
+     *
+     * @param rep
+     */
     public CommitHistoryWindow(MonitoredRepository rep) {
         SplashScreen splash = SplashScreen.getInstance();
         try {
@@ -98,22 +111,26 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             SplashScreen.getInstance().setVisible(false);
         } catch (VCSException ex) {
             splash.dispose();
-            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
-                    ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(
+                null,
+                "Application received the following exception trying to show repository log:\n" + ex
+                + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
             WindowEvent wev = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
             Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
             setVisible(false);
             dispose();
-        } catch(RuntimeException ex) {
+        } catch (RuntimeException ex) {
             ex.printStackTrace(System.err);
             splash.dispose();
-            JOptionPane.showMessageDialog(null, "Application received the following exception trying to show repository log:\n" +
-                    ex + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(
+                null,
+                "Application received the following exception trying to show repository log:\n" + ex
+                + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
             WindowEvent wev = new WindowEvent(this, WindowEvent.WINDOW_CLOSING);
             Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
             setVisible(false);
             dispose();
-        }            
+        }
     }
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">
@@ -133,7 +150,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         mouseModesCombo = graphMouse.getModeComboBox();
         mouseModesCombo.addItemListener(graphMouse.getModeListener());
         graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
-        
+
 
         plus = new JButton("+");
         plus.addActionListener(new ActionListener() {
@@ -176,7 +193,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         });
 
         edgeLineShapeCombo = new JComboBox();
-        this.edgeLineShapeCombo.setModel(new DefaultComboBoxModel(new String[]{"QuadCurve", "Line", "CubicCurve"}));
+        this.edgeLineShapeCombo.setModel(new DefaultComboBoxModel(new String[] { "QuadCurve", "Line", "CubicCurve" }));
         this.edgeLineShapeCombo.setSelectedItem("CubicCurve");
         this.edgeLineShapeCombo.addActionListener(new ActionListener() {
             @Override
@@ -185,11 +202,11 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             }
         });
 
-        Container content = getContentPane();
-        GraphZoomScrollPane gzsp = new GraphZoomScrollPane(vv);
+        Container           content = getContentPane();
+        GraphZoomScrollPane gzsp    = new GraphZoomScrollPane(vv);
         content.add(gzsp);
 
-        JPanel controls = new JPanel();
+        JPanel controls     = new JPanel();
         JPanel zoomControls = new JPanel(new GridLayout(2, 1));
         zoomControls.setBorder(BorderFactory.createTitledBorder("Zoom"));
         zoomControls.add(plus);
@@ -204,30 +221,32 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         controls.add(mouseModesCombo);
         controls.add(edgeLineShapeCombo);
         content.add(controls, BorderLayout.SOUTH);
-    }// </editor-fold>
+    }    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="initGraphComponent">
     private void initGraphComponent() throws VCSException {
-        // create the commit history graph with all commits from repository
-        graph = GraphBuilder.createBasicRepositoryHistoryGraph(rep);
+
+        // create the commit history graph with all commits from repository and maps the graph to the source commit map
+        GitCommitTools tools = GitCommitTools.getInstance(rep, true);
+        graph = GraphBuilder.createBasicRepositoryHistoryGraph(tools);
+        GraphDomainMapper<Map<String, CommitInfo>> mapper = new GraphDomainMapper(graph, tools.getCommitInfoMap());
         collapsedGraph = graph;
 
         // Choosing layout
-        layout = new RepositoryHistoryLayout(graph, rep);
-        Dimension preferredSize = new Dimension(580, 580);
+        layout = new RepositoryHistoryLayout(mapper, rep);
+        Dimension                preferredSize      = new Dimension(580, 580);
 
-        final VisualizationModel visualizationModel =
-                new DefaultVisualizationModel(layout, preferredSize);
+        final VisualizationModel visualizationModel = new DefaultVisualizationModel(layout, preferredSize);
         vv = new VisualizationViewer(visualizationModel, preferredSize);
 
-        //Scales the graph to show more nodes
+        // Scales the graph to show more nodes
         scaler.scale(vv, 0.4761905F, vv.getCenter());
         vv.scaleToLayout(scaler);
 
         collapser = new GraphCollapser(graph);
 
-        final PredicatedParallelEdgeIndexFunction eif = PredicatedParallelEdgeIndexFunction.getInstance();
-        final Set exclusions = new HashSet();
+        final PredicatedParallelEdgeIndexFunction eif        = PredicatedParallelEdgeIndexFunction.getInstance();
+        final Set                                 exclusions = new HashSet();
         eif.setPredicate(new Predicate<CommitRelationship>() {
             @Override
             public boolean evaluate(CommitRelationship e) {
@@ -260,23 +279,27 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         Transformer<Object, String> vertexTooltip = new CHVertexTooltipTransformer();
         vv.setVertexToolTipTransformer(vertexTooltip);
         ToolTipManager.sharedInstance().setDismissDelay(15000);
-        //</editor-fold>
+
+        // </editor-fold>
 
         // <editor-fold defaultstate="collapsed" desc="vertex fillPaint transformer">
         Transformer<Object, Paint> vertexPaint = new CHVertexPaintTransformer();
         vv.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
-        //</editor-fold>
+
+        // </editor-fold>
 
         // <editor-fold defaultstate="collapsed" desc="vertex label transformer">
         Transformer<Object, String> vertexLabel = new CHVertexLabelTransformer();
         vv.getRenderContext().setVertexLabelTransformer(vertexLabel);
         vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
-        //</editor-fold>
+
+        // </editor-fold>
 
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.CubicCurve());
         vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeTransformer());
     }
-    //</editor-fold>
+
+    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="action handlers">
     private void collapseActionPerformed(ActionEvent evt) {
@@ -294,7 +317,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     }
 
     private void edgeLineShapeSelectionActionPerformed(ActionEvent evt) {
-        String mode = (String) this.edgeLineShapeCombo.getSelectedItem();
+        String mode = (String)this.edgeLineShapeCombo.getSelectedItem();
         if (mode.equalsIgnoreCase("QuadCurve")) {
             vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.QuadCurve());
         } else if (mode.equalsIgnoreCase("Line")) {
@@ -302,24 +325,28 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         } else if (mode.equalsIgnoreCase("CubicCurve")) {
             vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.CubicCurve());
         }
+
         this.vv.repaint();
     }
+
     // </editor-fold>
 
     private void collapse(Collection picked) {
-//        AddFilters();
+
+//      AddFilters();
         if (picked.size() > 1) {
-            Graph inGraph = layout.getGraph();
+            Graph inGraph      = layout.getGraph();
             Graph clusterGraph = collapser.getClusterGraph(inGraph, picked);
 
-            collapsedGraph = ((DirectedOrderedSparseMultigraph) collapser.collapse(layout.getGraph(), clusterGraph));
+            collapsedGraph = ((DirectedOrderedSparseMultigraph)collapser.collapse(layout.getGraph(), clusterGraph));
             double sumx = 0;
             double sumy = 0;
             for (Object v : picked) {
-                Point2D p = (Point2D) layout.transform(v);
+                Point2D p = (Point2D)layout.transform(v);
                 sumx += p.getX();
                 sumy += p.getY();
             }
+
             Point2D cp = new Point2D.Double(sumx / picked.size(), sumy / picked.size());
             vv.getRenderContext().getParallelEdgeIndexFunction().reset();
             layout.setGraph(collapsedGraph);
@@ -327,20 +354,23 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             vv.getPickedVertexState().clear();
             vv.repaint();
         }
-//    RemoveFilters();
+
+//      RemoveFilters();
     }
 
     private void expand(Collection picked) {
         for (Object v : picked) {
             if (v instanceof Graph) {
-//                AddFilters();
-                collapsedGraph = ((DirectedOrderedSparseMultigraph) collapser.expand(layout.getGraph(), (Graph) v));
+
+//              AddFilters();
+                collapsedGraph = ((DirectedOrderedSparseMultigraph)collapser.expand(layout.getGraph(), (Graph)v));
                 vv.getRenderContext().getParallelEdgeIndexFunction().reset();
                 layout.setGraph(collapsedGraph);
 
             }
-//            RemoveFilters();
-//            Filter();
+
+//          RemoveFilters();
+//          Filter();
 
             vv.getPickedVertexState().clear();
             vv.repaint();
@@ -355,14 +385,14 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     }
 
     private void resetComponents() {
-        rep = null;
-        graph = null;
+        rep            = null;
+        graph          = null;
         collapsedGraph = null;
-        vv = null;
-        layout = null;
-        collapser = null;
-        edgeFilter = null;
-        nodeFilter = null;
+        vv             = null;
+        layout         = null;
+        collapser      = null;
+        edgeFilter     = null;
+        nodeFilter     = null;
     }
 
     /**
@@ -370,7 +400,8 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      */
     public static void main(String[] args) {
         MonitoredRepository rep = new MonitoredRepository("rep1363653250218");
-//        rep.setId("rep1364318989748");
+
+//      rep.setId("rep1364318989748");
         new CommitHistoryWindow(rep).setVisible(true);
     }
 
@@ -378,14 +409,15 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * Translates graph, positioning it at the farthest X position.
      */
     private void translateGraph() {
-        MutableTransformer modelTransformer = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT);
+        MutableTransformer modelTransformer =
+            vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT);
 
-        int lastXPosition = graph.getVertexCount() * 70;
-        int showPosition = lastXPosition - vv.getPreferredSize().width;
-        Point graphEnd = new Point(layout.getWidth() - vv.getPreferredSize().width, 0);
-        Point graphStart = new Point(0, 0);
-        float dx = (float) (graphStart.getX()-graphEnd.getX());
-        float dy = (float) (graphStart.getY()-graphEnd.getY());
+        int   lastXPosition = graph.getVertexCount() * 70;
+        int   showPosition  = lastXPosition - vv.getPreferredSize().width;
+        Point graphEnd      = new Point(layout.getWidth() - vv.getPreferredSize().width, 0);
+        Point graphStart    = new Point(0, 0);
+        float dx            = (float)(graphStart.getX() - graphEnd.getX());
+        float dy            = (float)(graphStart.getY() - graphEnd.getY());
 
         modelTransformer.translate(dx, dy);
     }

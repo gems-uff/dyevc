@@ -93,15 +93,15 @@ public class CommitInfo implements Comparable<CommitInfo> {
     private String author;
 
     /**
-     * Constructs ...
+     * Constructs a new CommitInfo object. This constructor should not be used by the application. It exists just
+     * and only to be used by JSON framework, when (de)serializing objects to / from JSON notation.
      */
     public CommitInfo() {}
 
     /**
-     * Constructs ...
-     *
-     * @param id
-     * @param repositoryId
+     * Constructs a CommitInfo object with the specified parameters.
+     * @param id The id of this CommitInfo, represented by its hash.
+     * @param repositoryId The id of the repository from where this commit was read.
      */
     public CommitInfo(String id, String repositoryId) {
         this.hash         = id;
@@ -111,150 +111,120 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the hash of this CommitInfo.
+     * @return The hash of this CommitInfo.
      */
     public String getHash() {
         return hash;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param hash
+     * Sets the hash of this CommitInfo.
+     * @param hash The new hash.
      */
     public void setHash(String hash) {
         this.hash = hash;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the system name of this CommitInfo.
+     * @return The system name of this CommitInfo.
      */
     public String getSystemName() {
         return systemName;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param systemName
+     * Sets the systemName.
+     * @param systemName The systemName to set.
      */
     public void setSystemName(String systemName) {
         this.systemName = systemName;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the repositoryId of this CommitInfo.
+     * @return The repositoryId of this CommitInfo.
      */
     public String getRepositoryId() {
         return repositoryId;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param repositoryId
+     * Sets the repositoryId
+     * @param repositoryId The repositoryId to set.
      */
     public void setRepositoryId(String repositoryId) {
         this.repositoryId = repositoryId;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the commitDate of this CommitInfo.
+     * @return The commitDate of this CommitInfo.
      */
     public Date getCommitDate() {
         return commitDate;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param commitDate
+     * Sets the commitDate.
+     * @param commitDate The commitDate to set.
      */
     public void setCommitDate(Date commitDate) {
         this.commitDate = commitDate;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the author of this CommitInfo.
+     * @return The author of this CommitInfo.
      */
     public String getAuthor() {
         return author;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param author
+     * Sets the author.
+     * @param author The author to set.
      */
     public void setAuthor(String author) {
         this.author = author;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the committer of this CommitInfo.
+     * @return The committer of this CommitInfo.
      */
     public String getCommitter() {
         return committer;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param committer
+     * Sets the committer.
+     * @param committer The committer to set.
      */
     public void setCommitter(String committer) {
         this.committer = committer;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the shortMessage of this CommitInfo.
+     * @return The shortMessage of this CommitInfo.
      */
     public String getShortMessage() {
         return shortMessage;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param shortMessage
+     * Sets the shortMessage.
+     * @param shortMessage The shortMessage to set.
      */
     public void setShortMessage(String shortMessage) {
         this.shortMessage = shortMessage;
     }
 
     /**
-     * Return ids of the parents for this CommitInfo
-     *
-     *
-     * @return Set of parent ids for this CommitInfo
+     * Returns a set with the id of each parent for this CommitInfo
+     * @return Set of parent id for this CommitInfo.
      */
     public Set<String> getParents() {
 
@@ -267,10 +237,8 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param parents
+     * Sets the parents.
+     * @param parents  The parents to set.
      */
     public void setParents(Set<String> parents) {
         this.parents      = parents;
@@ -278,28 +246,23 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the set of repository ids where this CommitInfo is known to exist.
+     * @return The set of repository ids where this CommitInfo is known to exist.
      */
     public Set<String> getFoundIn() {
         return foundIn;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param foundIn
+     * Sets the foundIn.
+     * @param foundIn The foundIn to set.
      */
     public void setFoundIn(Set<String> foundIn) {
         this.foundIn = foundIn;
     }
 
     /**
-     * Method description
-     *
+     * Increment the number of children for this CommitInfo.
      */
     public void incrementChildren() {
         synchronized (childrenCountLock) {
@@ -308,8 +271,7 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
 
     /**
-     * Method description
-     *
+     * Increment the number of parents for this CommitInfo.
      */
     public void incrementParents() {
         synchronized (parentsCountLock) {
@@ -317,22 +279,14 @@ public class CommitInfo implements Comparable<CommitInfo> {
         }
     }
 
-    /**
-     * Method description
-     *
-     *
-     * @return
-     */
     @Override
     public String toString() {
         return hash.substring(0, 5);
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the number of parents of this CommitInfo.
+     * @return The number of parents of this CommitInfo.
      */
     public int getParentsCount() {
         synchronized (parentsCountLock) {
@@ -341,10 +295,9 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
 
     /**
-     * Method description
+     * Gets the number of children of this CommitInfo.
      *
-     *
-     * @return
+     * @return The number of children of this CommitInfo.
      */
     public int getChildrenCount() {
         synchronized (childrenCountLock) {
@@ -352,14 +305,6 @@ public class CommitInfo implements Comparable<CommitInfo> {
         }
     }
 
-    /**
-     * Method description
-     *
-     *
-     * @param o
-     *
-     * @return
-     */
     @Override
     public int compareTo(CommitInfo o) {
         int result = 0;
@@ -415,10 +360,8 @@ public class CommitInfo implements Comparable<CommitInfo> {
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param cc
+     * Adds a commit change to this CommitInfo change set.
+     * @param cc The change to added to the change set.
      */
     public void addChangeSet(CommitChange cc) {
         if (changeSet == null) {
@@ -428,12 +371,6 @@ public class CommitInfo implements Comparable<CommitInfo> {
         this.changeSet.add(cc);
     }
 
-    /**
-     * Method description
-     *
-     *
-     * @return
-     */
     @Override
     public int hashCode() {
         int hash = 7;
@@ -442,14 +379,6 @@ public class CommitInfo implements Comparable<CommitInfo> {
         return hash;
     }
 
-    /**
-     * Method description
-     *
-     *
-     * @param obj
-     *
-     * @return
-     */
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -471,29 +400,24 @@ public class CommitInfo implements Comparable<CommitInfo> {
     /**
      * Indicates that this CommitInfo is being walked and though should use flags to decide
      * whether parents will be returned or not. If true, parents will be returned only if marked
-     * as PARSED.
-     * @see br.uff.ic.dyevc.tools.vcs.git.MergeBaseGenerator.PARSED
+     * as {@link br.uff.ic.dyevc.tools.vcs.git.CommonAncestralFinder#PARSED}.
      */
     private boolean inWalk;
 
-    /** Field description */
+    /** Flags is used to walk through commits. */
     private int flags;
 
     /**
-     * Method description
-     *
-     *
-     * @return
+     * Gets the flags.
+     * @return The flags.
      */
     public int getFlags() {
         return flags;
     }
 
     /**
-     * Method description
-     *
-     *
-     * @param flags
+     * Sets the flags
+     * @param flags The flags to set.
      */
     public void setFlags(int flags) {
         this.flags = flags;

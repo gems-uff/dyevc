@@ -4,27 +4,23 @@ package br.uff.ic.dyevc.tools.vcs.git;
 
 import br.uff.ic.dyevc.model.CommitInfo;
 
-//~--- JDK imports ------------------------------------------------------------
-
-import java.io.IOException;
-
 /**
- * Class description
- * @author         Cristiano Cesario
+ * Stores a number of commits as a queue which is accessed in blocks to avoid memory fragmentation.
+ * @author  Cristiano Cesario
  */
-abstract class BlockRevQueue {
-    /** Field description */
+abstract class BlockCommitQueue {
+    /** A block with free space to receive more commits. */
     protected BlockFreeList free;
 
-    /** Create an empty revision queue. */
-    protected BlockRevQueue() {
+    /** Create an empty commit queue. */
+    protected BlockCommitQueue() {
         free = new BlockFreeList();
     }
 
     /**
      * Reconfigure this queue to share the same free list as another.
      * <p>
-     * Multiple revision queues can be connected to the same free list, making
+     * Multiple commit queues can be connected to the same free list, making
      * it less expensive for applications to shuttle commits between them. This
      * method arranges for the receiver to take from / return to the same free
      * list as the supplied queue.
@@ -32,24 +28,23 @@ abstract class BlockRevQueue {
      * Free lists are not thread-safe. Applications must ensure that all queues
      * sharing the same free list are doing so from only a single thread.
      *
-     * @param q
-     *            the other queue we will steal entries from.
+     * @param q the other queue we will steal entries from.
      */
-    public void shareFreeList(final BlockRevQueue q) {
+    public void shareFreeList(final BlockCommitQueue q) {
         free = q.free;
     }
 
     /**
-     * Class description
+     * Stores a list queue of blocks
      * @author         Cristiano Cesario
      */
     static final class BlockFreeList {
         private Block next;
 
         /**
-         * Method description
+         * Returns an empty block from the chain. If the next block is null, then create a new one.
          *
-         * @return
+         * @return An empty block.
          */
         Block newBlock() {
             Block b = next;
@@ -64,9 +59,8 @@ abstract class BlockRevQueue {
         }
 
         /**
-         * Method description
-         *
-         * @param b
+         * Releases the reference to the specified block, freeing it.
+         * @param b the block to be released.
          */
         void freeBlock(final Block b) {
             b.next = next;
@@ -74,8 +68,7 @@ abstract class BlockRevQueue {
         }
 
         /**
-         * Method description
-         *
+         * Clears the block list by releasing the reference to its next element.
          */
         void clear() {
             next = null;
@@ -84,11 +77,11 @@ abstract class BlockRevQueue {
 
 
     /**
-     * Class description
-     * @author         Cristiano Cesario
+     * A block of commits.
+     * @author Cristiano Cesario
      */
     static final class Block {
-        /** Field description */
+        /** Size of the block. */
         static final int BLOCK_SIZE = 256;
 
         /** Next block in our chain of blocks; null if we are the last. */
@@ -104,71 +97,63 @@ abstract class BlockRevQueue {
         int tailIndex;
 
         /**
-         * Method description
-         *
-         * @return
+         * Verifies if this block is full, i.e., if the {@link #tailIndex} is equal to the {@link #BLOCK_SIZE}.
+         * @return True, if this block is full.
          */
         boolean isFull() {
             return tailIndex == BLOCK_SIZE;
         }
 
         /**
-         * Method description
-         *
-         * @return
+         * Verifies if this block is empty, i.e., the {@link #tailIndex} is equal to the {@link #headIndex}
+         * @return True, if the block has no elements.
          */
         boolean isEmpty() {
             return headIndex == tailIndex;
         }
 
         /**
-         * Method description
-         *
-         * @return
+         * Verifies if the queue can be unpoped.
+         * @return True, if the queue can be unpoped.
          */
         boolean canUnpop() {
             return headIndex > 0;
         }
 
         /**
-         * Method description
-         *
-         * @param c
+         * Adds a CommitInfo to the queue.
+         * @param c The CommitInfo to be added.
          */
         void add(final CommitInfo c) {
             commits[tailIndex++] = c;
         }
 
         /**
-         * Method description
-         *
-         * @param c
+         * Unpops a CommitInfo to the queue.
+         * @param c The CommitInfo to be unpoped.
          */
         void unpop(final CommitInfo c) {
             commits[--headIndex] = c;
         }
 
         /**
-         * Method description
-         *
-         * @return
+         * Pops from the queue.
+         * @return the popped CommitInfo.
          */
         CommitInfo pop() {
             return commits[headIndex++];
         }
 
         /**
-         * Method description
-         *
-         * @return
+         * Gets the head element from the queue, without popping it.
+         * @return The head CommitInfo.
          */
         CommitInfo peek() {
             return commits[headIndex];
         }
 
         /**
-         * Method description
-         *
+         * Clears this block.
          */
         void clear() {
             next      = null;
@@ -177,16 +162,14 @@ abstract class BlockRevQueue {
         }
 
         /**
-         * Method description
-         *
+         * Resets the {@link #headIndex} to the middle of the queue.
          */
         void resetToMiddle() {
             headIndex = tailIndex = BLOCK_SIZE / 2;
         }
 
         /**
-         * Method description
-         *
+         * Resets the {@link #headIndex} to the end of the queue.
          */
         void resetToEnd() {
             headIndex = tailIndex = BLOCK_SIZE;

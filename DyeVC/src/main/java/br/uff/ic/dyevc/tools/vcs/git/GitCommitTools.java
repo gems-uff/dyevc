@@ -24,13 +24,9 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
 
-import org.gitective.core.Assert;
 import org.gitective.core.CommitUtils;
-import org.gitective.core.GitException;
 
 import org.slf4j.LoggerFactory;
-
-import static org.eclipse.jgit.revwalk.filter.RevFilter.MERGE_BASE;
 
 //~--- JDK imports ------------------------------------------------------------
 
@@ -230,8 +226,9 @@ public class GitCommitTools {
     }
 
     /**
-     * Extracts the commit info from repository and creates a CommitInfo object containing the commit properties. After
-     * that, calls createCommitRelations to check relations between this commit and others.
+     * Extracts the commit info from repository and creates an object containing
+     * the commit properties. After that, calls {@link #createCommitRelations(org.eclipse.jgit.revwalk.RevCommit, org.eclipse.jgit.revwalk.RevWalk)}
+     * to check relations between this commit and others.
      *
      * @param commit the repository commit object to extract properties from.
      * @param walk the walk to be used to check for relations with this commit.
@@ -260,8 +257,8 @@ public class GitCommitTools {
     }
 
     /**
-     * Includes the existing relationships between the specified commit and others. Basically, the relationships consist
-     * of finding the parents of the specified commit.
+     * Includes the existing relationships between the specified commit and others. Basically,
+     * the relationships consist of finding the parents of the specified commit.
      *
      * @param commit the commit to be checked for relationships
      * @param walk the walk used to parse parent commits.
@@ -310,10 +307,10 @@ public class GitCommitTools {
     }
 
     /**
-     * Gets the changeset of a given revision string in the specified repository. The search is made in the working
-     * clone.
+     * Gets the change set of a given revision string in the specified repository.
+     * The search is made in the working clone.
      *
-     * @param commitId the commitId whose changeset will be returned
+     * @param commitId the commitId whose change set will be returned
      * @param repositoryId the repository id to look into.
      * @return the set of changes found in the given commit.
      */
@@ -370,43 +367,17 @@ public class GitCommitTools {
     }
 
     /**
-     * Get the common base commit between the given revisions.
+     * Get the common ancestral between the given revisions.
      *
-     * @param revisions
+     * @param revisions The revisions to start traversing the commit tree from.
      * @return base commit or null if none
      * @throws DyeVCException
      */
     public CommitInfo getBase(final String... revisions) throws DyeVCException {
-        if (revisions == null) {
-            throw new DyeVCException("Revisions cannot be null");
-        }
-
-        if (revisions.length == 0) {
-            throw new IllegalArgumentException(Assert.formatNotEmpty("Revisions"));
-        }
-
         if (!initialized) {
             initialize();
         }
 
-        final int          length = revisions.length;
-        final CommitInfo[] cis    = new CommitInfo[length];
-        for (int i = 0; i < length; i++) {
-            cis[i] = commitInfoMap.get(revisions[i]);
-        }
-
-        return walkToBase(cis);
-    }
-
-    private CommitInfo walkToBase(CommitInfo[] cis) throws VCSException {
-        final MergeBaseGenerator mbg = new MergeBaseGenerator(commitInfoMap);
-        for (int i = 0; i < cis.length; i++) {
-            mbg.markStart(cis[i]);
-        }
-
-        CommitInfo base = mbg.getBase();
-        mbg.reset();
-
-        return base;
+        return new CommonAncestorFinder(commitInfoMap).getCommonAncestor(revisions);
     }
 }

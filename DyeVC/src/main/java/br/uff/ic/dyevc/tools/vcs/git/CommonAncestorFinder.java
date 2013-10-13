@@ -2,36 +2,34 @@ package br.uff.ic.dyevc.tools.vcs.git;
 
 //~--- non-JDK imports --------------------------------------------------------
 
+import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.model.CommitInfo;
-
-import org.eclipse.jgit.lib.AnyObjectId;
 
 //~--- JDK imports ------------------------------------------------------------
 
 import java.text.MessageFormat;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Computes the merge base(s) of the starting commits.
+ * Computes the common ancestor of the starting commits.
  * <p>
- * This generator is selected if the RevFilter is only {@link org.eclipse.jgit.revwalk.filter.RevFilter#MERGE_BASE}.
- * <p>
- * To compute the merge base we assign a temporary flag to each of the starting commits. The maximum number of starting
- * commits is bounded by the number of free flags available in the RevWalk when the generator is initialized. These
- * flags will be automatically released on the next reset of the RevWalk, but not until then, as they are assigned to
+ * To compute the common ancestor a temporary flag is assigned to each of the starting commits. The maximum number of starting
+ * commits is bounded by the number of free flags available when the finder is initialized. These
+ * flags will be automatically released on the next reset of the finder, but not until then, as they are assigned to
  * commits throughout the history.
  * <p>
- * Several internal flags are reused here for a different purpose, but this should not have any impact as this generator
- * should be run alone, and without any other generators wrapped around it.
+ * Several internal flags are reused here for different purposes, but this should not have any impact as this finder
+ * should be run alone, and without any other finders wrapped around it.
  */
-class MergeBaseGenerator {
+public class CommonAncestorFinder {
     /**
-     * Set on objects whose important header data has been loaded.
+     * Set on {@link br.uff.ic.dyevc.model.CommitInfo} instances when they are first found in the commit history.
      * <p>
-     * For a RevCommit this indicates we have pulled apart the tree and parent references from the raw bytes available
+     * For a CommitInfo this indicates we have pulled apart the tree and parent references from the raw bytes available
      * in the repository and translated those to our own local RevTree and RevCommit instances. The raw buffer is also
      * available for message and other header filtering.
      * <p>
@@ -41,7 +39,7 @@ class MergeBaseGenerator {
     static final int PARSED = 1 << 0;
 
     /**
-     * Set on RevCommit instances added to our {@link #pending} queue.
+     * Set on {@link br.uff.ic.dyevc.model.CommitInfo} instances added to our {@link #pending} queue.
      * <p>
      * We use this flag to avoid adding the same commit instance twice to our queue, especially if we reached it by more
      * than one path.
@@ -49,7 +47,7 @@ class MergeBaseGenerator {
     static final int SEEN = 1 << 1;
 
     /**
-     * Set on RevCommit instances added to our {@link #pending} queue.
+     * Set on {@link br.uff.ic.dyevc.model.CommitInfo} instances added to our {@link #pending} queue.
      * <p>
      * We use this flag to avoid adding the same commit instance twice to our queue, especially if we reached it by more
      * than one path.
@@ -65,59 +63,78 @@ class MergeBaseGenerator {
     private static final int POPPED = 1 << 4;
 
     /**
-     * Set on a RevCommit that can collapse out of the history.
-     * <p>
-     * If the {@link #treeFilter} concluded that this commit matches his parents' for all of the paths that the filter
-     * is interested in then we mark the commit REWRITE. Later we can rewrite the parents of a REWRITE child to remove
-     * chains of REWRITE commits before we produce the child to the application.
-     *
-     * @see RewriteGenerator
+     * Set on a {@link br.uff.ic.dyevc.model.CommitInfo} instances that can be a common ancestor.
      */
     private static final int MERGE_BASE = 1 << 3;
 
     /**
-     * Set on RevCommit instances the caller does not want output.
-     * <p>
-     * We flag commits as uninteresting if the caller does not want commits reachable from a commit given to
-     * {@link #markUninteresting(RevCommit)}. This flag is always carried into the commit's parents and is a key part of
-     * the "rev-list B --not A" feature; A is marked UNINTERESTING.
+     * Set on {@link br.uff.ic.dyevc.model.CommitInfo} instances the caller does not want output.
      */
     static final int UNINTERESTING = 1 << 2;
 
     /**
-     * Field description
+     * Number of reserver flags that the application cannot use.
      */
-    static final int         RESERVED_FLAGS = 6;
-    private static final int APP_FLAGS      = -1 & ~((1 << RESERVED_FLAGS) - 1);
+    static final int RESERVED_FLAGS = 6;
+
+    /**
+     * Flags that the application can use.
+     */
+    private static final int APP_FLAGS = -1 & ~((1 << RESERVED_FLAGS) - 1);
 
     /**
      * Field description
      */
-    int                                   carryFlags = UNINTERESTING;
-    private int                           freeFlags  = APP_FLAGS;
-    private final ArrayList<CommitInfo>   roots;
-    private DateRevQueue                  initQueue;
-    private DateRevQueue                  pending;
+    private int carryFlags = UNINTERESTING;
+    private int freeFlags  = APP_FLAGS;
+
+    /**
+     * List of commits to start traversing from.
+     */
+    private final ArrayList<CommitInfo> roots;
+
+    /**
+     * Initial queue of commits to start traversing from.
+     */
+    private DateCommitQueue initQueue;
+
+    /**
+     * Queue of commits to be evaluated.
+     */
+    private DateCommitQueue pending;
+
+    /**
+     * Map of {@link br.uff.ic.dyevc.model.CommitInfo} instances, keyed by their hash.
+     */
     private final Map<String, CommitInfo> commitMap;
-    private int                           branchMask;
-    private int                           recarryTest;
-    private int                           recarryMask;
-    private boolean                       initialized = false;
 
     /**
-     * Constructs ...
-     *
-     *
-     * @param cis
+     * Stores nodes that had flags changed, in order to reset them later;
      */
-    MergeBaseGenerator(final Map<String, CommitInfo> cis) {
+    private HashSet<CommitInfo> changed;
+    private int                 branchMask;
+    private int                 recarryTest;
+    private int                 recarryMask;
+    private boolean             initialized = false;
+
+    /**
+     * Constructs an instance of this finder.
+     * @param cis The map of {@link br.uff.ic.dyevc.model.CommitInfo} where the common ancestor
+     * will be searched.
+     */
+    public CommonAncestorFinder(final Map<String, CommitInfo> cis) {
         commitMap = cis;
-        pending   = new DateRevQueue();
-        initQueue = new DateRevQueue();
+        pending   = new DateCommitQueue();
+        initQueue = new DateCommitQueue();
         roots     = new ArrayList<CommitInfo>();
+        changed   = new HashSet<CommitInfo>();
     }
 
-    private void init(DateRevQueue p) {
+    /**
+     * Initializes flags and pending queue based on a initial queue of commits.
+     * @param p The queue of commits to initialize this finder.
+     */
+    private void init(DateCommitQueue p) {
         try {
             for (;;) {
                 final CommitInfo c = p.next();
@@ -143,6 +160,10 @@ class MergeBaseGenerator {
         }
     }
 
+    /**
+     * Adds a commit in the pending queue and sets its flags
+     * @param c
+     */
     private void add(final CommitInfo c) {
         final int flag = allocFlag();
         branchMask |= flag;
@@ -157,17 +178,28 @@ class MergeBaseGenerator {
         }
 
         c.setFlags(c.getFlags() | flag);
+        changed.add(c);
         pending.add(c);
     }
 
     /**
-     * Method description
-     *
-     *
-     * @return
-     *
+     * Gets the common ancestor of the commits marked as start commits. Caller should previously
+     * invoke {@link #markStart(br.uff.ic.dyevc.model.CommitInfo) } method.
+     * @param revisions The revisions to find the common ancestor.
+     * @return The common ancestor for the commits marked as start commits.
      */
-    CommitInfo getBase() {
+    public CommitInfo getCommonAncestor(String... revisions) throws DyeVCException {
+        if (revisions == null) {
+            throw new DyeVCException("Revisions cannot be null.");
+        }
+
+        if (revisions.length == 0) {
+            throw new DyeVCException("Revisions cannot be empty.");
+        }
+
+        for (String revision : revisions) {
+            markStart(commitMap.get(revision));
+        }
 
         // Initializes pending queue based on initQueue (nodes marked to start from)
         if (!initialized) {
@@ -176,7 +208,10 @@ class MergeBaseGenerator {
 
         for (;;) {
             final CommitInfo c = pending.next();
+
             if (c == null) {
+                reset();
+
                 return null;
             }
 
@@ -190,9 +225,11 @@ class MergeBaseGenerator {
                 if ((c.getFlags() & PARSED) == 0) {
                     c.markInWalk();
                     c.setFlags(c.getFlags() | PARSED);
+                    changed.add(c);
                 }
 
                 p.setFlags(p.getFlags() | IN_PENDING);
+                changed.add(p);
                 pending.add(p);
             }
 
@@ -217,6 +254,8 @@ class MergeBaseGenerator {
                 // to move to the next available commit and try again.
                 //
                 if (pending.everbodyHasFlag(MERGE_BASE)) {
+                    reset();
+
                     return null;
                 }
 
@@ -224,9 +263,12 @@ class MergeBaseGenerator {
             }
 
             c.setFlags(c.getFlags() | POPPED);
+            changed.add(c);
 
             if (mb) {
-                c.setFlags(c.getFlags() | MERGE_BASE);
+
+//              c.setFlags(c.getFlags() | MERGE_BASE);
+                reset();
 
                 return c;
             }
@@ -268,6 +310,7 @@ class MergeBaseGenerator {
     private boolean carryOntoOne(final CommitInfo p, final int carry) {
         final boolean haveAll = (p.getFlags() & carry) == carry;
         p.setFlags(p.getFlags() | carry);
+        changed.add(p);
 
         if ((p.getFlags() & recarryMask) == recarryTest) {
 
@@ -277,6 +320,7 @@ class MergeBaseGenerator {
             // the merge base now.
             //
             p.setFlags(p.getFlags() & ~POPPED);
+            changed.add(p);
             pending.add(p);
             carryOntoHistory(p, branchMask | MERGE_BASE);
 
@@ -321,19 +365,11 @@ class MergeBaseGenerator {
 
     /**
      * Mark a commit to start graph traversal from.
-     * <p>
-     * Callers are encouraged to use {@link #parseCommit(AnyObjectId)} to obtain the commit reference, rather than
-     * {@link #lookupCommit(AnyObjectId)}, as this method requires the commit to be parsed before it can be added as a
-     * root for the traversal.
-     * <p>
-     * The method will automatically parse an unparsed commit, but error handling may be more difficult for the
-     * application to explain why a RevCommit is not actually a commit. The object pool of this walker would also be
-     * 'poisoned' by the non-commit RevCommit.
      *
-     * @param c the commit to start traversing from. The commit passed must be from this same revision walker.
-     * invocation to {@link #lookupCommit(AnyObjectId)}. {@link #lookupCommit(AnyObjectId)}.
+     * @param c the commit to start traversing from. The commit passed must exist in the {@link #commitMap} informed
+     * on the constructor.
      */
-    public void markStart(final CommitInfo c) {
+    public final void markStart(final CommitInfo c) {
         if ((c.getFlags() & SEEN) != 0) {
             return;
         }
@@ -341,73 +377,29 @@ class MergeBaseGenerator {
         if ((c.getFlags() & PARSED) == 0) {
             c.markInWalk();
             c.setFlags(c.getFlags() | PARSED);
+            changed.add(c);
         }
 
         c.setFlags(c.getFlags() | SEEN);
+        changed.add(c);
         roots.add(c);
         initQueue.add(c);
     }
 
     /**
-     * Resets internal state and allows this instance to be used again.
-     * <p>
-     * Unlike {@link #dispose()} previously acquired CommitInfo instances are not invalidated.
-     *
+     * Resets internal state of all changed commits and allows this instance to be used again.
      */
     protected void reset() {
-        int retainFlags = 0;
-        retainFlags |= PARSED;
-        final int          clearFlags = ~retainFlags;
-
-        final FIFORevQueue q          = new FIFORevQueue();
-        for (final CommitInfo c : roots) {
-            if ((c.getFlags() & clearFlags) == 0) {
-                continue;
-            }
-
-            c.setFlags(c.getFlags() & retainFlags);
-            q.add(c);
-        }
-
-        for (;;) {
-            final CommitInfo c = q.next();
-            if (c == null) {
-                break;
-            }
-
-            if ((c.getParents() == null) || (c.getParents().isEmpty())) {
-                continue;
-            }
-
-            for (final String id : c.getParents()) {
-                CommitInfo p = commitMap.get(id);
-                if ((p.getFlags() & clearFlags) == 0) {
-                    continue;
-                }
-
-                p.setFlags(p.getFlags() & retainFlags);
-                q.add(p);
-            }
-
+        for (CommitInfo c : changed) {
             c.resetWalk();
         }
 
         roots.clear();
-        pending = new DateRevQueue();
-    }
-
-    /**
-     * Dispose all internal state and invalidate all RevObject instances.
-     * <p>
-     * All RevObject (and thus RevCommit, etc.) instances previously acquired from this RevWalk are invalidated by a
-     * dispose call. Applications must not retain or use RevObject instances obtained prior to the dispose call. All
-     * RevFlag instances are also invalidated, and must not be reused.
-     */
-    public void dispose() {
-        freeFlags  = APP_FLAGS;
-        carryFlags = UNINTERESTING;
-        pending    = new DateRevQueue();
-        initQueue  = new DateRevQueue();
-        roots.clear();
+        changed.clear();
+        initQueue   = new DateCommitQueue();
+        pending     = new DateCommitQueue();
+        freeFlags   = APP_FLAGS;
+        carryFlags  = UNINTERESTING;
+        initialized = false;
     }
 }

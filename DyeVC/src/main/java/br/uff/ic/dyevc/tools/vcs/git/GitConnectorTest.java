@@ -122,13 +122,24 @@ public class GitConnectorTest {
     private void testGetBase2() {
         GitConnector egit = null;
         try {
-            egit = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/labgc-2012.2", "labgc-2012.2");
+            egit = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/sapos", "sapos");
             GitCommitTools tools = GitCommitTools.getInstance(egit);
-            CommitInfo     ci    = tools.getBase("c7f13e2d8f8f4073d9d9c7bd60751c60427d4823",
-                                       "99e739fc78c3684bf290c2b682883fd988b20c50");
 
-//          CommitInfo     ci    = tools.getBase("0e4af846a0b31045ae6dc372fdf9061cd386a774",
-//                                     "9cc61c7dac77f9a5c98d40617cb4129ff1b439fd");
+//          CommitInfo     ci    = tools.getBase("c7f13e2d8f8f4073d9d9c7bd60751c60427d4823",
+//                                     "99e739fc78c3684bf290c2b682883fd988b20c50");
+
+//            CommitInfo ci = tools.getBase("2a5d14a1c641104003f9671ff771161bdd5dbcbc",
+//                                          "9cc61c7dac77f9a5c98d40617cb4129ff1b439fd");
+
+            CommitInfo ci;
+
+            ci = new CommonAncestorFinder(tools.getCommitInfoMap()).getCommonAncestor(
+                "0802a2f64b8d08b8de6cc80330b64f105587fb7b", "dcc2737e5207986bc97c45cd3ac17d095a3d1842");
+
+            System.out.println(ci.getHash());
+
+            ci = new CommonAncestorFinder(tools.getCommitInfoMap()).getCommonAncestor(
+                "0d629b74c155b5facfd54545014eff94ed82aaa8", "dcc2737e5207986bc97c45cd3ac17d095a3d1842");
             System.out.println(ci.getHash());
         } catch (Exception ex) {
             Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
@@ -143,9 +154,12 @@ public class GitConnectorTest {
         GitConnector egit = null;
         try {
             egit = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/sapos", "sapos");
-            Repository repo   = egit.getRepository();
-            RevCommit  commit = CommitUtils.getBase(repo, "0e4af846a0b31045ae6dc372fdf9061cd386a774",
-                                    "9cc61c7dac77f9a5c98d40617cb4129ff1b439fd");
+            Repository repo = egit.getRepository();
+
+//          RevCommit  commit = CommitUtils.getBase(repo, "2a5d14a1c641104003f9671ff771161bdd5dbcbc",
+//                                  "9cc61c7dac77f9a5c98d40617cb4129ff1b439fd");
+            RevCommit commit = CommitUtils.getBase(repo, "dcc2737e5207986bc97c45cd3ac17d095a3d1842",
+                                   "0d629b74c155b5facfd54545014eff94ed82aaa8");
             System.out.println(commit.getId());
         } catch (Exception ex) {
             Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
