@@ -9,6 +9,8 @@ import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
+import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.utils.CommitInfoDateComparator;
 
 import org.eclipse.jgit.diff.DiffEntry;
@@ -56,6 +58,21 @@ public class GitCommitTools {
     private Map<String, CommitInfo> commitInfoMap;
 
     /**
+     * Map of commits not found in any of the repositories that {@link #rep} pushes from.
+     */
+    Set<CommitInfo> notInPushListSet;
+
+    /**
+     * Map of commits not found in any of the repositories that {@link #rep} pulls to.
+     */
+    Set<CommitInfo> notInPullListSet;
+
+    /**
+     * Map of commits not found locally in {@link #rep}.
+     */
+    Set<CommitInfo> notInLocalRepositoryListSet;
+
+    /**
      * Collection of commit relationships, relating a parent commit and its children.
      */
     private List<CommitRelationship> commitRelationshipList;
@@ -82,7 +99,10 @@ public class GitCommitTools {
      */
     private GitCommitTools(MonitoredRepository rep, boolean includeTopologyData) throws VCSException {
         this(rep.getConnection(), includeTopologyData);
-        this.rep = rep;
+        this.rep                    = rep;
+        notInPushListSet            = Collections.EMPTY_SET;
+        notInPullListSet            = Collections.EMPTY_SET;
+        notInLocalRepositoryListSet = Collections.EMPTY_SET;
     }
 
     /**
@@ -90,6 +110,7 @@ public class GitCommitTools {
      *
      * @param git The connector to be used to connect to a Git repository.
      * @param includeTopologyData If true, CommitInfo objects are filled with topology data
+     * @deprecated
      */
     private GitCommitTools(GitConnector git, boolean includeTopologyData) {
         this.git                 = git;
@@ -124,6 +145,7 @@ public class GitCommitTools {
      *
      * @param git the connector to be used to connect to a Git repository.
      * @return An instance of GitCommitTools.
+     * @deprecated
      */
     public static GitCommitTools getInstance(GitConnector git) {
         return new GitCommitTools(git, false);
@@ -185,6 +207,100 @@ public class GitCommitTools {
         }
 
         return commitInfoMap;
+    }
+
+    /**
+     * Returns a set with all commits not found locally.
+     *
+     * @return a set with all commits not found locally.
+     * @throws VCSException
+     */
+    public Set<CommitInfo> getCommitsNotFoundLocally() throws VCSException {
+        if (!initialized) {
+            initialize();
+        }
+
+        return notInLocalRepositoryListSet;
+    }
+
+    /**
+     * Returns a set with all commits not found in any of repositories that {@link #rep} pushes from.
+     *
+     * @return a set with all commits not found in any of the repositories that {@link #rep} pushes from.
+     * @throws VCSException
+     */
+    public Set<CommitInfo> getCommitsNotInPushList() throws VCSException {
+        if (!initialized) {
+            initialize();
+        }
+
+        return notInPushListSet;
+    }
+
+    /**
+     * Returns a set with all commits not found in any of repositories that {@link #rep} pulls to.
+     *
+     * @return a set with all commits not found in any of the repositories that {@link #rep} pulls to.
+     * @throws VCSException
+     */
+    public Set<CommitInfo> getCommitsNotInPullList() throws VCSException {
+        if (!initialized) {
+            initialize();
+        }
+
+        return notInPullListSet;
+    }
+
+    /**
+     * Loads external commits (not found locally) into the list of commits. After this, all known commits in the topology
+     * that includes {@link #rep} will be loaded into {@link #commitInfoMap}. The method also loads different sets, each one
+     * holding commits not found locally, commits not found in any of the push list repositories and commits not found in
+     * any of the pull list repositories.
+     *
+     * @param info The repository info to get related repositories from
+     *
+     * @throws DyeVCException
+     */
+    public void loadExternalCommits(RepositoryInfo info) throws DyeVCException {
+        if (rep == null) {
+            throw new VCSException(
+                "Cannot include external commits with a rep repository. Get an instance of "
+                + "this class using one of the constructors that receive a MonitoredRepository as parameter.");
+        }
+
+        if (!initialized) {
+            initialize();
+        }
+
+        CommitDAO dao           = new CommitDAO();
+
+        List      pushesToList  = new ArrayList(),
+                  pullsFromList = new ArrayList();
+        pushesToList.addAll(info.getPushesTo());
+        pullsFromList.addAll(info.getPullsFrom());
+
+
+        notInPullListSet            = dao.getCommitsNotFoundInRepositories(pullsFromList);
+        notInPushListSet            = dao.getCommitsNotFoundInRepositories(pushesToList);
+        notInLocalRepositoryListSet = dao.getCommitsNotFoundInRepository(rep.getId());
+
+        includeExternalCommits();
+    }
+
+    /**
+     * Include the external commits in the {@link #commitInfoMap}, along with its relationships.
+     */
+    private void includeExternalCommits() {
+        for (CommitInfo ci : notInLocalRepositoryListSet) {
+            commitInfoMap.put(ci.getHash(), ci);
+        }
+
+        for (CommitInfo ci : notInLocalRepositoryListSet) {
+            for (String hash : ci.getParents()) {
+                CommitRelationship cr = new CommitRelationship(ci, commitInfoMap.get(hash), false);
+                commitRelationshipList.add(cr);
+            }
+        }
     }
 
     /**
@@ -308,7 +424,6 @@ public class GitCommitTools {
 
     /**
      * Gets the change set of a given revision string in the specified repository.
-     * The search is made in the working clone.
      *
      * @param commitId the commitId whose change set will be returned
      * @param repositoryId the repository id to look into.
@@ -321,7 +436,7 @@ public class GitCommitTools {
         DiffFormatter     df      = null;
         try {
             Repository repo =
-                MonitoredRepositories.getMonitoredProjectById(repositoryId).getWorkingCloneConnection().getRepository();
+                MonitoredRepositories.getMonitoredProjectById(repositoryId).getConnection().getRepository();
             ObjectId  objId  = repo.resolve(commitId);
             RevCommit commit = CommitUtils.getCommit(repo, objId);
             rw = new RevWalk(repo);

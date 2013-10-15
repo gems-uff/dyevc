@@ -1,12 +1,18 @@
 package br.uff.ic.dyevc.model.topology;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.persistence.GenericFilter;
-import java.util.Date;
+
 import org.codehaus.jackson.annotate.JsonProperty;
+
+//~--- JDK imports ------------------------------------------------------------
+
+import java.util.Date;
 
 /**
  * Filter to be used in commit queries. All filters are inclusive (and operator
- * is implicit) and null fields are discarded.
+ * is implicit) and null fields should be discarded.
  * @author Cristiano
  */
 
@@ -14,7 +20,7 @@ public class CommitFilter extends GenericFilter {
     @JsonProperty(value = "_id")
     private String hash;
     private String systemName;
-    private Date commitDate;
+    private Date   commitDate;
     private String committer;
 
     public String getHash() {
@@ -48,5 +54,4 @@ public class CommitFilter extends GenericFilter {
     public void setCommitter(String committer) {
         this.committer = committer;
     }
-    
 }

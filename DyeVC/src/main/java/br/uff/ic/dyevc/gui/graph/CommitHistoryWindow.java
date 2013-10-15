@@ -3,19 +3,21 @@ package br.uff.ic.dyevc.gui.graph;
 //~--- non-JDK imports --------------------------------------------------------
 
 import br.uff.ic.dyevc.application.IConstants;
-import br.uff.ic.dyevc.exception.VCSException;
+import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.graph.GraphBuilder;
 import br.uff.ic.dyevc.graph.GraphDomainMapper;
 import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
+import br.uff.ic.dyevc.graph.transform.commithistory.CHTopologyVertexPaintTransformer;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexLabelTransformer;
-import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexPaintTransformer;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexTooltipTransformer;
 import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
 import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
+import br.uff.ic.dyevc.utils.RepositoryConverter;
 
 import edu.uci.ics.jung.algorithms.filters.EdgePredicateFilter;
 import edu.uci.ics.jung.algorithms.filters.Filter;
@@ -90,11 +92,22 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private JButton                         collapse;
     private JButton                         expand;
     private JButton                         reset;
-    private final DefaultModalGraphMouse    graphMouse = new DefaultModalGraphMouse<CommitInfo, CommitRelationship>();
-    private final ScalingControl            scaler     = new CrossoverScalingControl();
+    private JButton                         btnHelp;
+    private final DefaultModalGraphMouse    graphMouse   = new DefaultModalGraphMouse<CommitInfo, CommitRelationship>();
+    private final ScalingControl            scaler       = new CrossoverScalingControl();
+    private String                          instructions =
+        "<html><p>Each vertex in the graph represents a known commit of this system in the topology.</p>"
+        + "<p>Each vertex label shows the commit's five initial characters.</p>"
+        + "<p>Each vertex is painted according to its existence in this repository and those related to it <br>"
+        + "(those which this one pushes to or pulls from): </p>" + "<ul>"
+        + "<li>If vertex exists locally and in all related repositories, it is painted in WHITE;</li>"
+        + "<li>If vertex exists locally but do not exists in any push list, it is painted in GREEN;</li>"
+        + "<li>If vertex doesn't exist locally, but exists in any pull list, it is painted in RED;</li>"
+        + "<li>Finally, if vertex exists in a node not related to the local one (can't be pulled from it), it is painted GRAY.</li>"
+        + "</ul>" + "<p>Place the mouse over a vertex to view detailed information regarding it.</p>" + "</html>";
 
     /**
-     * Constructs ...
+     * Constructs a CommitHistoryWindow
      *
      * @param rep
      */
@@ -109,7 +122,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             initComponents();
             translateGraph();
             SplashScreen.getInstance().setVisible(false);
-        } catch (VCSException ex) {
+        } catch (DyeVCException ex) {
             splash.dispose();
             JOptionPane.showMessageDialog(
                 null,
@@ -192,6 +205,14 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             }
         });
 
+        btnHelp = new JButton("Help");
+        btnHelp.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JOptionPane.showMessageDialog(null, instructions, "Help", JOptionPane.PLAIN_MESSAGE);
+            }
+        });
+
         edgeLineShapeCombo = new JComboBox();
         this.edgeLineShapeCombo.setModel(new DefaultComboBoxModel(new String[] { "QuadCurve", "Line", "CubicCurve" }));
         this.edgeLineShapeCombo.setSelectedItem("CubicCurve");
@@ -220,20 +241,24 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         controls.add(collapseControls);
         controls.add(mouseModesCombo);
         controls.add(edgeLineShapeCombo);
+        controls.add(btnHelp);
         content.add(controls, BorderLayout.SOUTH);
     }    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="initGraphComponent">
-    private void initGraphComponent() throws VCSException {
+    private void initGraphComponent() throws DyeVCException {
 
         // create the commit history graph with all commits from repository and maps the graph to the source commit map
         GitCommitTools tools = GitCommitTools.getInstance(rep, true);
+        RepositoryInfo info  = new RepositoryConverter(rep).toRepositoryInfo();
+        tools.loadExternalCommits(info);
         graph = GraphBuilder.createBasicRepositoryHistoryGraph(tools);
         GraphDomainMapper<Map<String, CommitInfo>> mapper = new GraphDomainMapper(graph, tools.getCommitInfoMap());
         collapsedGraph = graph;
 
         // Choosing layout
         layout = new RepositoryHistoryLayout(mapper, rep);
+
         Dimension                preferredSize      = new Dimension(580, 580);
 
         final VisualizationModel visualizationModel = new DefaultVisualizationModel(layout, preferredSize);
@@ -283,7 +308,9 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         // </editor-fold>
 
         // <editor-fold defaultstate="collapsed" desc="vertex fillPaint transformer">
-        Transformer<Object, Paint> vertexPaint = new CHVertexPaintTransformer();
+        Transformer<Object, Paint> vertexPaint = new CHTopologyVertexPaintTransformer(info,
+                                                     tools.getCommitsNotInPushList(), tools.getCommitsNotInPullList(),
+                                                     tools.getCommitsNotFoundLocally());
         vv.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
 
         // </editor-fold>
@@ -399,7 +426,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * runs the graph with a demo repository
      */
     public static void main(String[] args) {
-        MonitoredRepository rep = new MonitoredRepository("rep1363653250218");
+        MonitoredRepository rep = new MonitoredRepository("rep1376735192420");
 
 //      rep.setId("rep1364318989748");
         new CommitHistoryWindow(rep).setVisible(true);
@@ -412,7 +439,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         MutableTransformer modelTransformer =
             vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT);
 
-        int   lastXPosition = graph.getVertexCount() * 70;
+        int   lastXPosition = graph.getVertexCount() * (int)RepositoryHistoryLayout.XDISTANCE;
         int   showPosition  = lastXPosition - vv.getPreferredSize().width;
         Point graphEnd      = new Point(layout.getWidth() - vv.getPreferredSize().width, 0);
         Point graphStart    = new Point(0, 0);

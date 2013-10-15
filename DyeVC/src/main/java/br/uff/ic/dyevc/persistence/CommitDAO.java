@@ -7,6 +7,7 @@ import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.topology.CommitFilter;
 import br.uff.ic.dyevc.services.MongoLabProvider;
+import br.uff.ic.dyevc.utils.JsonSerializer;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -82,6 +83,55 @@ public class CommitDAO {
         parms.setQuery(commitFilter);
         Set<CommitInfo> result = MongoLabProvider.getCommits(parms);
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByQuery -> Exit");
+
+        return result;
+    }
+
+    /**
+     * Retrieves a list of commits that are not found in any of the specified repositories, this is, if the commit is
+     * found in at least one of the specified repositories, than it is not retrieved.
+     *
+     * @param repositoryIds The id of the repositories to look for commits not found in. At least one repositoryId should
+     * be specified.
+     * @return List of commits that are not found in the specified repositoryIds
+     * @throws ServiceException
+     */
+    public Set<CommitInfo> getCommitsNotFoundInRepositories(List repositoryIds) throws ServiceException {
+        LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsNotFoundInRepositories -> Entry");
+
+        if ((repositoryIds == null) || (repositoryIds.size() == 0)) {
+            throw new ServiceException(
+                "At least one repository Id must be specified in order to look of non-existing commits");
+        }
+
+        CommitFilter filter = new CommitFilter();
+        filter.setCustomQuery("{\"foundIn\": {$nin: " + JsonSerializer.serializeWithoutNulls(repositoryIds) + "}}");
+        Set<CommitInfo> result = getCommitsByQuery(filter);
+
+        LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsNotFoundInRepositories -> Exit");
+
+        return result;
+    }
+
+    /**
+     * Retrieves a list of commits that are not found in the specified repository.
+     *
+     * @param repositoryId The id of the repository to look for commits not found in.
+     * @return List of commits that are not found in the specified repositoryId
+     * @throws ServiceException
+     */
+    public Set<CommitInfo> getCommitsNotFoundInRepository(String repositoryId) throws ServiceException {
+        LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsNotFoundInRepository -> Entry");
+
+        if ((repositoryId == null) || ("".equals(repositoryId))) {
+            throw new ServiceException("Repository id cannot be null or empty.");
+        }
+
+        ArrayList<String> repAsList = new ArrayList<String>();
+        repAsList.add(repositoryId);
+        Set<CommitInfo> result = getCommitsNotFoundInRepositories(repAsList);
+
+        LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsNotFoundInRepository -> Exit");
 
         return result;
     }

@@ -834,7 +834,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     /**
      * Class description
-     * @author         Cristiano Cesario    
+     * @author         Cristiano Cesario
      */
     @SuppressWarnings("serial")
     private class CheckRepositoryAction extends AbstractAction {

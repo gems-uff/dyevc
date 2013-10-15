@@ -35,10 +35,12 @@ import javax.swing.JOptionPane;
  * @author Cristiano
  */
 public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implements IterativeContext {
-    private V                   firstCommit = null;
-    private static final double XDISTANCE   = 70.0;
-    private static final double YDISTANCE   = 70.0;
-    private static final double EPSILON     = 0.000001D;
+    private V firstCommit = null;
+
+    /** Field description */
+    public static final double  XDISTANCE = 70.0;
+    private static final double YDISTANCE = 70.0;
+    private static final double EPSILON   = 0.000001D;
 
     /**
      * List of heads found in the repository (commits with no children)
@@ -79,7 +81,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     MonitoredRepository rep;
 
     /**
-     *
+     * Map of all commits found in topology, keyed by its hash.
      */
     Map<String, CommitInfo> commitInfoMap;
 
