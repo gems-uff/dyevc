@@ -200,6 +200,44 @@ public class MongoLabProvider {
     }
 
     /**
+     * Retrieves the number of commits that match the criteria specified in params.
+     *
+     * @param params A mapping of parameter names and parameter values to be
+     * used in the service invocation
+     * @return The number of commits that match the criteria specified in params.
+     *
+     * @throws ServiceException
+     */
+    public static Integer countCommits(MongoLabServiceParms params) throws ServiceException {
+        LoggerFactory.getLogger(MongoLabProvider.class).trace("countCommits -> Entry");
+        Integer                 result = null;
+        ClientRequest           req;
+        ClientResponse<Integer> res;
+        try {
+            req = prepareRequest(COLLECTION_COMMITS, params);
+            req.queryParameter(MongoLabServiceParms.PARAM_COUNT, Boolean.toString(true));
+            res = req.get(new GenericType<Integer>() {}
+            );
+
+            if (res.getStatus() == 200) {
+                result = res.getEntity();
+            } else {
+                throwErrorMessage(COLLECTION_COMMITS, res.getStatus(), params);
+            }
+        } catch (ServiceException se) {
+            throw se;
+        } catch (Exception ex) {
+            LoggerFactory.getLogger(MongoLabProvider.class).error("Error counting commits.", ex);
+
+            throw new ServiceException(ex);
+        }
+
+        LoggerFactory.getLogger(MongoLabProvider.class).trace("countCommits -> Exit");
+
+        return result;
+    }
+
+    /**
      * Inserts a collection of commits in the database
      *
      * @param commits The collection of commits to be inserted

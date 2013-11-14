@@ -2,12 +2,25 @@ package br.uff.ic.dyevc.tools.vcs.git;
 
 //~--- non-JDK imports --------------------------------------------------------
 
+import br.uff.ic.dyevc.exception.ServiceException;
+import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.gui.graph.CommitHistoryWindow;
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.git.TrackedBranch;
+import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.model.topology.CommitFilter;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
+import br.uff.ic.dyevc.persistence.CommitDAO;
+import br.uff.ic.dyevc.persistence.TopologyDAO;
+import br.uff.ic.dyevc.utils.DateUtil;
+import br.uff.ic.dyevc.utils.PreferencesUtils;
+
+import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.collections15.Predicate;
+import org.apache.commons.collections15.PredicateUtils;
 
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
@@ -31,6 +44,11 @@ import org.slf4j.LoggerFactory;
 
 //~--- JDK imports ------------------------------------------------------------
 
+import java.text.SimpleDateFormat;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -53,10 +71,16 @@ public class GitConnectorTest {
     public static void main(String[] args) {
         GitConnectorTest test = new GitConnectorTest();
 
+        test.testUpdateCommitTopology();
+
 //      test.testFindNewCommits();
 //        test.testGetBase();
 
-        test.testGetBase2();
+//      test.testGetBranches();
+
+//      test.testUpdateCommits();
+//      test.testInsertRepository();
+//      test.testCountCommits();
 
 //      test.testGetURIs();
 //      test.testGetBase();
@@ -67,6 +91,147 @@ public class GitConnectorTest {
 //      test.testCommitHistory();
 //      test.testAheadRemoteBranches();
 //      test.testAdjustTargetConfiguration();
+    }
+
+    private void testUpdateCommitTopology() {
+        try {
+            MonitoredRepositories reps   = PreferencesUtils.loadMonitoredRepositories();
+            MonitoredRepository   rep    = MonitoredRepositories.getMonitoredProjectById("rep1376735192420");
+
+            CommitDAO             dao    = new CommitDAO();
+            CommitFilter          filter = new CommitFilter();
+            filter.setSystemName("dyevc");
+            Set<CommitInfo> remoteHashes = dao.getCommitHashesByQuery(filter);
+
+            GitCommitTools  commitTools  = GitCommitTools.getInstance(rep.getWorkingCloneConnection());
+
+        } catch (ServiceException ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (VCSException ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void testGetCommitHashes() {
+        GitConnector sapos = null;
+        try {
+            sapos = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/dyevc", "dyevc");
+            CommitDAO        dao           = new CommitDAO();
+            Set<CommitInfo>  remoteCommits = dao.getCommitHashesByQuery(null);
+
+            GitConnector     git           = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/dyevc", "dyevc");
+            GitCommitTools   tools         = GitCommitTools.getInstance(git);
+            List<CommitInfo> localCommits  = tools.getCommitInfos();
+
+            // All elements that do not exist in both sets
+            Collection<CommitInfo> testDisjunction = CollectionUtils.disjunction(localCommits, remoteCommits);
+
+            // All elements that exist in both sets
+            Collection<CommitInfo> testIntersection = CollectionUtils.intersection(localCommits, remoteCommits);
+
+            // All elements that exists in left set, but does not exist in right set
+            Collection<CommitInfo> onlyInLocal           = CollectionUtils.subtract(localCommits, remoteCommits);
+            Collection<CommitInfo> onlyInRemote          = CollectionUtils.subtract(remoteCommits, localCommits);
+
+
+            Predicate<CommitInfo>  commitDateGreaterThan = new Predicate<CommitInfo>() {
+                Date compareDate = DateUtil.addDays(new Date(System.currentTimeMillis()), -10);
+                @Override
+                public boolean evaluate(CommitInfo object) {
+                    return object.getCommitDate().getTime() <= compareDate.getTime();
+                }
+            };
+
+            Collection<CommitInfo> greaterThanDate = CollectionUtils.select(localCommits, commitDateGreaterThan);
+            System.out.println("finish");
+
+        } catch (Exception ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (sapos != null) {
+                sapos.close();
+            }
+        }
+    }
+
+    private void testInsertRepository() {
+        GitConnector dyevc = null;
+        try {
+            dyevc = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/dyevc", "dyevc");
+            TopologyDAO    dao  = new TopologyDAO();
+            RepositoryInfo info = new RepositoryInfo();
+            info.setCloneName("testInsert");
+            info.setClonePath("C:\\testInsert");
+            info.setHostName("cmcdell.Home");
+            info.setId("repTestInsert");
+            info.setSystemName("dyevc");
+            HashSet<String> from = new HashSet<String>();
+            from.add("github.com");
+            info.setPullsFrom(from);
+            info.setPushesTo(from);
+            dao.upsertRepository(info);
+
+        } catch (Exception ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (dyevc != null) {
+                dyevc.close();
+            }
+        }
+    }
+
+    private void testCountCommits() {
+        GitConnector sapos = null;
+        try {
+            CommitDAO    dao    = new CommitDAO();
+            CommitFilter filter = new CommitFilter();
+            filter.setSystemName("dyevc");
+            int count = dao.countCommitsByQuery(filter);
+            System.out.println(count);
+        } catch (ServiceException ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (sapos != null) {
+                sapos.close();
+            }
+        }
+    }
+
+    private void testUpdateCommits() {
+        GitConnector sapos = null;
+        try {
+            sapos = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/dyevc", "dyevc");
+            CommitInfo commit = new CommitInfo("zzz", "rep1376735192420");
+            commit.setSystemName("dyevc");
+            List<CommitInfo> list = new ArrayList<CommitInfo>();
+            list.add(commit);
+            CommitDAO dao = new CommitDAO();
+            dao.updateCommitsWithNewRepository(list, "xxx");
+        } catch (Exception ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (sapos != null) {
+                sapos.close();
+            }
+        }
+    }
+
+    private void testGetBranches() {
+        GitConnector sapos = null;
+        try {
+            sapos = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/sapos", "sapos");
+
+            for (String branch : sapos.getLocalBranches()) {
+                System.out.println(sapos.resolve(branch));
+                System.out.println(CommitUtils.getCommit(sapos.getRepository(), branch).getFullMessage());
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (sapos != null) {
+                sapos.close();
+            }
+        }
     }
 
     private void testFindNewCommits() {

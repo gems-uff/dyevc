@@ -152,6 +152,20 @@ public class GitCommitTools {
     }
 
     /**
+     * Sets the connection this instance must work with. Must be called before the class is initialized. Use it if you
+     * want to work with a connection to a different clone of the repository (e.g. the temporary working clone).
+     * @param connection A connection to a repository
+     */
+    public void setConnection(GitConnector connection) throws VCSException {
+        if (initialized) {
+            throw new VCSException(
+                "Class was already instantiated and connection cannot be changed. Create another instance instead.");
+        }
+
+        this.git = connection;
+    }
+
+    /**
      * The list of commitInfos is created in this method.
      *
      * @throws VCSException
@@ -264,7 +278,7 @@ public class GitCommitTools {
     public void loadExternalCommits(RepositoryInfo info) throws DyeVCException {
         if (rep == null) {
             throw new VCSException(
-                "Cannot include external commits with a rep repository. Get an instance of "
+                "Cannot include external commits without a monitored repository. Get an instance of "
                 + "this class using one of the constructors that receive a MonitoredRepository as parameter.");
         }
 

@@ -1,6 +1,11 @@
 package br.uff.ic.dyevc.gui.core;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.utils.DateUtil;
+
+//~--- JDK imports ------------------------------------------------------------
+
 import java.awt.Font;
 
 /**
@@ -9,13 +14,17 @@ import java.awt.Font;
  * @author Cristiano
  */
 public class MessageManager {
-
     /**
      * Singleton that manages messages sent by application.
      */
-    private LogTextArea messages;
+    private final LogTextArea     messages;
     private static MessageManager manager;
 
+    /**
+     * Constructs ...
+     *
+     * @param messages
+     */
     private MessageManager(LogTextArea messages) {
         this.messages = messages;
         messages.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -25,6 +34,7 @@ public class MessageManager {
         if (manager == null) {
             manager = new MessageManager(messages);
         }
+
         return manager;
     }
 
@@ -37,9 +47,9 @@ public class MessageManager {
      * @param msg the message to be displayed.
      */
     public void addMessage(String msg) {
-        
-        messages.append(new StringBuilder(DateUtil.getFormattedCurrentDate())
-                .append(" ").append(msg).append("\n").toString());
+
+        messages.append(
+            new StringBuilder(DateUtil.getFormattedCurrentDate()).append(" ").append(msg).append("\n").toString());
     }
 
     /**

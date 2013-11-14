@@ -1,15 +1,24 @@
 package br.uff.ic.dyevc.persistence;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
-import br.uff.ic.dyevc.model.topology.RepositoryFilter;
 import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.MonitoredRepository;
+import br.uff.ic.dyevc.model.topology.RepositoryFilter;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.services.MongoLabProvider;
-import java.util.ArrayList;
+import br.uff.ic.dyevc.utils.DateUtil;
+
 import org.slf4j.LoggerFactory;
+
+//~--- JDK imports ------------------------------------------------------------
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Set;
 
 /**
  * Data Access Object to manipulate topology information
@@ -17,7 +26,6 @@ import org.slf4j.LoggerFactory;
  * @author Cristiano
  */
 public class TopologyDAO {
-
     /**
      * Retrieves the topology for a specific system
      *
@@ -27,17 +35,18 @@ public class TopologyDAO {
      */
     public Topology readTopologyForSystem(String systemName) throws ServiceException {
         LoggerFactory.getLogger(TopologyDAO.class).trace("readTopologyForSystem -> Entry");
-        Topology result = new Topology();
-        MongoLabServiceParms parms = new MongoLabServiceParms();
-        
-        RepositoryFilter filter = new RepositoryFilter();
+        Topology             result = new Topology();
+        MongoLabServiceParms parms  = new MongoLabServiceParms();
+
+        RepositoryFilter     filter = new RepositoryFilter();
         filter.setSystemName(systemName);
         parms.setQuery(filter);
-        
+
         ArrayList<RepositoryInfo> repositories = MongoLabProvider.getRepositories(parms);
         result.resetTopology(repositories);
 
         LoggerFactory.getLogger(TopologyDAO.class).trace("readTopologyForSystem -> Exit");
+
         return result;
     }
 
@@ -49,11 +58,12 @@ public class TopologyDAO {
      */
     public Topology readTopology() throws ServiceException {
         LoggerFactory.getLogger(TopologyDAO.class).trace("readTopology -> Entry");
-        Topology result = new Topology();
+        Topology                  result       = new Topology();
         ArrayList<RepositoryInfo> repositories = MongoLabProvider.getRepositories(null);
         result.resetTopology(repositories);
 
         LoggerFactory.getLogger(TopologyDAO.class).trace("readTopology -> Exit");
+
         return result;
     }
 
@@ -72,6 +82,7 @@ public class TopologyDAO {
         ArrayList<RepositoryInfo> result = MongoLabProvider.getRepositories(parms);
 
         LoggerFactory.getLogger(TopologyDAO.class).trace("getRepositoriesByQuery -> Exit");
+
         return result;
     }
 
@@ -84,16 +95,17 @@ public class TopologyDAO {
      * @throws ServiceException
      */
     public ArrayList<RepositoryInfo> findDependentRepositories(String id) throws ServiceException {
-        LoggerFactory.getLogger(TopologyDAO.class).trace("countRelatedRepositories -> Entry");
+        LoggerFactory.getLogger(TopologyDAO.class).trace("findDependentRepositories -> Entry");
 
-        String query = "{\"$or\": [{\"pushesTo\": \"" + id + "\"}, "
-                + "{\"pullsFrom\": \"" + id + "\"}]}";
+        String               query = "{\"$or\": [{\"pushesTo\": \"" + id + "\"}, " + "{\"pullsFrom\": \"" + id
+                                     + "\"}]}";
 
         MongoLabServiceParms parms = new MongoLabServiceParms();
         parms.setQuery(query);
         ArrayList<RepositoryInfo> result = MongoLabProvider.getRepositories(parms);
 
-        LoggerFactory.getLogger(TopologyDAO.class).trace("countRelatedRepositories -> Exit");
+        LoggerFactory.getLogger(TopologyDAO.class).trace("findDependentRepositories -> Exit");
+
         return result;
     }
 
@@ -102,14 +114,21 @@ public class TopologyDAO {
      * yet exists, then create it
      *
      * @param repositories List of repositories to be upserted
+     * @return The last changed date/time for this group of repositories
      * @exception DyeVCException
      */
-    public void upsertRepositories(ArrayList<RepositoryInfo> repositories) throws DyeVCException {
+    public Date upsertRepositories(ArrayList<RepositoryInfo> repositories) throws DyeVCException {
         LoggerFactory.getLogger(TopologyDAO.class).trace("upsertRepositories -> Entry");
+
+        Date lastChanged = DateUtil.getLocalTimeInUTC();
         for (RepositoryInfo repository : repositories) {
+            repository.setLastChanged(lastChanged);
             upsertRepository(repository);
         }
+
         LoggerFactory.getLogger(TopologyDAO.class).trace("upsertRepositories -> Exit");
+
+        return lastChanged;
     }
 
     /**
@@ -118,32 +137,84 @@ public class TopologyDAO {
      *
      * @param repository The repository to be updated in the database.
      * @throws DyeVCException
+     * @return The last changed date/time for this repository
      */
-    public void upsertRepository(RepositoryInfo repository) throws DyeVCException {
+    public Date upsertRepository(RepositoryInfo repository) throws DyeVCException {
+        Date lastChanged = repository.getLastChanged();
+        if (lastChanged == null) {
+            lastChanged = DateUtil.getLocalTimeInUTC();
+            repository.setLastChanged(lastChanged);
+        }
+
         MongoLabProvider.upsertRepository(repository);
+
+        return lastChanged;
     }
 
     /**
-     * Deletes the monitored repository from the database. The
+     * Deletes the monitored repository  with the specified id in the specified system from the database. The
      * application first checks if the repository is not referenced anywhere,
      * otherwise throws an exception. If the monitored repository does not have
      * a system name configured, ignores it and does nothing.
      *
-     * @param repository Monitored repository to be deleted from the database
+     * @param systemName System where the repository belongs to
+     * @param repId the Id of the repository to be deleted
+     * @throws br.uff.ic.dyevc.exception.ServiceException when an error occurred calling the provider
      * @throws RepositoryReferencedException when other repositories reference
      * this one
-     * @throws DyeVCException
+     * @return The date/time this repository was deleted.
      */
-    public void deleteRepository(MonitoredRepository repository) throws ServiceException, RepositoryReferencedException {
-        String systemName = repository.getSystemName();
+    public Date deleteRepository(String systemName, String repId)
+            throws ServiceException, RepositoryReferencedException {
+        Date lastChanged = null;
+
+        // Only repositories with system names have to be deleted from the database
         if (!("".equals(systemName) || "no name".equals(systemName))) {
-            // Only repositories with system names have to be deleted from the database
-            ArrayList<RepositoryInfo> dependentRepositories = findDependentRepositories(repository.getId());
+
+            // Verify if there is any repository that pushes to or pulls from this repository.
+            ArrayList<RepositoryInfo> dependentRepositories = findDependentRepositories(repId);
             if (dependentRepositories.isEmpty()) {
-                MongoLabProvider.deleteRepository(repository.getId());
+
+                // No one depends upon this repository. Verifies if any repository depends upon this repository's push or pull
+                // list. If not, than these repositories can be deleted as well
+                RepositoryFilter filter = new RepositoryFilter();
+                filter.setSystemName(systemName);
+                filter.setId(repId);
+
+                ArrayList<RepositoryInfo> reps = getRepositoriesByQuery(filter);
+
+                // Only one repository should be returned from above query. If no record is returned, than this repository
+                // was already deleted.
+                if (reps.isEmpty()) {
+                    return null;
+                }
+
+                RepositoryInfo info    = reps.get(0);
+                Set<String>    related = info.getPullsFrom();
+                related.addAll(info.getPushesTo());
+
+                MongoLabProvider.deleteRepository(repId);
+
+                for (String id : related) {
+                    try {
+                        deleteRepository(systemName, id);
+                    } catch (RepositoryReferencedException re) {
+                        LoggerFactory.getLogger(TopologyDAO.class).warn(
+                            "Repository <" + id + ">, referenced by <" + repId
+                            + "> could not be deleted from the topology, because it is still referenced.", re);
+                    } catch (ServiceException se) {
+                        LoggerFactory.getLogger(TopologyDAO.class).warn(
+                            "Repository <" + id + ">, referenced by <" + repId
+                            + "> could not be deleted from the topology, due to the following error:", se);
+                    }
+                }
+
+                lastChanged = DateUtil.getLocalTimeInUTC();
             } else {
                 throw new RepositoryReferencedException(dependentRepositories);
             }
         }
+
+        return lastChanged;
     }
 }

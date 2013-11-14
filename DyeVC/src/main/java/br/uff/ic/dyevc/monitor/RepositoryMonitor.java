@@ -1,23 +1,34 @@
 package br.uff.ic.dyevc.monitor;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
+import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.exception.VCSException;
-import br.uff.ic.dyevc.gui.main.MainWindow;
 import br.uff.ic.dyevc.gui.core.MessageManager;
+import br.uff.ic.dyevc.gui.main.MainWindow;
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
+import br.uff.ic.dyevc.model.topology.Topology;
+import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.tools.vcs.git.GitTools;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
+
+import org.apache.commons.io.FileUtils;
+
+import org.slf4j.LoggerFactory;
+
+//~--- JDK imports ------------------------------------------------------------
+
 import java.io.File;
 import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class continuously monitors the specified repositories, according to the
@@ -26,11 +37,11 @@ import org.slf4j.LoggerFactory;
  * @author Cristiano
  */
 public class RepositoryMonitor extends Thread {
-
-    private ApplicationSettingsBean settings;
-    private List<RepositoryStatus> statusList;
-    private MainWindow container;
-    private MonitoredRepository repositoryToMonitor;
+    private final ApplicationSettingsBean settings;
+    private List<RepositoryStatus>        statusList;
+    private final MainWindow              container;
+    private MonitoredRepository           repositoryToMonitor;
+    private Topology                      topology;
 
     /**
      * Associates the specified window container and continuously monitors the
@@ -41,7 +52,7 @@ public class RepositoryMonitor extends Thread {
      */
     public RepositoryMonitor(MainWindow container) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
-        settings = PreferencesUtils.loadPreferences();
+        settings       = PreferencesUtils.loadPreferences();
         this.container = container;
         this.start();
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Exit.");
@@ -60,26 +71,47 @@ public class RepositoryMonitor extends Thread {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
                 checkWorkingFolder();
                 statusList = new ArrayList<RepositoryStatus>();
-                if (repositoryToMonitor == null) { //monitor all repositories
-                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.", MonitoredRepositories.getMonitoredProjects().size());
+                updateCachedTopology();
+                TopologyUpdater updater = new TopologyUpdater();
+
+                if (repositoryToMonitor == null) {    // monitor all repositories
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.",
+                                            MonitoredRepositories.getMonitoredProjects().size());
+
+                    int count = 0;
                     for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
+                        MessageManager.getInstance().addMessage("Checking repository " + ++count + " of "
+                                + MonitoredRepositories.getMonitoredProjects().size() + ": <"
+                                + monitoredRepository.getId() + "> with id <" + monitoredRepository.getName() + ">");
                         checkRepository(monitoredRepository);
+                        updater.update(monitoredRepository);
                     }
-                } else { //monitor specified repository
-                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Manual monitoring requested for repository {}.", repositoryToMonitor.getName());
+
+                    MessageManager.getInstance().addMessage(
+                        "Finished checking monitored repositories. Now verifying deleted repositories.");
+                    updater.verifyDeletedRepositories();
+                } else {    // monitor specified repository
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug(
+                        "Manual monitoring requested for repository <{}> with id <{}>.", repositoryToMonitor.getId(),
+                        repositoryToMonitor.getName());
                     checkRepository(repositoryToMonitor);
+                    updater.update(repositoryToMonitor);
                     setRepositoryToMonitor(null);
                 }
+
+                PreferencesUtils.persistRepositories();
                 container.notifyMessages(statusList);
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Will now sleep for {} seconds.", sleepTime);
                 MessageManager.getInstance().addMessage("Repository monitor is sleeping.");
                 Thread.sleep(settings.getRefreshInterval() * 1000);
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping for {} seconds.",
+                                        sleepTime);
             } catch (DyeVCException dex) {
                 try {
                     MessageManager.getInstance().addMessage(dex.getMessage());
                     Thread.sleep(settings.getRefreshInterval() * 1000);
-                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping for {} seconds.",
+                                            sleepTime);
                 } catch (InterruptedException ex) {
                     LoggerFactory.getLogger(RepositoryMonitor.class).info("Waking up due to interruption received.");
                 }
@@ -88,7 +120,8 @@ public class RepositoryMonitor extends Thread {
                     MessageManager.getInstance().addMessage(re.getMessage());
                     LoggerFactory.getLogger(RepositoryMonitor.class).error("Error during monitoring.", re);
                     Thread.sleep(settings.getRefreshInterval() * 1000);
-                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping for {} seconds.", sleepTime);
+                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Waking up after sleeping for {} seconds.",
+                                            sleepTime);
                 } catch (InterruptedException ex) {
                     LoggerFactory.getLogger(RepositoryMonitor.class).info("Waking up due to interruption received.");
                 }
@@ -107,11 +140,11 @@ public class RepositoryMonitor extends Thread {
      * @param monitoredRepository the repository to be checked
      */
     private void checkRepository(MonitoredRepository monitoredRepository) {
-        LoggerFactory.getLogger(RepositoryMonitor.class)
-                .trace("checkRepository -> Entry. Repository: {}, id:{}", monitoredRepository.getName(), monitoredRepository.getId());
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Entry. Repository: {}, id:{}",
+                                monitoredRepository.getName(), monitoredRepository.getId());
 
-        RepositoryStatus repStatus = new RepositoryStatus(monitoredRepository.getId());
-        String cloneAddress = monitoredRepository.getCloneAddress();
+        RepositoryStatus repStatus    = new RepositoryStatus(monitoredRepository.getId());
+        String           cloneAddress = monitoredRepository.getCloneAddress();
 
         if (!GitConnector.isValidRepository(cloneAddress)) {
             repStatus.setInvalid("<" + cloneAddress + "> is not a valid repository path.");
@@ -122,9 +155,9 @@ public class RepositoryMonitor extends Thread {
             } catch (VCSException ex) {
                 MessageManager.getInstance().addMessage("It was not possible to finish monitoring of repository <"
                         + monitoredRepository.getName() + "> with id <" + monitoredRepository.getId() + ">.");
-                LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .error("It was not possible to finish monitoring of repository <{}> with id <{}>",
-                        monitoredRepository.getName(), monitoredRepository.getId());
+                LoggerFactory.getLogger(RepositoryMonitor.class).error(
+                    "It was not possible to finish monitoring of repository <{}> with id <{}>",
+                    monitoredRepository.getName(), monitoredRepository.getId());
                 repStatus.setInvalid(ex.getCause().toString());
             }
         }
@@ -133,7 +166,8 @@ public class RepositoryMonitor extends Thread {
 
         statusList.add(repStatus);
 
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Exit. Repository: {}", monitoredRepository.getName());
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkRepository -> Exit. Repository: {}",
+                                monitoredRepository.getName());
     }
 
     /**
@@ -143,24 +177,27 @@ public class RepositoryMonitor extends Thread {
      * @return a list of status for the given repository
      */
     private List<BranchStatus> processRepository(MonitoredRepository monitoredRepository) throws VCSException {
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Entry. Repository: {}", monitoredRepository.getName());
-        GitConnector sourceConnector = null;
-        GitConnector tempConnector = null;
-        List<BranchStatus> result = null;
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Entry. Repository: {}",
+                                monitoredRepository.getName());
+        GitConnector       sourceConnector = null;
+        GitConnector       tempConnector   = null;
+        List<BranchStatus> result          = null;
         try {
 
             sourceConnector = monitoredRepository.getConnection();
-            LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .debug("processRepository -> created gitConnector for repository {}, id={}", monitoredRepository.getName(), monitoredRepository.getId());
+            LoggerFactory.getLogger(RepositoryMonitor.class).debug(
+                "processRepository -> created gitConnector for repository {}, id={}", monitoredRepository.getName(),
+                monitoredRepository.getId());
 
             String pathTemp = monitoredRepository.getWorkingCloneAddress();
 
             if (!GitConnector.isValidRepository(pathTemp)) {
-                LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .debug("There is no valid temp repository at {}. Will create a valid temp by cloning {}.",
-                        pathTemp, monitoredRepository.getId());
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug(
+                    "There is no valid temp repository at {}. Will create a valid temp by cloning {}.", pathTemp,
+                    monitoredRepository.getId());
                 monitoredRepository.setWorkingCloneConnection(createWorkingClone(pathTemp, sourceConnector));
             }
+
             tempConnector = monitoredRepository.getWorkingCloneConnection();
             GitTools.adjustTargetConfiguration(sourceConnector, tempConnector);
 
@@ -168,19 +205,23 @@ public class RepositoryMonitor extends Thread {
             result = tempConnector.testAhead();
         } finally {
             if (sourceConnector != null) {
-                LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .debug("About to close connection with repository <{}> with id <{}>",
-                        monitoredRepository.getName(), monitoredRepository.getId());
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug(
+                    "About to close connection with repository <{}> with id <{}>", monitoredRepository.getName(),
+                    monitoredRepository.getId());
                 sourceConnector.close();
             }
+
             if (tempConnector != null) {
-                LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .debug("About to close connection with temp repository for <{}> with id <{}>",
-                        monitoredRepository.getName(), monitoredRepository.getId());
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug(
+                    "About to close connection with temp repository for <{}> with id <{}>",
+                    monitoredRepository.getName(), monitoredRepository.getId());
                 tempConnector.close();
             }
         }
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Exit. Repository: {}", monitoredRepository.getName());
+
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("processRepository -> Exit. Repository: {}",
+                                monitoredRepository.getName());
+
         return result;
     }
 
@@ -194,21 +235,28 @@ public class RepositoryMonitor extends Thread {
     private void checkWorkingFolder() throws DyeVCException {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkWorkingFolder -> Entry.");
         File workingFolder = new File(settings.getWorkingPath());
-        LoggerFactory.getLogger(RepositoryMonitor.class).info("checkWorkingFolder -> Working folder is at {}.", workingFolder.getAbsoluteFile());
+        LoggerFactory.getLogger(RepositoryMonitor.class).info("checkWorkingFolder -> Working folder is at {}.",
+                                workingFolder.getAbsoluteFile());
+
         if (workingFolder.exists()) {
             LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder already exists.");
             checkOrphanedFolders(workingFolder);
+
             if (!workingFolder.canWrite()) {
                 LoggerFactory.getLogger(RepositoryMonitor.class).error("Working folder is not writable.");
-                MessageManager.getInstance()
-                        .addMessage("Working folder is not writable. Please check folder permissions at "
-                        + workingFolder.getAbsolutePath());
-                throw new DyeVCException("Temp folder located at " + workingFolder.getAbsolutePath() + " is not writable.");
+                MessageManager.getInstance().addMessage(
+                    "Working folder is not writable. Please check folder permissions at "
+                    + workingFolder.getAbsolutePath());
+
+                throw new DyeVCException("Temp folder located at " + workingFolder.getAbsolutePath()
+                                         + " is not writable.");
             }
         } else {
             workingFolder.mkdir();
-            LoggerFactory.getLogger(RepositoryMonitor.class).debug("Working folder does not exist. A brand new one was created.");
+            LoggerFactory.getLogger(RepositoryMonitor.class).debug(
+                "Working folder does not exist. A brand new one was created.");
         }
+
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkWorkingFolder -> Exit.");
     }
 
@@ -224,11 +272,12 @@ public class RepositoryMonitor extends Thread {
         for (int i = 0; i < tmpFolders.length; i++) {
             String tmpFolder = tmpFolders[i];
             if (MonitoredRepositories.getMonitoredProjectById(tmpFolder) == null) {
-                LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .debug("Repository with id={} is not being monitored anymore. Temp folder will be deleted.", tmpFolder);
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug(
+                    "Repository with id={} is not being monitored anymore. Temp folder will be deleted.", tmpFolder);
                 deleteDirectory(workingFolder, tmpFolder);
             }
         }
+
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkOrphanedFolders -> Exit.");
     }
 
@@ -247,17 +296,21 @@ public class RepositoryMonitor extends Thread {
         try {
             if (new File(pathTemp).exists()) {
                 FileUtils.cleanDirectory(new File(pathTemp));
-                LoggerFactory.getLogger(RepositoryMonitor.class)
-                        .debug("Removed existing content at {}. ", pathTemp);
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Removed existing content at {}. ", pathTemp);
             }
+
             target = source.cloneThis(pathTemp);
             GitTools.adjustTargetConfiguration(source, target);
             LoggerFactory.getLogger(RepositoryMonitor.class).debug("Created temp clone.");
         } catch (IOException ex) {
-            LoggerFactory.getLogger(RepositoryMonitor.class).error("Error cleaning existing temp folder at" + pathTemp + ".", ex);
+            LoggerFactory.getLogger(RepositoryMonitor.class).error("Error cleaning existing temp folder at" + pathTemp
+                                    + ".", ex);
+
             throw new VCSException("Error cleaning existing temp folder at" + pathTemp + ".", ex);
         }
+
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("createWorkingClone -> Entry.");
+
         return target;
     }
 
@@ -271,11 +324,10 @@ public class RepositoryMonitor extends Thread {
     private void deleteDirectory(File parentFolder, String pathToDelete) {
         try {
             FileUtils.deleteDirectory(new File(parentFolder, pathToDelete));
-            LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .debug("Folder {} was successfully deleted.", pathToDelete);
+            LoggerFactory.getLogger(RepositoryMonitor.class).debug("Folder {} was successfully deleted.", pathToDelete);
         } catch (IOException ex) {
-            LoggerFactory.getLogger(RepositoryMonitor.class)
-                    .error("It was not possible to delete folder " + pathToDelete, ex);
+            LoggerFactory.getLogger(RepositoryMonitor.class).error("It was not possible to delete folder "
+                                    + pathToDelete, ex);
         }
     }
 
@@ -291,5 +343,25 @@ public class RepositoryMonitor extends Thread {
      */
     public synchronized MonitoredRepository getRepositoryToMonitor() {
         return repositoryToMonitor;
+    }
+
+    /**
+     * Gets the topology from the database and updates the cached topology object. If an error occurs while accessing
+     * the database, the value of cached topology object is not changed.
+     */
+    private void updateCachedTopology() {
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("getTopology -> Entry.");
+        TopologyDAO dao = new TopologyDAO();
+        try {
+            Topology updated = dao.readTopology();
+            this.topology = (updated != null) ? updated : this.topology;
+        } catch (ServiceException ex) {
+            LoggerFactory.getLogger(RepositoryMonitor.class).error("Error getting topology from database.", ex);
+            MessageManager.getInstance().addMessage("It was not possible to read topology from the database."
+                    + "\n\tTopology information may be inaccurate until next monitor run."
+                    + "\n\tOpen console window to see error details.");
+        }
+
+        LoggerFactory.getLogger(RepositoryMonitor.class).trace("getTopology -> Exit.");
     }
 }

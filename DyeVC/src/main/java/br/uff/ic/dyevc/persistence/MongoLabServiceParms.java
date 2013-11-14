@@ -15,11 +15,23 @@ import java.util.HashMap;
  */
 @SuppressWarnings("serial")
 public class MongoLabServiceParms extends HashMap<String, Object> {
-    private static final String PARAM_QUERY         = "q";
-    private static final String PARAM_RETURN_FIELDS = "f";
-    private static final String PARAM_SORT_ORDER    = "s";
-    private static final String PARAM_LIMIT         = "l";
-    private static final String PARAM_MULTI         = "m";
+    /** Field description */
+    public static final String PARAM_QUERY = "q";
+
+    /** Field description */
+    public static final String PARAM_RETURN_FIELDS = "f";
+
+    /** Field description */
+    public static final String PARAM_SORT_ORDER = "s";
+
+    /** Field description */
+    public static final String PARAM_LIMIT = "l";
+
+    /** Field description */
+    public static final String PARAM_MULTI = "m";
+
+    /** Field description */
+    public static final String PARAM_COUNT = "c";
 
     /**
      * Method description
@@ -42,7 +54,9 @@ public class MongoLabServiceParms extends HashMap<String, Object> {
      * @throws ServiceException
      */
     public void setQuery(GenericFilter filter) throws ServiceException {
-        put(PARAM_QUERY, filter.serialize(true));
+        if (filter != null) {
+            put(PARAM_QUERY, filter.serialize(true));
+        }
     }
 
     /**

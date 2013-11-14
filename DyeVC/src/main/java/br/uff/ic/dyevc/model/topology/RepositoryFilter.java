@@ -1,6 +1,10 @@
 package br.uff.ic.dyevc.model.topology;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.persistence.GenericFilter;
+
+import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
  * Filter to be used in repository queries. All filters are inclusive (and operator
@@ -13,9 +17,13 @@ public class RepositoryFilter extends GenericFilter {
     private String hostName;
     private String cloneName;
     private String clonePath;
+    @JsonProperty(value = "_id")
+    private String id;
 
-    public RepositoryFilter() {
-    }
+    /**
+     * Constructs ...
+     */
+    public RepositoryFilter() {}
 
     public String getSystemName() {
         return systemName;
@@ -47,5 +55,13 @@ public class RepositoryFilter extends GenericFilter {
 
     public void setClonePath(String path) {
         this.clonePath = path;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

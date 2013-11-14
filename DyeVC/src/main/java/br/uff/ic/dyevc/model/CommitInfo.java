@@ -93,6 +93,11 @@ public class CommitInfo implements Comparable<CommitInfo> {
     private String author;
 
     /**
+     * Date this commit was last changed in database;
+     */
+    private Date lastChanged;
+
+    /**
      * Constructs a new CommitInfo object. This constructor should not be used by the application. It exists just
      * and only to be used by JSON framework, when (de)serializing objects to / from JSON notation.
      */
@@ -259,6 +264,22 @@ public class CommitInfo implements Comparable<CommitInfo> {
      */
     public void setFoundIn(Set<String> foundIn) {
         this.foundIn = foundIn;
+    }
+
+    /**
+     * Gets the date this object was last changed in database.
+     * @return the last changed date.
+     */
+    public Date getLastChanged() {
+        return lastChanged;
+    }
+
+    /**
+     * Sets the lastChanged
+     * @param lastChanged  The lastChanged to set.
+     */
+    public void setLastChanged(Date lastChanged) {
+        this.lastChanged = lastChanged;
     }
 
     /**

@@ -1,13 +1,21 @@
 package br.uff.ic.dyevc.model;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.StringUtils;
+
+//~--- JDK imports ------------------------------------------------------------
+
 import java.beans.*;
+
 import java.io.Serializable;
+
+import java.util.Date;
 
 /**
  * Models a monitored repository. A monitored repository is a repository
@@ -16,61 +24,76 @@ import java.io.Serializable;
  * @author Cristiano
  */
 public class MonitoredRepository implements Serializable {
-
     /**
      * How the attribute "name" is called
      */
     public static final String NAME = "name";
+
     /**
      * How the attribute "systemName" is called
      */
     public static final String SYSTEM_NAME = "systemName";
+
     /**
      * How the attribute "cloneAddress" is called
      */
-    public static final String PROP_CLONEADDRESS = "cloneAddress";
+    public static final String    PROP_CLONEADDRESS = "cloneAddress";
     private PropertyChangeSupport propertySupport;
-    private static final long serialVersionUID = -8604175800390199323L;
+    private static final long     serialVersionUID = -8604175800390199323L;
+
     /**
      * Name of the system (global known name of the repository).
      */
     private String systemName;
+
     /**
      * Name of the clone.
      */
     private String name;
+
     /**
      * Identification of the repository.
      */
     private String id;
+
     /**
      * Address where the monitored repository is located.
      */
     private String cloneAddress;
+
     /**
      * Clone address in normalized form (no double or leading backslashes)
      */
     private String normalizedCloneAddress;
+
     /**
      * Status of the monitored repository.
      *
      * @see RepositoryStatus
      */
     private RepositoryStatus repStatus;
+
     /**
      * Status of the monitored repository.
      *
      * @see RepositoryStatus
      */
     private boolean markedForDeletion;
+
     /**
      * Connection with the working clone for this monitored repository
      */
     private GitConnector workingCloneConnection;
+
     /**
      * Connection with the clone for this monitored repository
      */
     private GitConnector cloneConnection;
+
+    /**
+     * Last date/time this repository was changed in database
+     */
+    private Date lastChanged;
 
     /**
      * Get the value of normalizedCloneAddress
@@ -98,8 +121,8 @@ public class MonitoredRepository implements Serializable {
     public String getWorkingCloneAddress() {
         ApplicationSettingsBean settings = PreferencesUtils.loadPreferences();
 
-        String pathTemp = settings.getWorkingPath()
-                + IConstants.DIR_SEPARATOR + getId();
+        String                  pathTemp = settings.getWorkingPath() + IConstants.DIR_SEPARATOR + getId();
+
         return pathTemp;
     }
 
@@ -110,19 +133,24 @@ public class MonitoredRepository implements Serializable {
      */
     public void setCloneAddress(String cloneAddress) {
         String oldCloneAddress = this.cloneAddress;
-        this.cloneAddress = cloneAddress;
+        this.cloneAddress           = cloneAddress;
         this.normalizedCloneAddress = StringUtils.normalizePath(cloneAddress);
         propertySupport.firePropertyChange(PROP_CLONEADDRESS, oldCloneAddress, cloneAddress);
     }
 
+    /**
+     * Constructs ...
+     *
+     * @param id
+     */
     public MonitoredRepository(String id) {
-        this.name = "";
-        this.systemName = "";
-        this.cloneAddress = "";
-        this.id = id;
-        this.repStatus = new RepositoryStatus("");
+        this.name              = "";
+        this.systemName        = "";
+        this.cloneAddress      = "";
+        this.id                = id;
+        this.repStatus         = new RepositoryStatus("");
         this.markedForDeletion = false;
-        propertySupport = new PropertyChangeSupport(this);
+        propertySupport        = new PropertyChangeSupport(this);
     }
 
     public String getName() {
@@ -146,9 +174,7 @@ public class MonitoredRepository implements Serializable {
     }
 
     public boolean hasSystemName() {
-        return (systemName != null
-                && !systemName.equals("")
-                && !systemName.equals("no name"));
+        return ((systemName != null) &&!systemName.equals("") &&!systemName.equals("no name"));
     }
 
     public void addPropertyChangeListener(PropertyChangeListener listener) {
@@ -161,11 +187,8 @@ public class MonitoredRepository implements Serializable {
 
     @Override
     public String toString() {
-        return new StringBuilder("Repository{systemName=").append(systemName)
-                .append(", name=").append(name)
-                .append(", id=").append(id)
-                .append(", cloneAddress=").append(cloneAddress)
-                .append("}").toString();
+        return new StringBuilder("Repository{systemName=").append(systemName).append(", name=").append(name).append(
+            ", id=").append(id).append(", cloneAddress=").append(cloneAddress).append("}").toString();
     }
 
     public String getId() {
@@ -194,6 +217,7 @@ public class MonitoredRepository implements Serializable {
         if (cloneConnection == null) {
             cloneConnection = new GitConnector(this.cloneAddress, this.id);
         }
+
         return cloneConnection;
     }
 
@@ -209,6 +233,7 @@ public class MonitoredRepository implements Serializable {
         if (workingCloneConnection == null) {
             workingCloneConnection = new GitConnector(this.getWorkingCloneAddress(), this.id);
         }
+
         return workingCloneConnection;
     }
 
@@ -224,6 +249,7 @@ public class MonitoredRepository implements Serializable {
         if (this.workingCloneConnection != null) {
             this.workingCloneConnection.close();
         }
+
         this.workingCloneConnection = connection;
     }
 
@@ -233,6 +259,14 @@ public class MonitoredRepository implements Serializable {
 
     public void setMarkedForDeletion(boolean markedForDeletion) {
         this.markedForDeletion = markedForDeletion;
+    }
+
+    public Date getLastChanged() {
+        return lastChanged;
+    }
+
+    public void setLastChanged(Date lastChanged) {
+        this.lastChanged = lastChanged;
     }
 
     /**

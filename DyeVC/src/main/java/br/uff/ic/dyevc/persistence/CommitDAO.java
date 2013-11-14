@@ -88,6 +88,23 @@ public class CommitDAO {
     }
 
     /**
+     * Retrieves the number of commits that match the specified filter
+     *
+     * @param commitFilter Filter to be applied
+     * @return The number of commits that match the specified filter
+     * @throws ServiceException
+     */
+    public int countCommitsByQuery(CommitFilter commitFilter) throws ServiceException {
+        LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByQuery -> Entry");
+        MongoLabServiceParms parms = new MongoLabServiceParms();
+        parms.setQuery(commitFilter);
+        Integer result = MongoLabProvider.countCommits(parms);
+        LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByQuery -> Exit");
+
+        return result;
+    }
+
+    /**
      * Retrieves a list of commits that are not found in any of the specified repositories, this is, if the commit is
      * found in at least one of the specified repositories, than it is not retrieved.
      *
@@ -99,7 +116,7 @@ public class CommitDAO {
     public Set<CommitInfo> getCommitsNotFoundInRepositories(List repositoryIds) throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsNotFoundInRepositories -> Entry");
 
-        if ((repositoryIds == null) || (repositoryIds.size() == 0)) {
+        if ((repositoryIds == null) || (repositoryIds.isEmpty())) {
             throw new ServiceException(
                 "At least one repository Id must be specified in order to look of non-existing commits");
         }
@@ -137,7 +154,7 @@ public class CommitDAO {
     }
 
     /**
-     * Inserts all commits in the list, in packages with <code>BULK_INSERT_SIZE</code>
+     * Inserts in the database all commits in the list, in packages with <code>BULK_INSERT_SIZE</code>
      * elements
      *
      * @param commits List of commits to be inserted
@@ -224,8 +241,8 @@ public class CommitDAO {
      * @param repositoryId The repository Id to be included in foundIn list
      * @exception DyeVCException
      */
-    public void removeRepositoryFromCommits(String systemName, String repositoryId) throws DyeVCException {
-        LoggerFactory.getLogger(CommitDAO.class).trace("removeRepositoryFromCommits -> Entry");
+    public void removeRepositoryFromAllCommits(String systemName, String repositoryId) throws DyeVCException {
+        LoggerFactory.getLogger(CommitDAO.class).trace("removeRepositoryFromAllCommits -> Entry");
 
         // Create filter for the list of commits to be updated
         MongoLabServiceParms parms  = new MongoLabServiceParms();
@@ -240,7 +257,7 @@ public class CommitDAO {
 
         // Calls Mongo Lab to update commits
         MongoLabProvider.updateCommits(parms, updateCmd);
-        LoggerFactory.getLogger(CommitDAO.class).trace("removeRepositoryFromCommits -> Exit");
+        LoggerFactory.getLogger(CommitDAO.class).trace("removeRepositoryFromAllCommits -> Exit");
     }
 
     /**

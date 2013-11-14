@@ -14,11 +14,12 @@ import br.uff.ic.dyevc.gui.core.SettingsWindow;
 import br.uff.ic.dyevc.gui.core.StdOutErrWindow;
 import br.uff.ic.dyevc.gui.graph.CommitHistoryWindow;
 import br.uff.ic.dyevc.gui.graph.TopologyWindow;
+import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
-import br.uff.ic.dyevc.monitor.TopologyMonitor;
+import br.uff.ic.dyevc.monitor.TopologyUpdater;
 import br.uff.ic.dyevc.utils.ImageUtils;
 import br.uff.ic.dyevc.utils.LimitLinesDocumentListener;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
@@ -101,7 +102,7 @@ public class MainWindow extends javax.swing.JFrame {
     private PopupMenu                  trayPopup;
     private TrayIcon                   trayIcon;
     private RepositoryMonitor          repositoryMonitor;
-    private TopologyMonitor            topologyMonitor;
+    private TopologyUpdater            topologyUpdater;
     private int                        lastMessagesCount = 0;
     private LimitLinesDocumentListener documentListener;
 
@@ -124,7 +125,7 @@ public class MainWindow extends javax.swing.JFrame {
 
         dlgAbout              = new AboutDialog(this, rootPaneCheckingEnabled);
         frameSettings         = new SettingsWindow();
-        monitoredRepositories = PreferencesUtils.loadMonitoredRepositories();
+        monitoredRepositories = MonitoredRepositories.getInstance();
 
         pnlMain               = new javax.swing.JPanel();
         pnlMain.setBorder(javax.swing.BorderFactory.createTitledBorder("Monitored repositories"));
@@ -446,7 +447,7 @@ public class MainWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="main menu events">
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
-            new RepositoryConfigWindow(monitoredRepositories, null, topologyMonitor).setVisible(true);
+            new RepositoryConfigWindow(monitoredRepositories, null, topologyUpdater).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -460,7 +461,7 @@ public class MainWindow extends javax.swing.JFrame {
     private void mntEditProjectActionPerformed(ActionEvent evt) {
         try {
             new RepositoryConfigWindow(monitoredRepositories, getSelectedRepository(),
-                                       topologyMonitor).setVisible(true);
+                                       topologyUpdater).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -700,7 +701,7 @@ public class MainWindow extends javax.swing.JFrame {
      */
     private void startMonitors() {
         repositoryMonitor = new RepositoryMonitor(this);
-        topologyMonitor   = new TopologyMonitor(monitoredRepositories);
+        topologyUpdater   = new TopologyUpdater();
     }
 
     /**
