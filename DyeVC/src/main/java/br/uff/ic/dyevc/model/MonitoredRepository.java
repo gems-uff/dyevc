@@ -120,7 +120,6 @@ public class MonitoredRepository implements Serializable {
      */
     public String getWorkingCloneAddress() {
         ApplicationSettingsBean settings = PreferencesUtils.loadPreferences();
-
         String                  pathTemp = settings.getWorkingPath() + IConstants.DIR_SEPARATOR + getId();
 
         return pathTemp;
@@ -139,7 +138,7 @@ public class MonitoredRepository implements Serializable {
     }
 
     /**
-     * Constructs ...
+     * Constructs an object of this type.
      *
      * @param id
      */

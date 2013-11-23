@@ -2,9 +2,11 @@ package br.uff.ic.dyevc.monitor;
 
 //~--- non-JDK imports --------------------------------------------------------
 
+import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.MonitorException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
+import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
@@ -17,14 +19,34 @@ import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import br.uff.ic.dyevc.utils.RepositoryConverter;
 
+import org.apache.commons.collections15.CollectionUtils;
+
+import org.eclipse.jgit.transport.URIish;
+
 import org.slf4j.LoggerFactory;
 
 //~--- JDK imports ------------------------------------------------------------
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * This class updates the topology.
@@ -32,38 +54,30 @@ import java.util.Set;
  * @author Cristiano
  */
 public class TopologyUpdater {
-    private final TopologyDAO   topologyDAO;
-    private Topology            topology;
-    MonitoredRepositories       monitoredRepositories;
-    RepositoryConverter         converter;
-    private MonitoredRepository repositoryToUpdate;
-    private final Object        lock = new Object();
-    private Boolean             running;
+    private final TopologyDAO           topologyDAO;
+    private final CommitDAO             commitDAO;
+    private Topology                    topology;
+    private final MonitoredRepositories monitoredRepositories;
+    private RepositoryConverter         converter;
+    private MonitoredRepository         repositoryToUpdate;
+    private GitCommitTools              tools;
 
     /**
-     * Associates the specified window container and continuously monitors the topology.
-     *
+     * Creates a new object of this type.
      */
     public TopologyUpdater() {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Constructor -> Entry.");
         topologyDAO                = new TopologyDAO();
+        commitDAO                  = new CommitDAO();
         this.monitoredRepositories = MonitoredRepositories.getInstance();
-        running                    = false;
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Constructor -> Exit.");
     }
 
     /**
      * Updates the topology.
+     * @param repositoryToUpdate the repository to be updated
      */
-    public void update(MonitoredRepository repositoryToUpdate) throws MonitorException {
-        synchronized (lock) {
-            if (running) {
-                throw new MonitorException("Topology updater is currently running. Try again later.");
-            }
-
-            running = true;
-        }
-
+    public void update(MonitoredRepository repositoryToUpdate) {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Topology updater is running.");
 
         if (!repositoryToUpdate.hasSystemName()) {
@@ -81,11 +95,11 @@ public class TopologyUpdater {
                 + "> with id <" + repositoryToUpdate.getName() + ">");
 
         updateRepositoryTopology();
+
         updateCommitTopology();
 
         MessageManager.getInstance().addMessage("Finished update topology for repository <"
                 + repositoryToUpdate.getId() + "> with id <" + repositoryToUpdate.getName() + ">");
-        running = false;
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Topology updater finished running.");
     }
 
@@ -94,8 +108,6 @@ public class TopologyUpdater {
      * that do not yet exist and refreshes local topology cache.
      *
      * @see RepositoryConverter
-     *
-     * @throws DyeVCException
      */
     private void updateRepositoryTopology() {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateRepositoryTopology -> Entry.");
@@ -119,42 +131,72 @@ public class TopologyUpdater {
 
     /**
      * Updates the topology for the specified repository sending any new commits found both to the repository and to
-     * referenced repositories. The following logic is used:<br><br>
-     * <ul>
-     *      <li></li>
-     * </ul>
-     * @throws DyeVCException
+     * referenced repositories.
      */
     private void updateCommitTopology() {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommitTopology -> Entry.");
 
-//      repositoryToUpdate.getRepStatus().getNonSyncedRepositoryBranches().get(0).getReferencedRemote()
-
         try {
-            CommitDAO    dao    = new CommitDAO();
-            CommitFilter filter = new CommitFilter();
-            filter.setSystemName("dyevc");
+            // TODO implement lock mechanism
+            // Retrieves previous snapshot from disk
+            ArrayList<CommitInfo> previousSnapshot = retrieveSnapshot();
 
-            // Gets all known commit hashes for the system in the topology
-            Set<CommitInfo>       remoteHashes = dao.getCommitHashesByQuery(filter);
-            ArrayList<CommitInfo> toUpdate     = new ArrayList<CommitInfo>();
+            // Retrieves current snapshot from repository
+            tools = GitCommitTools.getInstance(repositoryToUpdate, true);
+            ArrayList<CommitInfo> currentSnapshot = (ArrayList)tools.getCommitInfos();
 
-            GitCommitTools        commitTools  = GitCommitTools.getInstance(repositoryToUpdate, true);
-            commitTools.setConnection(repositoryToUpdate.getWorkingCloneConnection());
-            commitTools.loadExternalCommits(converter.toRepositoryInfo());
-            ArrayList workingHashes = (ArrayList)commitTools.getCommitInfos();
+            // Identifies new local commits since previous snapshot
+            ArrayList<CommitInfo> newCommits = currentSnapshot;
+            if (previousSnapshot != null) {
+                newCommits = (ArrayList)CollectionUtils.subtract(currentSnapshot, previousSnapshot);
+            }
 
-            System.out.println("commits updated.");
+            // Identifies commits that were deleted since previous snapshot
+            ArrayList<CommitInfo> commitsToDelete = new ArrayList<CommitInfo>();
+            if (previousSnapshot != null) {
+                commitsToDelete = (ArrayList<CommitInfo>)CollectionUtils.subtract(previousSnapshot, currentSnapshot);
+            }
+
+            // Identifies commits that are potentially not synchronized in the database
+            int             commitCount               = countCommitsInDatabase();
+            Set<CommitInfo> commitsNotFoundInSomeReps = new HashSet<CommitInfo>();
+            if (commitCount > 0) {
+                commitsNotFoundInSomeReps = getCommitsNotFoundInSomeReps();
+            }
+
+            // Insert commits into the database
+            ArrayList<CommitInfo> commitsToInsert = getCommitsToInsert(newCommits);
+            // uncomment this later
+            if (!commitsToInsert.isEmpty()) {
+                insertCommits(commitsToInsert);
+            }
+
+            // delete commits from database
+            // uncomment this later
+            if (!commitsToDelete.isEmpty()) {
+                deleteCommits(commitsToDelete);
+            }
+
+            // save current snapshot to disk
+            // uncomment this later
+            saveSnapshot(currentSnapshot);
+
+            // updated commits in the database (those that were not deleted)
+            ArrayList<CommitInfo> updateableCommits = (ArrayList)CollectionUtils.subtract(commitsNotFoundInSomeReps,
+                                                          commitsToDelete);
+            if (!updateableCommits.isEmpty()) {
+                updateCommits(updateableCommits);
+            }
 
         } catch (DyeVCException dex) {
-            MessageManager.getInstance().addMessage("Error updating commits for repository<"
+            MessageManager.getInstance().addMessage("Error updating commits from repository <"
                     + repositoryToUpdate.getName() + "> with id<" + repositoryToUpdate.getId() + ">\n\t"
                     + dex.getMessage());
         } catch (RuntimeException re) {
-            MessageManager.getInstance().addMessage("Error updating commits for repository<"
+            MessageManager.getInstance().addMessage("Error updating commits from repository <"
                     + repositoryToUpdate.getName() + "> with id<" + repositoryToUpdate.getId() + ">\n\t"
                     + re.getMessage());
-            LoggerFactory.getLogger(TopologyUpdater.class).error("Error during commits update.", re);
+            LoggerFactory.getLogger(TopologyUpdater.class).error("Error during topology update.", re);
         }
 
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommitTopology -> Exit.");
@@ -204,5 +246,260 @@ public class TopologyUpdater {
         }
 
         LoggerFactory.getLogger(TopologyUpdater.class).trace("verifyDeletedRepositories -> Exit.");
+    }
+
+    /**
+     * Retrieves the previous snapshot of commit infos from disk. If there was no previous snapshot saved, then returns null.
+     * @return the saved snapshot of commit infos (null if no previous snapshot found).
+     * @throws DyeVCException
+     */
+    private ArrayList<CommitInfo> retrieveSnapshot() throws DyeVCException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("retrieveSnapshot -> Entry.");
+        ObjectInput           input = null;
+        String                snapshotPath;
+        ArrayList<CommitInfo> recoveredCommits = null;
+        try {
+            snapshotPath = repositoryToUpdate.getWorkingCloneConnection().getPath() + IConstants.DIR_SEPARATOR
+                           + "snapshot.ser";
+            input = new ObjectInputStream(new BufferedInputStream(new FileInputStream(snapshotPath)));
+
+            // deserialize the List
+            recoveredCommits = (ArrayList<CommitInfo>)input.readObject();
+        } catch (FileNotFoundException ex) {
+            // do nothing. There is no previous snapshot, so will return null.
+        } catch (ClassNotFoundException ex) {
+            throw new MonitorException(ex);
+        } catch (IOException ex) {
+            throw new MonitorException(ex);
+        } finally {
+            try {
+                if (input != null) {
+                    input.close();
+                }
+            } catch (IOException ex) {
+                LoggerFactory.getLogger(TopologyUpdater.class).warn("Error closing snapshot stream.", ex);
+            }
+        }
+
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("retrieveSnapshot -> Exit.");
+
+        return recoveredCommits;
+    }
+
+    /**
+     * Saves a snapshot with the specified list of commit infos to disk
+     * @param commitInfos the list of commit infos to be saved
+     * @throws DyeVCException
+     */
+    private void saveSnapshot(ArrayList<CommitInfo> commitInfos) throws DyeVCException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("saveSnapshot -> Entry.");
+        ObjectOutput output = null;
+        String       snapshotPath;
+        try {
+            snapshotPath = repositoryToUpdate.getWorkingCloneConnection().getPath() + IConstants.DIR_SEPARATOR
+                           + "snapshot.ser";
+            output = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(snapshotPath)));
+            output.writeObject(commitInfos);
+        } catch (IOException ex) {
+            throw new MonitorException(ex);
+        } finally {
+            try {
+                if (output != null) {
+                    output.close();
+                }
+            } catch (IOException ex) {
+                LoggerFactory.getLogger(TopologyUpdater.class).warn("Error closing snapshot stream.", ex);
+            }
+        }
+
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("saveSnapshot -> Exit.");
+    }
+
+    /**
+     * Retrieves from the database the number of existing commits for the system that the repository being updated belongs to
+     * @return the number of existing commits for the system that the repository being updated belongs to
+     * @throws ServiceException
+     */
+    private int countCommitsInDatabase() throws ServiceException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("countCommitsInDatabase -> Entry.");
+        CommitFilter filter = new CommitFilter();
+        filter.setSystemName(repositoryToUpdate.getSystemName());
+
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("countCommitsInDatabase -> Exit.");
+
+        return commitDAO.countCommitsByQuery(filter);
+    }
+
+    /**
+     * Retrieves from the database the list of commits that were not found in repositories related to the repository
+     * being updated. If at least one related repository was not listed in the commits foundIn list, then the commit is
+     * retrieved
+     * @return The list of commits that were not found in some of the related repositories
+     */
+    private Set<CommitInfo> getCommitsNotFoundInSomeReps() throws DyeVCException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("getCommitsNotFoundInSomeReps -> Entry.");
+        Set<String>    repositoryIds = new HashSet<String>();
+        RepositoryInfo info          = converter.toRepositoryInfo();
+
+        repositoryIds.add(repositoryToUpdate.getId());
+        repositoryIds.addAll(info.getPullsFrom());
+        repositoryIds.addAll(info.getPushesTo());
+
+        Set<CommitInfo> commitsNotFound = commitDAO.getCommitsNotFoundInRepositories(repositoryIds,
+                                              info.getSystemName(), false);
+
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("getCommitsNotFoundInSomeReps -> Exit.");
+
+        return commitsNotFound;
+    }
+
+    /**
+     * Verifies which of the snapshot's new commits already exist in the database, and return only those that do not exist,
+     * this is, those that must be inserted into the database
+     * @param newCommits New commits found in the current repository snapshot
+     * @return the list of commits that do not exist in the database yet
+     * @throws DyeVCException
+     */
+    private ArrayList<CommitInfo> getCommitsToInsert(ArrayList<CommitInfo> newCommits) throws DyeVCException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("getCommitsToInsert -> Entry.");
+        ArrayList<CommitInfo> commitsToInsert = newCommits;
+
+        if (newCommits != null) {
+            Set<CommitInfo> newCommitsInDatabase = commitDAO.getCommitsByHashes(newCommits,
+                                                       converter.toRepositoryInfo().getSystemName());
+            commitsToInsert = (ArrayList<CommitInfo>)CollectionUtils.subtract(newCommits, newCommitsInDatabase);
+        } else {
+            commitsToInsert = new ArrayList<CommitInfo>();
+        }
+
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("getCommitsToInsert -> Exit.");
+
+        return commitsToInsert;
+    }
+
+    /**
+     * Converts a set of URIishes into a set of repository ids.
+     * @param aheadSet the set of uriishes to be converted.
+     * @return the set of uriishes converted into a set of repository ids.
+     * @throws DyeVCException
+     */
+    private Set<String> convertURIishesToRepIds(final Set<URIish> aheadSet) throws DyeVCException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("convertURIishesToRepIds -> Entry.");
+        Set<String> aheadRepIds = new HashSet<String>(aheadSet.size());
+        for (URIish uriish : aheadSet) {
+            String repId = converter.mapUriToRepositoryId(uriish);
+            if (repId != null) {
+                aheadRepIds.add(repId);
+            }
+        }
+
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("convertURIishesToRepIds -> Exit.");
+
+        return aheadRepIds;
+    }
+
+
+    /**
+     * Insert new commits into the database. Prior to the insertion, update each commit with the list of repositories
+     * where they are known to be found.
+     * @param commitsToInsert the list of commits to be inserted
+     */
+    private void insertCommits(ArrayList<CommitInfo> commitsToInsert) throws DyeVCException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("insertCommits -> Entry.");
+
+        commitsToInsert = updateWhereExists(commitsToInsert);
+        commitDAO.insertCommits(commitsToInsert);
+
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("insertCommits -> Exit.");
+    }
+
+    /**
+     * Updates commits into the database. Prior to the update, update each commit with the list of repositories
+     * where they are known to be found. If the list of repositories has not changed since last run, then do not update the commit.
+     * updateableCommits commitsToUpdate the list of commits to be updated
+     */
+    private void updateCommits(ArrayList<CommitInfo> updateableCommits) throws DyeVCException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommits -> Entry.");
+
+        updateableCommits = updateWhereExists(updateableCommits);
+        ArrayList<CommitInfo> commitsToUpdate = new ArrayList<CommitInfo>();
+
+        // Populates a map with groups of commits that should be updated with new repositories where they can now be found
+        Map<String, List<CommitInfo>> commitsToUpdateByRepository = new TreeMap<String, List<CommitInfo>>();
+        for (CommitInfo ci : updateableCommits) {
+            Collection<String> newRepIds = CollectionUtils.subtract(ci.getFoundIn(), ci.getPreviousFoundIn());
+            if (!newRepIds.isEmpty()) {
+                // if collection of found repositories for the commits has changed, then include the commit to be updated for
+                // new repository id can now be found.
+                for (String repId : newRepIds) {
+                    List<CommitInfo> cisToUpdate = commitsToUpdateByRepository.get(repId);
+                    if (cisToUpdate == null) {
+                        cisToUpdate = new ArrayList<CommitInfo>();
+                        commitsToUpdateByRepository.put(repId, cisToUpdate);
+                    }
+
+                    cisToUpdate.add(ci);
+                }
+            }
+        }
+
+        for (String repId : commitsToUpdateByRepository.keySet()) {
+            commitDAO.updateCommitsWithNewRepository(commitsToUpdateByRepository.get(repId), repId);
+        }
+
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommits -> Exit.");
+    }
+
+    /**
+     * Delete the specified list of commits from the database.
+     * @param commitsToDelete the list of commits to be deleted.
+     */
+    private void deleteCommits(ArrayList<CommitInfo> commitsToDelete) throws ServiceException {
+        commitDAO.deleteCommits(commitsToDelete, repositoryToUpdate.getSystemName());
+    }
+
+    /**
+     * Updates each commit in the specified list with the list of repositories where they are known to be found. This is
+     * done checking the repository status for each non-synchronized branch.
+     * @param commitList
+     * @return
+     */
+    private ArrayList<CommitInfo> updateWhereExists(ArrayList<CommitInfo> commitList) throws DyeVCException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("updateWhereExists -> Entry.");
+
+        for (CommitInfo ci : commitList) {
+            ci.setPreviousFoundIn(new HashSet<String>(ci.getFoundIn()));
+            Set<URIish> aheadSet  = repositoryToUpdate.getRepStatus().getAheadRepsForCommit(ci.getHash());
+            Set<URIish> behindSet = repositoryToUpdate.getRepStatus().getBehindRepsForCommit(ci.getHash());
+
+            if (aheadSet.isEmpty() && behindSet.isEmpty()) {
+                if (tools.getCommitInfoMap().containsKey(ci.getHash())) {
+                    // If the commit is neither ahead nor behind any related repository, and exists locally,
+                    // then it exists in all related repositories
+                    ci.addAllToFoundIn(converter.toRepositoryInfo().getPullsFrom());
+                    ci.addAllToFoundIn(converter.toRepositoryInfo().getPushesTo());
+                    ci.addFoundIn(repositoryToUpdate.getId());
+                }
+            }
+
+            if (!behindSet.isEmpty()) {
+                // Commit is behind, so it does not exist locally and exists in all repositories in behindSet.
+                Set<String> behindRepIds = convertURIishesToRepIds(behindSet);
+                ci.addAllToFoundIn(behindRepIds);
+            }
+
+            if (!aheadSet.isEmpty()) {
+                // Commit is ahead, so it exists locally and in all repositories that DO NOT have an ahead list containing it.
+                Set<String>        aheadRepIds    = convertURIishesToRepIds(aheadSet);
+                Collection<String> notAheadRepIds =
+                    CollectionUtils.subtract(converter.toRepositoryInfo().getPushesTo(), aheadRepIds);
+                ci.addAllToFoundIn(notAheadRepIds);
+                ci.addFoundIn(repositoryToUpdate.getId());
+            }
+        }
+
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("updateWhereExists -> Exit.");
+
+        return commitList;
     }
 }

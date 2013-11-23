@@ -4,14 +4,13 @@ package br.uff.ic.dyevc.gui.core;
 
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
-import br.uff.ic.dyevc.exception.MonitorException;
 import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.topology.RepositoryFilter;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.model.topology.Topology;
-import br.uff.ic.dyevc.monitor.TopologyUpdater;
+import br.uff.ic.dyevc.monitor.RepositoryMonitor;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
@@ -44,14 +43,17 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private static final long       serialVersionUID = -5327813882224088396L;
     private ApplicationSettingsBean settings;
     private Topology                topology;
-    private TopologyUpdater         topologyUpdater;
+    private RepositoryMonitor       repositoryMonitor;
     private RepositoryConverter     converter;
 
     /**
      * Creates new form RepositoryConfigWindow
+     * @param monBean The list of monitored repositories. It must not be null.
+     * @param repository The repository to be configured. If null, will create a new one.
+     * @param monitor The repository monitor to be called after creating a new repository.
      */
     public RepositoryConfigWindow(MonitoredRepositories monBean, MonitoredRepository repository,
-                                  TopologyUpdater updater)
+                                  RepositoryMonitor monitor)
             throws DyeVCException {
         if (monBean == null) {
             LoggerFactory.getLogger(RepositoryConfigWindow.class).error(
@@ -61,7 +63,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         }
 
         monitoredRepositoriesBean = monBean;
-        topologyUpdater           = updater;
+        repositoryMonitor         = monitor;
 
         if (repository != null) {
             create         = false;
@@ -204,30 +206,34 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             return;
         }
 
-        try {
-            updateTopology();
-        } catch (DyeVCException ex) {
-            JOptionPane.showMessageDialog(
-                this,
-                "An error occurred while trying to include a repository in the topology."
-                + " Please try again later.  Access \"View -> Console Window\" for details.", "Error",
-                    JOptionPane.ERROR_MESSAGE);
-
-            return;
-        }
+//      try {
+//          updateTopology();
+//      } catch (DyeVCException ex) {
+//          JOptionPane.showMessageDialog(
+//              this,
+//              "An error occurred while trying to include a repository in the topology."
+//              + " Please try again later.  Access \"View -> Console Window\" for details.", "Error",
+//                  JOptionPane.ERROR_MESSAGE);
+//
+//          return;
+//      }
 
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
         PreferencesUtils.persistRepositories();
         PreferencesUtils.storePreferences(settings);
 
-        try {
-            topologyUpdater.update(repositoryBean);
-        } catch (MonitorException ex) {
-            JOptionPane.showMessageDialog(this,
-                                          "Could not update topology for clone <" + repositoryBean.getName()
-                                          + "> with id <" + repositoryBean.getId()
-                                          + ">.\nTopology will be updated on the next monitor cycle.", "Information",
-                                              JOptionPane.OK_OPTION);
+        if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
+            repositoryMonitor.setRepositoryToMonitor(repositoryBean);
+            repositoryMonitor.interrupt();
+        } else {
+            JOptionPane.showMessageDialog(
+                this,
+                "The repository is being locally monitored, but the topology could not"
+                + "\nbe updated because the Repository Monitor is busy now. Topology will be updated on the next"
+                + "\nscheduled monitor run. If you want to update it before next run, right click on the repository"
+                + "\nname and choose \"Check Project\".\n\nRemember the topology and commits graphs shown before"
+                + "\nchecking the repository will not reflect the current situation.", "Information",
+                    JOptionPane.OK_OPTION);
         }
 
         dispose();

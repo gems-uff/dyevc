@@ -7,7 +7,8 @@ import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.topology.CommitFilter;
 import br.uff.ic.dyevc.services.MongoLabProvider;
-import br.uff.ic.dyevc.utils.JsonSerializer;
+import br.uff.ic.dyevc.utils.DateUtil;
+import br.uff.ic.dyevc.utils.JsonSerializerUtils;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -19,6 +20,8 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -32,6 +35,12 @@ public class CommitDAO {
      * Number of elements to send in bulk inserts;
      */
     private static final int BULK_INSERT_SIZE = 3000;
+
+    /**
+     * Number of elements to send in bulk commit update by hashes. More than this will make command too long and mongodb
+     * will reject it;
+     */
+    private static final int BULK_UPDATE_COMMITS_SIZE = 80;
 
     /**
      * Limit of commits to be returned in queries
@@ -88,6 +97,42 @@ public class CommitDAO {
     }
 
     /**
+     * Retrieves the list of specified commits that already exist in the database.
+     *
+     * @param cis List of commits which hashes to be queried. Hashes that do not have corresponding commits in the
+     * database are discarded.
+     * @param systemName System name where commits will be searched.
+     * @return List of commits that have the specified hashes.
+     * @throws ServiceException
+     */
+    public Set<CommitInfo> getCommitsByHashes(List<CommitInfo> cis, String systemName) throws ServiceException {
+        LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByHashes -> Entry");
+
+        if (cis == null) {
+            throw new ServiceException(
+                "The list of commits must not be null in order to retrieve commits from the database.");
+        }
+
+        if (cis.isEmpty()) {
+            return new HashSet<CommitInfo>();
+        }
+
+        if ((systemName == null) || ("".equals(systemName))) {
+            throw new ServiceException("System name must be specified");
+        }
+
+        CommitFilter  filter = new CommitFilter();
+        StringBuilder query  = new StringBuilder("{\"systemName\": \"").append(systemName).append("\"");
+        query.append(", \"_id\": {$in: ").append(JsonSerializerUtils.serializeHashes(cis)).append("}}");
+        filter.setCustomQuery(query.toString());
+        Set<CommitInfo> result = getCommitsByQuery(filter);
+
+        LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByHashes -> Exit");
+
+        return result;
+    }
+
+    /**
      * Retrieves the number of commits that match the specified filter
      *
      * @param commitFilter Filter to be applied
@@ -105,15 +150,25 @@ public class CommitDAO {
     }
 
     /**
-     * Retrieves a list of commits that are not found in any of the specified repositories, this is, if the commit is
-     * found in at least one of the specified repositories, than it is not retrieved.
+     * <p>Retrieves a list of commits that are not found in the specified {@literal repositoryIds}. The search is done according to the
+     * {@literal considerAll} parameter. This is:</p>
+     * <ul>
+     *  <li>If considerAll is true, makes an <code>AND</code> search, meaning that commits returned do not exist in ANY
+     * of the specified {@literal repositoryIds}.</li>
+     *  <li>If considerAll is false, makes an <code>OR</code> search, meaning that commits returned do not exist in
+     * AT LEAST ONE of the specified {@literal repositoryIds}.</li>
+     * </ul>
      *
      * @param repositoryIds The id of the repositories to look for commits not found in. At least one repositoryId should
      * be specified.
+     * @param systemName System name where commits will be searched.
+     * @param considerAll If true, makes an AND search across the specified {@literal repositoryIds}, otherwise, makes an OR search.
      * @return List of commits that are not found in the specified repositoryIds
      * @throws ServiceException
      */
-    public Set<CommitInfo> getCommitsNotFoundInRepositories(List repositoryIds) throws ServiceException {
+    public Set<CommitInfo> getCommitsNotFoundInRepositories(Set<String> repositoryIds, String systemName,
+            boolean considerAll)
+            throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsNotFoundInRepositories -> Entry");
 
         if ((repositoryIds == null) || (repositoryIds.isEmpty())) {
@@ -121,32 +176,72 @@ public class CommitDAO {
                 "At least one repository Id must be specified in order to look of non-existing commits");
         }
 
-        CommitFilter filter = new CommitFilter();
-        filter.setCustomQuery("{\"foundIn\": {$nin: " + JsonSerializer.serializeWithoutNulls(repositoryIds) + "}}");
-        Set<CommitInfo> result = getCommitsByQuery(filter);
+        if ((systemName == null) || ("".equals(systemName))) {
+            throw new ServiceException("System name must be specified");
+        }
 
+        CommitFilter  filter = new CommitFilter();
+        StringBuilder query  = new StringBuilder("{\"systemName\": \"").append(systemName).append("\"");
+        if (considerAll) {
+            query.append(", \"foundIn\": {$nin: ").append(
+                JsonSerializerUtils.serializeWithoutNulls(repositoryIds)).append("}}");
+        } else {
+            query.append(", \"$or\": [");
+            Iterator<String> it = repositoryIds.iterator();
+            int              i  = 0;
+            while (it.hasNext()) {
+                i++;
+                String repositoryId = it.next();
+                query.append("{\"foundIn\": {\"$nin\": [\"").append(repositoryId).append("\"]}}");
+
+                if (i < repositoryIds.size()) {
+                    query.append(",");
+                }
+            }
+
+            query.append("]}");
+        }
+
+        filter.setCustomQuery(query.toString());
+        Set<CommitInfo> result = getCommitsByQuery(filter);
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsNotFoundInRepositories -> Exit");
 
         return result;
     }
 
     /**
+     * <p>Retrieves a list of commits that are not found in any of the specified {@literal repositoryIds}.</p>
+     *
+     * @param repositoryIds The id of the repositories to look for commits not found in. At least one repositoryId should
+     * be specified.
+     * @param systemName System name where commits will be searched.
+     * @return List of commits that are not found in any of the specified repositoryIds
+     * @throws ServiceException
+     */
+    public Set<CommitInfo> getCommitsNotFoundInRepositories(Set<String> repositoryIds, String systemName)
+            throws ServiceException {
+        return getCommitsNotFoundInRepositories(repositoryIds, systemName, true);
+    }
+
+    /**
      * Retrieves a list of commits that are not found in the specified repository.
      *
      * @param repositoryId The id of the repository to look for commits not found in.
+     * @param systemName System name where commits will be searched.
      * @return List of commits that are not found in the specified repositoryId
      * @throws ServiceException
      */
-    public Set<CommitInfo> getCommitsNotFoundInRepository(String repositoryId) throws ServiceException {
+    public Set<CommitInfo> getCommitsNotFoundInRepository(String repositoryId, String systemName)
+            throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsNotFoundInRepository -> Entry");
 
         if ((repositoryId == null) || ("".equals(repositoryId))) {
             throw new ServiceException("Repository id cannot be null or empty.");
         }
 
-        ArrayList<String> repAsList = new ArrayList<String>();
-        repAsList.add(repositoryId);
-        Set<CommitInfo> result = getCommitsNotFoundInRepositories(repAsList);
+        Set<String> repAsSet = new HashSet<String>();
+        repAsSet.add(repositoryId);
+        Set<CommitInfo> result = getCommitsNotFoundInRepositories(repAsSet, systemName);
 
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsNotFoundInRepository -> Exit");
 
@@ -155,20 +250,21 @@ public class CommitDAO {
 
     /**
      * Inserts in the database all commits in the list, in packages with <code>BULK_INSERT_SIZE</code>
-     * elements
+     * elements.
      *
      * @param commits List of commits to be inserted
      * @exception DyeVCException
      */
     public void insertCommits(List<CommitInfo> commits) throws DyeVCException {
-        LoggerFactory.getLogger(CommitDAO.class).trace("insertCommits -> Entry");
+        LoggerFactory.getLogger(CommitDAO.class).trace("upsertCommits -> Entry");
         int    i          = 0;
         int    j          = i + BULK_INSERT_SIZE;
         int    size       = commits.size();
         String systemName = commits.get(0).getSystemName();
+
         while (j <= size) {
             LoggerFactory.getLogger(CommitDAO.class).info(
-                "Inserting commits from {} to {} from a total of {} commits into <{}>.", i, j, size, systemName);
+                "Upserting commits from {} to {} from a total of {} commits into <{}>.", i, j, size, systemName);
             MongoLabProvider.insertCommits(commits.subList(i, j));
             i = j;
             j = i + BULK_INSERT_SIZE;
@@ -176,12 +272,12 @@ public class CommitDAO {
 
         if (i < size) {
             LoggerFactory.getLogger(CommitDAO.class).info(
-                "Inserting commits from {} to {} from a total of {} commits into system <{}>.", i, size, size,
+                "Upserting commits from {} to {} from a total of {} commits into system <{}>.", i, size, size,
                 systemName);
             MongoLabProvider.insertCommits(commits.subList(i, size));
         }
 
-        LoggerFactory.getLogger(CommitDAO.class).trace("insertCommits -> Exit");
+        LoggerFactory.getLogger(CommitDAO.class).trace("upsertCommits -> Exit");
     }
 
     /**
@@ -194,7 +290,7 @@ public class CommitDAO {
     public void updateCommitsWithNewRepository(List<CommitInfo> commits, String repositoryId) throws DyeVCException {
         LoggerFactory.getLogger(CommitDAO.class).trace("updateCommitsWithNewRepository -> Entry");
         int    i          = 0;
-        int    j          = i + BULK_INSERT_SIZE;
+        int    j          = i + BULK_UPDATE_COMMITS_SIZE;
         int    size       = commits.size();
         String systemName = commits.get(0).getSystemName();
 
@@ -207,7 +303,7 @@ public class CommitDAO {
         parms.setMulti(true);
 
         // Sets the update command
-        String updateCmd = "{\"$addToSet\" : { \"foundIn\" : \"" + repositoryId + "\" }";
+        String updateCmd = "{\"$addToSet\" : { \"foundIn\" : \"" + repositoryId + "\" }}";
         while (j <= size) {
             LoggerFactory.getLogger(CommitDAO.class).info(
                 "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, j, size,
@@ -239,9 +335,9 @@ public class CommitDAO {
      *
      * @param systemName The system name where commits will be updated
      * @param repositoryId The repository Id to be included in foundIn list
-     * @exception DyeVCException
+     * @throws br.uff.ic.dyevc.exception.ServiceException
      */
-    public void removeRepositoryFromAllCommits(String systemName, String repositoryId) throws DyeVCException {
+    public void removeRepositoryFromAllCommits(String systemName, String repositoryId) throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("removeRepositoryFromAllCommits -> Entry");
 
         // Create filter for the list of commits to be updated
@@ -253,7 +349,7 @@ public class CommitDAO {
         parms.setMulti(true);
 
         // Sets the update command
-        String updateCmd = "{\"$pull\" : { \"foundIn\" : \"" + repositoryId + "\" }";
+        String updateCmd = "{\"$pull\" : { \"foundIn\" : \"" + repositoryId + "\" }}";
 
         // Calls Mongo Lab to update commits
         MongoLabProvider.updateCommits(parms, updateCmd);
@@ -278,32 +374,8 @@ public class CommitDAO {
 
         // Calls Mongo Lab to update commits
         MongoLabProvider.deleteCommits(parms);
-        LoggerFactory.getLogger(CommitDAO.class).trace("removeRepositoryFromCommits -> Exit");
+        LoggerFactory.getLogger(CommitDAO.class).trace("deleteOrphanedCommits -> Exit");
     }
-
-//  /**
-//   * Deletes the monitored repository from the database. The
-//   * application first checks if the repository is not referenced anywhere,
-//   * otherwise throws an exception. If the monitored repository does not have
-//   * a system name configured, ignores it and does nothing.
-//   *
-//   * @param repository Monitored repository to be deleted from the database
-//   * @throws RepositoryReferencedException when other repositories reference
-//   * this one
-//   * @throws DyeVCException
-//   */
-//  public void deleteRepository(MonitoredRepository repository) throws ServiceException, RepositoryReferencedException {
-//      String systemName = repository.getSystemName();
-//      if (!("".equals(systemName) || "no name".equals(systemName))) {
-//          // Only repositories with system names have to be deleted from the database
-//          ArrayList<RepositoryInfo> dependentRepositories = findDependentRepositories(repository.getId());
-//          if (dependentRepositories.isEmpty()) {
-//              MongoLabProvider.deleteRepository(repository.getId());
-//          } else {
-//              throw new RepositoryReferencedException(dependentRepositories);
-//          }
-//      }
-//  }
 
     /**
      * Gets a list of commits and return their hashes as a serialized json array of strings.
@@ -345,7 +417,29 @@ public class CommitDAO {
         String hashes = serializeHashesToJsonArray(begin, end, commits);
 
         // Sets the list of hashes to be updated
-        filter.setHash(hashes);
-        parms.setQuery(filter);
+        StringBuilder query = new StringBuilder("{\"systemName\":\"dyevc\",\"_id\":{\"$in\": ");
+        query.append(hashes).append("}}");
+        parms.setQuery(query.toString());
+    }
+
+    /**
+     * Remove the specified list of commits from the database
+     * @param cis the List of commits to be deleted
+     * @param systemName The system name where commits will be deleted
+     */
+    public void deleteCommits(ArrayList<CommitInfo> cis, String systemName) throws ServiceException {
+        LoggerFactory.getLogger(CommitDAO.class).trace("deleteCommits -> Entry");
+
+        // Create filter for the list of commits to be updated
+        MongoLabServiceParms parms = new MongoLabServiceParms();
+
+        // Sets the query to delete commits (documents from the specified system name and empty foundIn list
+        StringBuilder query = new StringBuilder("{\"systemName\": \"").append(systemName).append("\"");
+        query.append(", \"_id\": {$in: ").append(JsonSerializerUtils.serializeHashes(cis)).append("}}");
+        parms.setQuery(query.toString());
+
+        // Calls Mongo Lab to update commits
+        MongoLabProvider.deleteCommits(parms);
+        LoggerFactory.getLogger(CommitDAO.class).trace("deleteCommits -> Exit");
     }
 }

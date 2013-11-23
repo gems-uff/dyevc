@@ -494,7 +494,6 @@ public class TemplateGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_settingsMnuItemActionPerformed
 
     private void repoListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_repoListMouseClicked
-        //TODO implementar a chamada à janela para editar as informações do projeto.
         JList list = (JList) evt.getSource();
         if (evt.getClickCount() == 2) {          // Double-click
             // Get item index
@@ -530,7 +529,6 @@ public class TemplateGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void needsAuthenticationCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_needsAuthenticationCheckBoxActionPerformed
-        // TODO add your handling code here:
     }//GEN-LAST:event_needsAuthenticationCheckBoxActionPerformed
 
     /**

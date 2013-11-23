@@ -84,7 +84,10 @@ public class RepositoryMonitor extends Thread {
                                 + MonitoredRepositories.getMonitoredProjects().size() + ": <"
                                 + monitoredRepository.getId() + "> with id <" + monitoredRepository.getName() + ">");
                         checkRepository(monitoredRepository);
-                        updater.update(monitoredRepository);
+
+                        if (!monitoredRepository.getRepStatus().isInvalid()) {
+                            updater.update(monitoredRepository);
+                        }
                     }
 
                     MessageManager.getInstance().addMessage(
@@ -95,7 +98,11 @@ public class RepositoryMonitor extends Thread {
                         "Manual monitoring requested for repository <{}> with id <{}>.", repositoryToMonitor.getId(),
                         repositoryToMonitor.getName());
                     checkRepository(repositoryToMonitor);
-                    updater.update(repositoryToMonitor);
+
+                    if (!repositoryToMonitor.getRepStatus().isInvalid()) {
+                        updater.update(repositoryToMonitor);
+                    }
+
                     setRepositoryToMonitor(null);
                 }
 

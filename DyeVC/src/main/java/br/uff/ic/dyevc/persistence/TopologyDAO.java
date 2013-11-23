@@ -193,7 +193,10 @@ public class TopologyDAO {
                 Set<String>    related = info.getPullsFrom();
                 related.addAll(info.getPushesTo());
 
+                CommitDAO commitDao = new CommitDAO();
+
                 MongoLabProvider.deleteRepository(repId);
+                commitDao.removeRepositoryFromAllCommits(systemName, repId);
 
                 for (String id : related) {
                     try {

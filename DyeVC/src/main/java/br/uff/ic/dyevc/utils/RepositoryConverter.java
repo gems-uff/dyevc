@@ -28,13 +28,13 @@ import java.util.List;
  * @author Cristiano
  */
 public class RepositoryConverter {
-    private MonitoredRepository       monitoredRepository;
-    private TopologyDAO               topologyDAO;
-    private ArrayList<RepositoryInfo> relatedNew;
-    private String                    relatedSystem;
-    private RepositoryInfo            info;
-    private boolean                   processed;
-    private HashMap<URIish, String>   uriishToIdMap;
+    private final MonitoredRepository       monitoredRepository;
+    private final TopologyDAO               topologyDAO;
+    private final ArrayList<RepositoryInfo> relatedNew;
+    private String                          relatedSystem;
+    private final RepositoryInfo            info;
+    private boolean                         processed;
+    private final HashMap<URIish, String>   uriishToIdMap;
 
     /**
      * Constructs ...
@@ -228,5 +228,19 @@ public class RepositoryConverter {
         relatedNew.add(toProcess);
 
         return toProcess;
+    }
+
+    /**
+     * Returns the repository unique id related to the specified uri
+     * @param uri The uri of the repository to return the id. The URIish is the one set in git's config file.
+     * @return The repository id that maps to the specified uri.
+     * @throws DyeVCException
+     */
+    public String mapUriToRepositoryId(URIish uri) throws DyeVCException {
+        if (!processed) {
+            initialize();
+        }
+
+        return uriishToIdMap.get(uri);
     }
 }

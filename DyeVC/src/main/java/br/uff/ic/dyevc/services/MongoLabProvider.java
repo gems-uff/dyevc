@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Set;
 
 /**
@@ -31,14 +32,16 @@ import java.util.Set;
  * @author Cristiano
  */
 public class MongoLabProvider {
-    /** Field description */
+    /** Path to access mongo lab collection for repositories */
     public static final String COLLECTION_REPOSITORIES = "/collections/repositories";
 
-    /** Field description */
-    public static final String        COLLECTION_COMMITS = "/collections/commits";
-    private static final String       API_KEY            = "dgOZbb9cNfzHSfuANRekokGrWCYWYCEs";
-    private static final String       BASE_URL           = "https://api.mongolab.com/api/1/databases/dyevc";
-    private static final ObjectMapper mapper             = new ObjectMapper();
+    /** Path to access mongo lab collection for commits */
+    public static final String        COLLECTION_COMMITS              = "/collections/commits";
+    private static final String       API_KEY                         = "dgOZbb9cNfzHSfuANRekokGrWCYWYCEs";
+    private static final String       BASE_URL                        =
+        "https://api.mongolab.com/api/1/databases/dyevc";
+    private static final String       KEY_MESSAGE_WHEN_ERROR_OCCURRED = "message";
+    private static final ObjectMapper mapper                          = new ObjectMapper();
 
     // <editor-fold defaultstate="collapsed" desc="repositories">
 
@@ -90,19 +93,19 @@ public class MongoLabProvider {
      */
     public static Object upsertRepository(RepositoryInfo body) throws DyeVCException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("upsertRepository -> Entry");
-        Object         result = null;
-        ClientRequest  req;
-        ClientResponse res;
+        LinkedHashMap                 result = null;
+        ClientRequest                 req;
+        ClientResponse<LinkedHashMap> res;
         try {
             mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
             String serviceName = COLLECTION_REPOSITORIES + "/" + body.getId();
-            req = prepareRequest(serviceName, null, new String(mapper.writeValueAsBytes(body)));
-            res = req.put(new GenericType<RepositoryInfo>() {}
+            req    = prepareRequest(serviceName, null, new String(mapper.writeValueAsBytes(body)));
+            res    = req.put(new GenericType<LinkedHashMap>() {}
             );
 
-            if (res.getStatus() == 200) {
-                result = res.getEntity();
-            } else {
+            result = res.getEntity();
+
+            if (res.getStatus() != 200) {
                 throwErrorMessage(serviceName, res.getStatus(), null);
             }
         } catch (ServiceException se) {
@@ -131,19 +134,19 @@ public class MongoLabProvider {
      */
     public static Object deleteRepository(String id) throws ServiceException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("deleteRepository -> Entry");
-        Object         result = null;
-        ClientRequest  req;
-        ClientResponse res;
+        LinkedHashMap                 result = null;
+        ClientRequest                 req;
+        ClientResponse<LinkedHashMap> res;
         try {
             String serviceName = COLLECTION_REPOSITORIES + "/" + id;
-            req = prepareRequest(serviceName, null);
-            res = req.delete(new GenericType<RepositoryInfo>() {}
+            req    = prepareRequest(serviceName, null);
+            res    = req.delete(new GenericType<LinkedHashMap>() {}
             );
 
-            if (res.getStatus() == 200) {
-                result = res.getEntity();
-            } else {
-                throwErrorMessage(serviceName, res.getStatus(), null);
+            result = res.getEntity();
+
+            if (res.getStatus() != 200) {
+                throwErrorMessage(serviceName, result.get(KEY_MESSAGE_WHEN_ERROR_OCCURRED), res.getStatus(), null);
             }
         } catch (ServiceException se) {
             throw se;
@@ -247,20 +250,20 @@ public class MongoLabProvider {
      */
     public static Object insertCommits(Collection<CommitInfo> commits) throws DyeVCException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("insertCommits -> Entry");
-        Object         result = null;
-        ClientRequest  req;
-        ClientResponse res;
+        LinkedHashMap                 result = null;
+        ClientRequest                 req;
+        ClientResponse<LinkedHashMap> res;
         try {
             mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
             String serviceName = COLLECTION_COMMITS;
-            req = prepareRequest(serviceName, null, new String(mapper.writeValueAsBytes(commits)));
-            res = req.post(new GenericType<Object>() {}
+            req    = prepareRequest(serviceName, null, new String(mapper.writeValueAsBytes(commits)));
+            res    = req.post(new GenericType<LinkedHashMap>() {}
             );
 
-            if (res.getStatus() == 200) {
-                result = res.getEntity();
-            } else {
-                throwErrorMessage(serviceName, res.getStatus(), null);
+            result = res.getEntity();
+
+            if (res.getStatus() != 200) {
+                throwErrorMessage(serviceName, result.get(KEY_MESSAGE_WHEN_ERROR_OCCURRED), res.getStatus(), null);
             }
         } catch (ServiceException se) {
             throw se;
@@ -286,19 +289,19 @@ public class MongoLabProvider {
      */
     public static Object updateCommits(MongoLabServiceParms parms, String updateCmd) throws ServiceException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("updateCommits -> Entry");
-        Object         result = null;
-        ClientRequest  req;
-        ClientResponse res;
+        LinkedHashMap                 result = null;
+        ClientRequest                 req;
+        ClientResponse<LinkedHashMap> res;
         try {
             String serviceName = COLLECTION_COMMITS;
-            req = prepareRequest(serviceName, parms, updateCmd);
-            res = req.put(new GenericType<Object>() {}
+            req    = prepareRequest(serviceName, parms, updateCmd);
+            res    = req.put(new GenericType<LinkedHashMap>() {}
             );
 
-            if (res.getStatus() == 200) {
-                result = res.getEntity();
-            } else {
-                throwErrorMessage(serviceName, res.getStatus(), null);
+            result = res.getEntity();
+
+            if (res.getStatus() != 200) {
+                throwErrorMessage(serviceName, result.get("message"), res.getStatus(), parms);
             }
         } catch (Exception ex) {
             LoggerFactory.getLogger(MongoLabProvider.class).error("Error updating commits with command: <" + updateCmd
@@ -322,20 +325,20 @@ public class MongoLabProvider {
      */
     public static Object deleteCommits(MongoLabServiceParms parms) throws ServiceException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("deleteCommits -> Entry");
-        Object         result = null;
-        ClientRequest  req;
-        ClientResponse res;
+        LinkedHashMap                 result = null;
+        ClientRequest                 req;
+        ClientResponse<LinkedHashMap> res;
         try {
             String serviceName = COLLECTION_COMMITS;
             req = prepareRequest(serviceName, parms);
             req.body("application/json", "[ ]");
-            res = req.put(new GenericType<Object>() {}
+            res    = req.put(new GenericType<LinkedHashMap>() {}
             );
 
-            if (res.getStatus() == 200) {
-                result = res.getEntity();
-            } else {
-                throwErrorMessage(serviceName, res.getStatus(), null);
+            result = res.getEntity();
+
+            if (res.getStatus() != 200) {
+                throwErrorMessage(serviceName, result.get(KEY_MESSAGE_WHEN_ERROR_OCCURRED), res.getStatus(), null);
             }
         } catch (Exception ex) {
             LoggerFactory.getLogger(MongoLabProvider.class).error("Error deleting commits.", ex);
@@ -379,26 +382,33 @@ public class MongoLabProvider {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="error handling">
+    private static void throwErrorMessage(String service, Object error, int status, HashMap<String, Object> params)
+            throws ServiceException {
+        StringBuilder message = createErrorMessage(service, error, status, params);
+        LoggerFactory.getLogger(MongoLabProvider.class).error(message.toString());
+
+        throw new ServiceException(message.toString());
+    }
+
     private static void throwErrorMessage(String service, int status, HashMap<String, Object> params)
             throws ServiceException {
-        StringBuilder message = createErrorMessage(service, status, params);
+        Object        error   = null;
+        StringBuilder message = createErrorMessage(service, error, status, params);
         LoggerFactory.getLogger(MongoLabProvider.class).error(message.toString());
 
         throw new ServiceException(message.toString());
     }
 
-    private static void throwErrorMessage(String service, int status, HashMap<String, Object> params, String body)
-            throws ServiceException {
-        StringBuilder message = createErrorMessage(service, status, params, body);
-        LoggerFactory.getLogger(MongoLabProvider.class).error(message.toString());
-
-        throw new ServiceException(message.toString());
-    }
-
-    private static StringBuilder createErrorMessage(String service, int status, HashMap<String, Object> params)
+    private static StringBuilder createErrorMessage(String service, Object error, int status,
+            HashMap<String, Object> params)
             throws ServiceException {
         StringBuilder message = new StringBuilder("Error invoking service: ").append(service).append(
                                     ". Return code received on service invocation: ").append(status);
+
+        if (error != null) {
+            message.append(IConstants.LINE_SEPARATOR).append("\tError message: ").append(error.toString());
+        }
+
         if ((params != null) &&!params.isEmpty()) {
             message.append(IConstants.LINE_SEPARATOR).append("\tParams used on invocation: ").append(
                 IConstants.LINE_SEPARATOR);
@@ -411,19 +421,5 @@ public class MongoLabProvider {
 
         return message;
     }
-
-    private static StringBuilder createErrorMessage(String service, int status, HashMap<String, Object> params,
-            String body)
-            throws ServiceException {
-        StringBuilder message = createErrorMessage(service, status, params);
-        if ((body != null) &&!"".equals(body)) {
-            message.append(IConstants.LINE_SEPARATOR).append("\tMessage body sent on invocation: ").append(
-                IConstants.LINE_SEPARATOR);
-            message.append("\t\t").append(body);
-        }
-
-        return message;
-    }
-
     // </editor-fold>
 }

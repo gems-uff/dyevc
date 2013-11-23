@@ -3,7 +3,7 @@ package br.uff.ic.dyevc.persistence;
 //~--- non-JDK imports --------------------------------------------------------
 
 import br.uff.ic.dyevc.exception.ServiceException;
-import br.uff.ic.dyevc.utils.JsonSerializer;
+import br.uff.ic.dyevc.utils.JsonSerializerUtils;
 
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -51,6 +51,6 @@ public abstract class GenericFilter {
             return customQuery;
         }
 
-        return JsonSerializer.serialize(this, filterNulls);
+        return JsonSerializerUtils.serialize(this, filterNulls);
     }
 }

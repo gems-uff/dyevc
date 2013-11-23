@@ -10,6 +10,9 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 //~--- JDK imports ------------------------------------------------------------
 
+import java.io.Serializable;
+
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -21,15 +24,16 @@ import java.util.TreeSet;
  * @author Cristiano
  */
 @JsonIgnoreProperties(
-    value         = {
-        "repositoryId", "parentsCount", "childrenCount", "changeSet", "visited", "author"
+    value = {
+        "repositoryId", "inWalk", "parentsCount", "parentsCountLock", "childrenCount", "childrenCountLock", "changeSet",
+        "visited", "author", "flags", "previousFoundIn"
     },
     ignoreUnknown = true
 )
 @JsonPropertyOrder(value = {
-    "_id", "systemName", "commitDate", "committer", "shortMessage", "parents", "foundIn"
+    "_id", "systemName", "commitDate", "committer", "shortMessage", "parents", "foundIn", "lastChanged"
 })
-public class CommitInfo implements Comparable<CommitInfo> {
+public class CommitInfo implements Comparable<CommitInfo>, Serializable {
     /**
      * Number of parents this commit has. If greater than one, this was a merge.
      * If zero, this was the first commit.
@@ -81,6 +85,15 @@ public class CommitInfo implements Comparable<CommitInfo> {
     private String      shortMessage;
     private Set<String> parents;
     private Set<String> foundIn;
+    private Set<String> previousFoundIn;
+
+    public Set<String> getPreviousFoundIn() {
+        return previousFoundIn;
+    }
+
+    public void setPreviousFoundIn(Set<String> previousFoundIn) {
+        this.previousFoundIn = previousFoundIn;
+    }
 
     /**
      * The id of any repository where this commit was found
@@ -264,6 +277,22 @@ public class CommitInfo implements Comparable<CommitInfo> {
      */
     public void setFoundIn(Set<String> foundIn) {
         this.foundIn = foundIn;
+    }
+
+    /**
+     * Adds a repository id to the set of foundIn repository ids.
+     * @param repId The repository id to be added.
+     */
+    public void addFoundIn(String repId) {
+        this.foundIn.add(repId);
+    }
+
+    /**
+     * Adds a collection of repository ids to the set of foundIn repository ids.
+     * @param repIds The collection of repository ids to be added.
+     */
+    public void addAllToFoundIn(Collection<String> repIds) {
+        this.foundIn.addAll(repIds);
     }
 
     /**

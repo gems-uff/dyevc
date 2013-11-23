@@ -58,7 +58,10 @@ public final class PreferencesUtils {
         nodeToStore.node(repositoryBean.getId()).put("name", repositoryBean.getName());
         nodeToStore.node(repositoryBean.getId()).put("cloneaddress", repositoryBean.getCloneAddress());
         nodeToStore.node(repositoryBean.getId()).putBoolean("markedForDeletion", repositoryBean.isMarkedForDeletion());
-        nodeToStore.node(repositoryBean.getId()).putLong("lastChanged", repositoryBean.getLastChanged().getTime());
+
+        if (repositoryBean.getLastChanged() != null) {
+            nodeToStore.node(repositoryBean.getId()).putLong("lastChanged", repositoryBean.getLastChanged().getTime());
+        }
 
         return repositoryBean;
     }

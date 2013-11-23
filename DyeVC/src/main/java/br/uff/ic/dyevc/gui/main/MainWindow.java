@@ -447,7 +447,7 @@ public class MainWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="main menu events">
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
-            new RepositoryConfigWindow(monitoredRepositories, null, topologyUpdater).setVisible(true);
+            new RepositoryConfigWindow(monitoredRepositories, null, repositoryMonitor).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -461,7 +461,7 @@ public class MainWindow extends javax.swing.JFrame {
     private void mntEditProjectActionPerformed(ActionEvent evt) {
         try {
             new RepositoryConfigWindow(monitoredRepositories, getSelectedRepository(),
-                                       topologyUpdater).setVisible(true);
+                                       repositoryMonitor).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override

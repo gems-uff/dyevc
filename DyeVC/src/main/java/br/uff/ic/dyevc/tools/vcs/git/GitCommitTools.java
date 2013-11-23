@@ -286,17 +286,17 @@ public class GitCommitTools {
             initialize();
         }
 
-        CommitDAO dao           = new CommitDAO();
+        CommitDAO dao          = new CommitDAO();
 
-        List      pushesToList  = new ArrayList(),
-                  pullsFromList = new ArrayList();
-        pushesToList.addAll(info.getPushesTo());
-        pullsFromList.addAll(info.getPullsFrom());
+        Set       pushesToSet  = new HashSet<String>(),
+                  pullsFromSet = new HashSet<String>();
+        pushesToSet.addAll(info.getPushesTo());
+        pullsFromSet.addAll(info.getPullsFrom());
 
 
-        notInPullListSet            = dao.getCommitsNotFoundInRepositories(pullsFromList);
-        notInPushListSet            = dao.getCommitsNotFoundInRepositories(pushesToList);
-        notInLocalRepositoryListSet = dao.getCommitsNotFoundInRepository(rep.getId());
+        notInPullListSet            = dao.getCommitsNotFoundInRepositories(pullsFromSet, info.getSystemName());
+        notInPushListSet            = dao.getCommitsNotFoundInRepositories(pushesToSet, info.getSystemName());
+        notInLocalRepositoryListSet = dao.getCommitsNotFoundInRepository(rep.getId(), info.getSystemName());
 
         includeExternalCommits();
     }
