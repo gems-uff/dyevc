@@ -188,6 +188,7 @@ public class TopologyUpdater {
                 updateCommits(updateableCommits);
             }
 
+            commitDAO.deleteOrphanedCommits(repositoryToUpdate.getSystemName());
         } catch (DyeVCException dex) {
             MessageManager.getInstance().addMessage("Error updating commits from repository <"
                     + repositoryToUpdate.getName() + "> with id<" + repositoryToUpdate.getId() + ">\n\t"

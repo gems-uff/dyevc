@@ -362,7 +362,7 @@ public class CommitDAO {
      * @param systemName The system name where commits will be deleted
      * @exception DyeVCException
      */
-    public void deleteOrphanedCommits(String systemName) throws DyeVCException {
+    public void deleteOrphanedCommits(String systemName) throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("deleteOrphanedCommits -> Entry");
 
         // Create filter for the list of commits to be updated

@@ -212,6 +212,7 @@ public class TopologyDAO {
                     }
                 }
 
+                commitDao.deleteOrphanedCommits(systemName);
                 lastChanged = DateUtil.getLocalTimeInUTC();
             } else {
                 throw new RepositoryReferencedException(dependentRepositories);
