@@ -18,6 +18,7 @@ import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import br.uff.ic.dyevc.utils.RepositoryConverter;
+import br.uff.ic.dyevc.utils.SystemUtils;
 
 import org.apache.commons.collections15.CollectionUtils;
 
@@ -75,6 +76,7 @@ public class TopologyUpdater {
 
     /**
      * Updates the topology.
+     *
      * @param repositoryToUpdate the repository to be updated
      */
     public void update(MonitoredRepository repositoryToUpdate) {
@@ -104,19 +106,72 @@ public class TopologyUpdater {
     }
 
     /**
-     * Updates the topology for the specified repository in the database, including any new referenced repositories
-     * that do not yet exist and refreshes local topology cache.
+     * Updates the topology for the specified repository in the database, including any new referenced repositories that
+     * do not yet exist and refreshes local topology cache.
      *
      * @see RepositoryConverter
      */
     private void updateRepositoryTopology() {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateRepositoryTopology -> Entry.");
+        String systemName = repositoryToUpdate.getSystemName();
 
         try {
-            Date lastChanged = topologyDAO.upsertRepository(converter.toRepositoryInfo());
-            topologyDAO.upsertRepositories(converter.getRelatedNewList());
-            repositoryToUpdate.setLastChanged(lastChanged);
-            topology = topologyDAO.readTopologyForSystem(repositoryToUpdate.getSystemName());
+            topology = topologyDAO.readTopologyForSystem(systemName);
+
+            RepositoryInfo localRepositoryInfo  = converter.toRepositoryInfo();
+            RepositoryInfo remoteRepositoryInfo = topology.getRepositoryInfo(systemName, localRepositoryInfo.getId());
+
+            /*
+             * changedLocally is used to flag any changes to repository info. If any changes were done at the end of the
+             * method, then the repository is updated in database. It is initialized with true if the repository info
+             * does not exist in the database.
+             */
+            boolean changedLocally = remoteRepositoryInfo == null;
+            if (!changedLocally) {
+                // localRepositoryInfo already exists in the topology, then gets the list of hosts that monitor it
+                localRepositoryInfo.setMonitoredBy(remoteRepositoryInfo.getMonitoredBy());
+            } else {
+                localRepositoryInfo.addMonitoredBy(SystemUtils.getLocalHostname());
+            }
+
+            if (!changedLocally) {
+                // check whether this computer must be added or removed from the monitoredby list.
+                Set<String> monitoredBy = localRepositoryInfo.getMonitoredBy();
+                String      hostname    = SystemUtils.getLocalHostname();
+
+                if (repositoryToUpdate.isMarkedForDeletion()) {
+                    changedLocally |= monitoredBy.remove(hostname);
+                } else {
+                    changedLocally |= monitoredBy.add(hostname);
+                }
+            }
+
+            if (!changedLocally) {
+                // Checks if the pullsFrom list must be updated
+                Collection<String> insertedPullsFrom = CollectionUtils.subtract(localRepositoryInfo.getPullsFrom(),
+                                                           remoteRepositoryInfo.getPullsFrom());
+                Collection<String> removedPullsFrom = CollectionUtils.subtract(remoteRepositoryInfo.getPullsFrom(),
+                                                          localRepositoryInfo.getPullsFrom());
+                changedLocally |= !insertedPullsFrom.isEmpty();
+                changedLocally |= !removedPullsFrom.isEmpty();
+            }
+
+            if (!changedLocally) {
+                // Checks if the pushesTo list must be updated
+                Collection<String> insertedPushesTo = CollectionUtils.subtract(localRepositoryInfo.getPushesTo(),
+                                                          remoteRepositoryInfo.getPushesTo());
+                Collection<String> removedPushesTo = CollectionUtils.subtract(remoteRepositoryInfo.getPushesTo(),
+                                                         localRepositoryInfo.getPushesTo());
+                changedLocally |= !insertedPushesTo.isEmpty();
+                changedLocally |= !removedPushesTo.isEmpty();
+            }
+
+            if (changedLocally) {
+                Date lastChanged = topologyDAO.upsertRepository(converter.toRepositoryInfo());
+                topologyDAO.upsertRepositories(converter.getRelatedNewList());
+                repositoryToUpdate.setLastChanged(lastChanged);
+                topology = topologyDAO.readTopologyForSystem(repositoryToUpdate.getSystemName());
+            }
         } catch (DyeVCException dex) {
             MessageManager.getInstance().addMessage("Error updating repository<" + repositoryToUpdate.getName()
                     + "> with id<" + repositoryToUpdate.getId() + ">\n\t" + dex.getMessage());
@@ -250,7 +305,9 @@ public class TopologyUpdater {
     }
 
     /**
-     * Retrieves the previous snapshot of commit infos from disk. If there was no previous snapshot saved, then returns null.
+     * Retrieves the previous snapshot of commit infos from disk. If there was no previous snapshot saved, then returns
+     * null.
+     *
      * @return the saved snapshot of commit infos (null if no previous snapshot found).
      * @throws DyeVCException
      */
@@ -289,6 +346,7 @@ public class TopologyUpdater {
 
     /**
      * Saves a snapshot with the specified list of commit infos to disk
+     *
      * @param commitInfos the list of commit infos to be saved
      * @throws DyeVCException
      */
@@ -317,7 +375,9 @@ public class TopologyUpdater {
     }
 
     /**
-     * Retrieves from the database the number of existing commits for the system that the repository being updated belongs to
+     * Retrieves from the database the number of existing commits for the system that the repository being updated
+     * belongs to
+     *
      * @return the number of existing commits for the system that the repository being updated belongs to
      * @throws ServiceException
      */
@@ -335,6 +395,7 @@ public class TopologyUpdater {
      * Retrieves from the database the list of commits that were not found in repositories related to the repository
      * being updated. If at least one related repository was not listed in the commits foundIn list, then the commit is
      * retrieved
+     *
      * @return The list of commits that were not found in some of the related repositories
      */
     private Set<CommitInfo> getCommitsNotFoundInSomeReps() throws DyeVCException {
@@ -355,8 +416,9 @@ public class TopologyUpdater {
     }
 
     /**
-     * Verifies which of the snapshot's new commits already exist in the database, and return only those that do not exist,
-     * this is, those that must be inserted into the database
+     * Verifies which of the snapshot's new commits already exist in the database, and return only those that do not
+     * exist, this is, those that must be inserted into the database
+     *
      * @param newCommits New commits found in the current repository snapshot
      * @return the list of commits that do not exist in the database yet
      * @throws DyeVCException
@@ -380,6 +442,7 @@ public class TopologyUpdater {
 
     /**
      * Converts a set of URIishes into a set of repository ids.
+     *
      * @param aheadSet the set of uriishes to be converted.
      * @return the set of uriishes converted into a set of repository ids.
      * @throws DyeVCException
@@ -399,10 +462,10 @@ public class TopologyUpdater {
         return aheadRepIds;
     }
 
-
     /**
      * Insert new commits into the database. Prior to the insertion, update each commit with the list of repositories
      * where they are known to be found.
+     *
      * @param commitsToInsert the list of commits to be inserted
      */
     private void insertCommits(ArrayList<CommitInfo> commitsToInsert) throws DyeVCException {
@@ -415,9 +478,9 @@ public class TopologyUpdater {
     }
 
     /**
-     * Updates commits into the database. Prior to the update, update each commit with the list of repositories
-     * where they are known to be found. If the list of repositories has not changed since last run, then do not update the commit.
-     * updateableCommits commitsToUpdate the list of commits to be updated
+     * Updates commits into the database. Prior to the update, update each commit with the list of repositories where
+     * they are known to be found. If the list of repositories has not changed since last run, then do not update the
+     * commit. updateableCommits commitsToUpdate the list of commits to be updated
      */
     private void updateCommits(ArrayList<CommitInfo> updateableCommits) throws DyeVCException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommits -> Entry.");
@@ -453,6 +516,7 @@ public class TopologyUpdater {
 
     /**
      * Delete the specified list of commits from the database.
+     *
      * @param commitsToDelete the list of commits to be deleted.
      */
     private void deleteCommits(ArrayList<CommitInfo> commitsToDelete) throws ServiceException {
@@ -462,6 +526,7 @@ public class TopologyUpdater {
     /**
      * Updates each commit in the specified list with the list of repositories where they are known to be found. This is
      * done checking the repository status for each non-synchronized branch.
+     *
      * @param commitList
      * @return
      */

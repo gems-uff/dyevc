@@ -88,10 +88,9 @@ public class MongoLabProvider {
      *
      * @param body The repository to be upserted
      * @return The result of the service invocation
-     * @throws DyeVCException In case of any exception during the service
-     * invocation
+     * @throws ServiceException In case of any exception during the service invocation
      */
-    public static Object upsertRepository(RepositoryInfo body) throws DyeVCException {
+    public static Object upsertRepository(RepositoryInfo body) throws ServiceException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("upsertRepository -> Entry");
         LinkedHashMap                 result = null;
         ClientRequest                 req;

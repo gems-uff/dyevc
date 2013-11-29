@@ -206,34 +206,21 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
             return;
         }
 
-//      try {
-//          updateTopology();
-//      } catch (DyeVCException ex) {
-//          JOptionPane.showMessageDialog(
-//              this,
-//              "An error occurred while trying to include a repository in the topology."
-//              + " Please try again later.  Access \"View -> Console Window\" for details.", "Error",
-//                  JOptionPane.ERROR_MESSAGE);
-//
-//          return;
-//      }
-
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
         PreferencesUtils.persistRepositories();
         PreferencesUtils.storePreferences(settings);
 
+        repositoryMonitor.addRepositoryToMonitor(repositoryBean);
+
         if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
-            repositoryMonitor.setRepositoryToMonitor(repositoryBean);
             repositoryMonitor.interrupt();
         } else {
-            JOptionPane.showMessageDialog(
-                this,
-                "The repository is being locally monitored, but the topology could not"
-                + "\nbe updated because the Repository Monitor is busy now. Topology will be updated on the next"
-                + "\nscheduled monitor run. If you want to update it before next run, right click on the repository"
-                + "\nname and choose \"Check Project\".\n\nRemember the topology and commits graphs shown before"
-                + "\nchecking the repository will not reflect the current situation.", "Information",
-                    JOptionPane.OK_OPTION);
+            JOptionPane
+                .showMessageDialog(
+                    this, "The Repository Monitor is current running. This new repository was added to the monitor queue and"
+                    + "\nwill be checked as soon as the current activities finish."
+                    + "\n\nMeanwhile, remember that the topology and commits graphs will not reflect the current situation.", "Information", JOptionPane
+                        .OK_OPTION);
         }
 
         dispose();
@@ -445,6 +432,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
                 return false;
             } else {
                 repositoryBean.setId(repoSameClone.getId());
+                repositoryBean.setLastChanged(repoSameClone.getLastChanged());
                 txtCloneAddres.setText(repoSameClone.getClonePath());
             }
         }

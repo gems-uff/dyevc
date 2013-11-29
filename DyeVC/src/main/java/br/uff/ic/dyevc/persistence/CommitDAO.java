@@ -7,7 +7,6 @@ import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.topology.CommitFilter;
 import br.uff.ic.dyevc.services.MongoLabProvider;
-import br.uff.ic.dyevc.utils.DateUtil;
 import br.uff.ic.dyevc.utils.JsonSerializerUtils;
 
 import org.codehaus.jackson.map.ObjectMapper;

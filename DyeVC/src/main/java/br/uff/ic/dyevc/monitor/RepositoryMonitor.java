@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -37,11 +38,12 @@ import java.util.List;
  * @author Cristiano
  */
 public class RepositoryMonitor extends Thread {
-    private final ApplicationSettingsBean settings;
-    private List<RepositoryStatus>        statusList;
-    private final MainWindow              container;
-    private MonitoredRepository           repositoryToMonitor;
-    private Topology                      topology;
+    private final ApplicationSettingsBean   settings;
+    private List<RepositoryStatus>          statusList;
+    private final MainWindow                container;
+    private final List<MonitoredRepository> queue = Collections.synchronizedList(new ArrayList<MonitoredRepository>());
+    private MonitoredRepository             repositoryToMonitor;
+    private Topology                        topology;
 
     /**
      * Associates the specified window container and continuously monitors the
@@ -74,26 +76,27 @@ public class RepositoryMonitor extends Thread {
                 updateCachedTopology();
                 TopologyUpdater updater = new TopologyUpdater();
 
-                if (repositoryToMonitor == null) {    // monitor all repositories
-                    LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.",
-                                            MonitoredRepositories.getMonitoredProjects().size());
+                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.",
+                                        MonitoredRepositories.getMonitoredProjects().size());
 
-                    int count = 0;
-                    for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
-                        MessageManager.getInstance().addMessage("Checking repository " + ++count + " of "
-                                + MonitoredRepositories.getMonitoredProjects().size() + ": <"
-                                + monitoredRepository.getId() + "> with id <" + monitoredRepository.getName() + ">");
-                        checkRepository(monitoredRepository);
+                int count = 0;
+                for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
+                    MessageManager.getInstance().addMessage("Checking repository " + ++count + " of "
+                            + MonitoredRepositories.getMonitoredProjects().size() + ": <" + monitoredRepository.getId()
+                            + "> with id <" + monitoredRepository.getName() + ">");
+                    checkRepository(monitoredRepository);
 
-                        if (!monitoredRepository.getRepStatus().isInvalid()) {
-                            updater.update(monitoredRepository);
-                        }
+                    if (!monitoredRepository.getRepStatus().isInvalid()) {
+                        updater.update(monitoredRepository);
                     }
+                }
 
-                    MessageManager.getInstance().addMessage(
-                        "Finished checking monitored repositories. Now verifying deleted repositories.");
-                    updater.verifyDeletedRepositories();
-                } else {    // monitor specified repository
+                MessageManager.getInstance().addMessage(
+                    "Finished checking monitored repositories. Now verifying deleted repositories.");
+                updater.verifyDeletedRepositories();
+
+                while (!queue.isEmpty()) {
+                    repositoryToMonitor = queue.remove(0);
                     LoggerFactory.getLogger(RepositoryMonitor.class).debug(
                         "Manual monitoring requested for repository <{}> with id <{}>.", repositoryToMonitor.getId(),
                         repositoryToMonitor.getName());
@@ -103,7 +106,7 @@ public class RepositoryMonitor extends Thread {
                         updater.update(repositoryToMonitor);
                     }
 
-                    setRepositoryToMonitor(null);
+                    repositoryToMonitor = null;
                 }
 
                 PreferencesUtils.persistRepositories();
@@ -276,8 +279,7 @@ public class RepositoryMonitor extends Thread {
     private void checkOrphanedFolders(File workingFolder) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkOrphanedFolders -> Entry.");
         String[] tmpFolders = workingFolder.list();
-        for (int i = 0; i < tmpFolders.length; i++) {
-            String tmpFolder = tmpFolders[i];
+        for (String tmpFolder : tmpFolders) {
             if (MonitoredRepositories.getMonitoredProjectById(tmpFolder) == null) {
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug(
                     "Repository with id={} is not being monitored anymore. Temp folder will be deleted.", tmpFolder);
@@ -339,17 +341,11 @@ public class RepositoryMonitor extends Thread {
     }
 
     /**
-     * @param repositoryToMonitor the repositoryToMonitor to set
+     * Adds a repository to the queue to be monitored as soon as the current run finishes
+     * @param repos the repositoryToMonitor to add
      */
-    public synchronized void setRepositoryToMonitor(MonitoredRepository repos) {
-        repositoryToMonitor = repos;
-    }
-
-    /**
-     * @return the repositoryToMonitor
-     */
-    public synchronized MonitoredRepository getRepositoryToMonitor() {
-        return repositoryToMonitor;
+    public void addRepositoryToMonitor(MonitoredRepository repos) {
+        queue.add(repos);
     }
 
     /**

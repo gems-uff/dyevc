@@ -22,7 +22,6 @@ import br.uff.ic.dyevc.monitor.RepositoryMonitor;
 import br.uff.ic.dyevc.monitor.TopologyUpdater;
 import br.uff.ic.dyevc.utils.ImageUtils;
 import br.uff.ic.dyevc.utils.LimitLinesDocumentListener;
-import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.TableColumnAdjuster;
 
 import org.slf4j.LoggerFactory;
@@ -30,7 +29,6 @@ import org.slf4j.LoggerFactory;
 //~--- JDK imports ------------------------------------------------------------
 
 import java.awt.AWTException;
-import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -540,12 +538,13 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntCheckProjectActionPerformed(ActionEvent evt) {
         MonitoredRepository rep = getSelectedRepository();
+        repositoryMonitor.addRepositoryToMonitor(rep);
+
         if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
-            repositoryMonitor.setRepositoryToMonitor(rep);
             repositoryMonitor.interrupt();
         } else {
-            JOptionPane.showMessageDialog(repoTable, "Monitor is busy now. Please try again later.", "Information",
-                                          JOptionPane.OK_OPTION);
+            JOptionPane.showMessageDialog(repoTable, "Monitor is busy now. Repository was added to the monitor queue.",
+                                          "Information", JOptionPane.OK_OPTION);
         }
     }
 

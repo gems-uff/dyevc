@@ -9,6 +9,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 //~--- JDK imports ------------------------------------------------------------
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,15 +28,17 @@ public class RepositoryInfo implements Comparable<RepositoryInfo> {
     private String      clonePath;
     private Set<String> pushesTo;
     private Set<String> pullsFrom;
+    private Set<String> monitoredBy;
     private Date        lastChanged;
 
     /**
      * Constructs a new RepositoryInfo.
      */
     public RepositoryInfo() {
-        pushesTo  = new HashSet<String>();
-        pullsFrom = new HashSet<String>();
-        id        = StringUtils.generateRepositoryId();
+        pushesTo    = new HashSet<String>();
+        pullsFrom   = new HashSet<String>();
+        monitoredBy = new HashSet<String>();
+        id          = StringUtils.generateRepositoryId();
     }
 
     public String getId() {
@@ -83,12 +86,29 @@ public class RepositoryInfo implements Comparable<RepositoryInfo> {
         return pushesTo;
     }
 
-    public void addPushesTo(String key) {
-        this.pushesTo.add(key);
+    public boolean addPushesTo(String key) {
+        return this.pushesTo.add(key);
     }
 
-    public void addPullsFrom(String key) {
-        this.pullsFrom.add(key);
+    public boolean addAllPushesTo(Collection<String> keysToAdd) {
+        return this.pushesTo.addAll(keysToAdd);
+    }
+
+    public boolean removeAllPushesTo(Collection<String> keysToRemove) {
+        return this.pushesTo.removeAll(keysToRemove);
+    }
+
+    public boolean addPullsFrom(String key) {
+        return this.pullsFrom.add(key);
+    }
+
+    public boolean addAllPullsFrom(Collection<String> keysToAdd) {
+        ;
+        return this.pullsFrom.addAll(keysToAdd);
+    }
+
+    public boolean removeAllPullsFrom(Collection<String> keysToRemove) {
+        return this.pullsFrom.removeAll(keysToRemove);
     }
 
     public void setPushesTo(Set<String> pushesTo) {
@@ -101,6 +121,32 @@ public class RepositoryInfo implements Comparable<RepositoryInfo> {
 
     public void setPullsFrom(Set<String> pullsFrom) {
         this.pullsFrom = pullsFrom;
+    }
+
+    public Set<String> getMonitoredBy() {
+        return monitoredBy;
+    }
+
+    public void setMonitoredBy(Set<String> monitoredBy) {
+        this.monitoredBy = monitoredBy;
+    }
+
+    /**
+     * Adds a hostname to the list of hostnames that monitor this repository
+     * @param hostname The hostname to be added.
+     * @return true if the hostname was added. False if it alread existed.
+     */
+    public boolean addMonitoredBy(String hostname) {
+        return this.monitoredBy.add(hostname);
+    }
+
+    /**
+     * Removes the specified hostname from the list of hostnames that monitor this repository
+     * @param hostname The hostname to be removed.
+     * @return true if the hostname was removed. False if it did not exist.
+     */
+    public boolean removeMonitoredBy(String hostname) {
+        return this.monitoredBy.remove(hostname);
     }
 
     public Date getLastChanged() {

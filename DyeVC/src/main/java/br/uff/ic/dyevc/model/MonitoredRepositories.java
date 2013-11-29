@@ -131,7 +131,7 @@ public final class MonitoredRepositories extends AbstractTableModel {
         if (index >= 0) {
             TopologyDAO dao = new TopologyDAO();
             try {
-                Date lastChanged = dao.deleteRepository(repository.getSystemName(), repository.getId());
+                Date lastChanged = dao.deleteRepository(repository.getSystemName(), repository.getId(), true);
                 repository.setLastChanged(lastChanged);
             } catch (RepositoryReferencedException rre) {
                 monitoredRepositories.remove(repository);
@@ -167,7 +167,7 @@ public final class MonitoredRepositories extends AbstractTableModel {
         if (index >= 0) {
             TopologyDAO dao = new TopologyDAO();
             try {
-                Date lastChanged = dao.deleteRepository(repository.getSystemName(), repository.getId());
+                Date lastChanged = dao.deleteRepository(repository.getSystemName(), repository.getId(), true);
                 repository.setLastChanged(lastChanged);
             } catch (RepositoryReferencedException rre) {
                 throw rre;
