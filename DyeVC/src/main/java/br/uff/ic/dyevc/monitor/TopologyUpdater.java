@@ -115,6 +115,7 @@ public class TopologyUpdater {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateRepositoryTopology -> Entry.");
         String systemName = repositoryToUpdate.getSystemName();
 
+        // TODO implement lock mechanism
         try {
             topology = topologyDAO.readTopologyForSystem(systemName);
 
@@ -122,7 +123,7 @@ public class TopologyUpdater {
             RepositoryInfo remoteRepositoryInfo = topology.getRepositoryInfo(systemName, localRepositoryInfo.getId());
 
             /*
-             * changedLocally is used to flag any changes to repository info. If any changes were done at the end of the
+             * changedLocally is used to flag any changes to repository info. If any changes were detected by the end of the
              * method, then the repository is updated in database. It is initialized with true if the repository info
              * does not exist in the database.
              */
@@ -201,9 +202,22 @@ public class TopologyUpdater {
             ArrayList<CommitInfo> currentSnapshot = (ArrayList)tools.getCommitInfos();
 
             // Identifies new local commits since previous snapshot
-            ArrayList<CommitInfo> newCommits = currentSnapshot;
+            ArrayList<CommitInfo> newCommits = new ArrayList<CommitInfo>(currentSnapshot);
             if (previousSnapshot != null) {
                 newCommits = (ArrayList)CollectionUtils.subtract(currentSnapshot, previousSnapshot);
+            }
+
+            // Identifies commits that are potentially not synchronized in the database, before inserting new commits
+            boolean         dbIsEmpty                 = checkIfDbIsEmpty();
+            Set<CommitInfo> commitsNotFoundInSomeReps = new HashSet<CommitInfo>();
+            if (!dbIsEmpty) {
+                commitsNotFoundInSomeReps = getCommitsNotFoundInSomeReps();
+            }
+
+            // Insert commits into the database
+            ArrayList<CommitInfo> commitsToInsert = getCommitsToInsert(newCommits, dbIsEmpty);
+            if (!commitsToInsert.isEmpty()) {
+                insertCommits(commitsToInsert);
             }
 
             // Identifies commits that were deleted since previous snapshot
@@ -212,37 +226,22 @@ public class TopologyUpdater {
                 commitsToDelete = (ArrayList<CommitInfo>)CollectionUtils.subtract(previousSnapshot, currentSnapshot);
             }
 
-            // Identifies commits that are potentially not synchronized in the database
-            int             commitCount               = countCommitsInDatabase();
-            Set<CommitInfo> commitsNotFoundInSomeReps = new HashSet<CommitInfo>();
-            if (commitCount > 0) {
-                commitsNotFoundInSomeReps = getCommitsNotFoundInSomeReps();
-            }
-
-            // Insert commits into the database
-            ArrayList<CommitInfo> commitsToInsert = getCommitsToInsert(newCommits);
-            // uncomment this later
-            if (!commitsToInsert.isEmpty()) {
-                insertCommits(commitsToInsert);
-            }
-
             // delete commits from database
-            // uncomment this later
             if (!commitsToDelete.isEmpty()) {
                 deleteCommits(commitsToDelete);
             }
 
             // save current snapshot to disk
-            // uncomment this later
             saveSnapshot(currentSnapshot);
 
-            // updated commits in the database (those that were not deleted)
-            ArrayList<CommitInfo> updateableCommits = (ArrayList)CollectionUtils.subtract(commitsNotFoundInSomeReps,
-                                                          commitsToDelete);
-            if (!updateableCommits.isEmpty()) {
-                updateCommits(updateableCommits);
+            // updates commits in the database (those that were not deleted)
+            ArrayList<CommitInfo> commitsToUpdate = (ArrayList)CollectionUtils.subtract(commitsNotFoundInSomeReps,
+                                                        commitsToDelete);
+            if (!commitsToUpdate.isEmpty()) {
+                updateCommits(commitsToUpdate);
             }
 
+            // removes orphaned commits (those that remained with an empty foundIn list.
             commitDAO.deleteOrphanedCommits(repositoryToUpdate.getSystemName());
         } catch (DyeVCException dex) {
             MessageManager.getInstance().addMessage("Error updating commits from repository <"
@@ -376,19 +375,21 @@ public class TopologyUpdater {
 
     /**
      * Retrieves from the database the number of existing commits for the system that the repository being updated
-     * belongs to
+     * belongs to and returns true if this number is not 0.
      *
-     * @return the number of existing commits for the system that the repository being updated belongs to
+     * @return true if there is any commit in the database
      * @throws ServiceException
      */
-    private int countCommitsInDatabase() throws ServiceException {
+    private boolean checkIfDbIsEmpty() throws ServiceException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("countCommitsInDatabase -> Entry.");
+
         CommitFilter filter = new CommitFilter();
         filter.setSystemName(repositoryToUpdate.getSystemName());
+        int commitCount = commitDAO.countCommitsByQuery(filter);
 
         LoggerFactory.getLogger(TopologyUpdater.class).trace("countCommitsInDatabase -> Exit.");
 
-        return commitDAO.countCommitsByQuery(filter);
+        return commitCount == 0;
     }
 
     /**
@@ -420,18 +421,24 @@ public class TopologyUpdater {
      * exist, this is, those that must be inserted into the database
      *
      * @param newCommits New commits found in the current repository snapshot
+     * @param dbIsEmpty Indicates if database is empty for the system this repository belongs to.
      * @return the list of commits that do not exist in the database yet
      * @throws DyeVCException
      */
-    private ArrayList<CommitInfo> getCommitsToInsert(ArrayList<CommitInfo> newCommits) throws DyeVCException {
+    private ArrayList<CommitInfo> getCommitsToInsert(ArrayList<CommitInfo> newCommits, boolean dbIsEmpty)
+            throws DyeVCException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("getCommitsToInsert -> Entry.");
-        ArrayList<CommitInfo> commitsToInsert = newCommits;
+        ArrayList<CommitInfo> commitsToInsert = new ArrayList(newCommits);
 
         if (newCommits != null) {
-            Set<CommitInfo> newCommitsInDatabase = commitDAO.getCommitsByHashes(newCommits,
-                                                       converter.toRepositoryInfo().getSystemName());
-            commitsToInsert = (ArrayList<CommitInfo>)CollectionUtils.subtract(newCommits, newCommitsInDatabase);
+            if (!dbIsEmpty) {
+                // Check db only if it is not empty, otherwise all commits in newCommits have to be inserted.
+                Set<CommitInfo> newCommitsInDatabase = commitDAO.getCommitsByHashes(newCommits,
+                                                           converter.toRepositoryInfo().getSystemName());
+                commitsToInsert = (ArrayList<CommitInfo>)CollectionUtils.subtract(newCommits, newCommitsInDatabase);
+            }
         } else {
+            // if newCommits is null, return an empty list (no commits to insert)
             commitsToInsert = new ArrayList<CommitInfo>();
         }
 
@@ -482,15 +489,14 @@ public class TopologyUpdater {
      * they are known to be found. If the list of repositories has not changed since last run, then do not update the
      * commit. updateableCommits commitsToUpdate the list of commits to be updated
      */
-    private void updateCommits(ArrayList<CommitInfo> updateableCommits) throws DyeVCException {
+    private void updateCommits(ArrayList<CommitInfo> commitsToUpdate) throws DyeVCException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommits -> Entry.");
 
-        updateableCommits = updateWhereExists(updateableCommits);
-        ArrayList<CommitInfo> commitsToUpdate = new ArrayList<CommitInfo>();
+        commitsToUpdate = updateWhereExists(commitsToUpdate);
 
         // Populates a map with groups of commits that should be updated with new repositories where they can now be found
         Map<String, List<CommitInfo>> commitsToUpdateByRepository = new TreeMap<String, List<CommitInfo>>();
-        for (CommitInfo ci : updateableCommits) {
+        for (CommitInfo ci : commitsToUpdate) {
             Collection<String> newRepIds = CollectionUtils.subtract(ci.getFoundIn(), ci.getPreviousFoundIn());
             if (!newRepIds.isEmpty()) {
                 // if collection of found repositories for the commits has changed, then include the commit to be updated for
@@ -546,6 +552,8 @@ public class TopologyUpdater {
                     ci.addAllToFoundIn(converter.toRepositoryInfo().getPushesTo());
                     ci.addFoundIn(repositoryToUpdate.getId());
                 }
+
+                continue;
             }
 
             if (!behindSet.isEmpty()) {
