@@ -3,6 +3,7 @@ package br.uff.ic.dyevc.monitor;
 //~--- non-JDK imports --------------------------------------------------------
 
 import br.uff.ic.dyevc.application.IConstants;
+import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.MonitorException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
@@ -17,6 +18,8 @@ import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
+import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
+import br.uff.ic.dyevc.utils.PreferencesUtils;
 import br.uff.ic.dyevc.utils.RepositoryConverter;
 import br.uff.ic.dyevc.utils.SystemUtils;
 
@@ -55,22 +58,29 @@ import java.util.TreeMap;
  * @author Cristiano
  */
 public class TopologyUpdater {
-    private final TopologyDAO           topologyDAO;
-    private final CommitDAO             commitDAO;
-    private Topology                    topology;
-    private final MonitoredRepositories monitoredRepositories;
-    private RepositoryConverter         converter;
-    private MonitoredRepository         repositoryToUpdate;
-    private GitCommitTools              tools;
+    private final TopologyDAO             topologyDAO;
+    private final CommitDAO               commitDAO;
+    private Topology                      topology;
+    private final MonitoredRepositories   monitoredRepositories;
+    private RepositoryConverter           converter;
+    private MonitoredRepository           repositoryToUpdate;
+    private GitCommitTools                tools;
+    private final ApplicationSettingsBean settings;
+    private static final String           currentApplicationVersion;
+
+    static {
+        currentApplicationVersion = ApplicationVersionUtils.getAppVersion();
+    }
 
     /**
      * Creates a new object of this type.
      */
     public TopologyUpdater() {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Constructor -> Entry.");
-        topologyDAO                = new TopologyDAO();
-        commitDAO                  = new CommitDAO();
-        this.monitoredRepositories = MonitoredRepositories.getInstance();
+        topologyDAO           = new TopologyDAO();
+        commitDAO             = new CommitDAO();
+        monitoredRepositories = MonitoredRepositories.getInstance();
+        settings              = PreferencesUtils.loadPreferences();
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Constructor -> Exit.");
     }
 
@@ -312,6 +322,11 @@ public class TopologyUpdater {
      */
     private ArrayList<CommitInfo> retrieveSnapshot() throws DyeVCException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("retrieveSnapshot -> Entry.");
+
+        if (!currentApplicationVersion.equals(settings.getLastApplicationVersionUsed())) {
+            return null;
+        }
+
         ObjectInput           input = null;
         String                snapshotPath;
         ArrayList<CommitInfo> recoveredCommits = null;

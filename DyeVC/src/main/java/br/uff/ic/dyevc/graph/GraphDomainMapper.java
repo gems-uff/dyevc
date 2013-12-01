@@ -8,10 +8,11 @@ import edu.uci.ics.jung.graph.Graph;
  * Maps a graph to its domain. Used when domain information is needed when building graph layouts.
  *
  * @author Cristiano
+ * @param <D> Specifies the domain associated with this graph.
  */
 public class GraphDomainMapper<D> {
-    private Graph graph;
-    private D     domain;
+    private final Graph graph;
+    private final D     domain;
 
     /**
      * Constructs a new mapper from {@link #graph} to {@link #domain}.

@@ -2,12 +2,6 @@ package br.uff.ic.dyevc.exception;
 
 //~--- non-JDK imports --------------------------------------------------------
 
-import br.uff.ic.dyevc.model.topology.RepositoryInfo;
-
-//~--- JDK imports ------------------------------------------------------------
-
-import java.util.ArrayList;
-
 /**
  * Exception to mark that a searched object was not found.
  *

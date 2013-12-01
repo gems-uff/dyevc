@@ -69,7 +69,7 @@ public class AboutDialog extends javax.swing.JDialog {
 
         JPanel versionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         versionPanel.setOpaque(false);
-        versionPanel.add(new JLabel(ApplicationVersionUtils.getAppVersion()));
+        versionPanel.add(new JLabel("DyeVC Version: " + ApplicationVersionUtils.getAppVersion()));
 
         topPanel.add(versionPanel, BorderLayout.WEST);
         topPanel.add(memoryPanel, BorderLayout.EAST);

@@ -33,6 +33,8 @@ import javax.swing.JOptionPane;
  * Layout for drawing a repository history
  *
  * @author Cristiano
+ * @param <V> The type of the vertices
+ * @param <E> The type of the edges
  */
 public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implements IterativeContext {
     private V firstCommit = null;
@@ -45,12 +47,12 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     /**
      * List of heads found in the repository (commits with no children)
      */
-    private ArrayList<V> heads = new ArrayList<V>();
+    private final ArrayList<V> heads = new ArrayList<V>();
 
     /**
      * List of heads that were already processed
      */
-    private ArrayList<V> processedHeads = new ArrayList<V>();
+    private final ArrayList<V> processedHeads = new ArrayList<V>();
 
     /**
      * List of heights for each node. To find the height of a node, all that is
@@ -62,18 +64,18 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     /**
      * Stores the nodes in the order corresponding to its X position
      */
-    private ArrayList<V> nodes = new ArrayList<V>();
+    private final ArrayList<V> nodes = new ArrayList<V>();
 
     /**
      * Maps each node's hash info with its X position
      */
-    private HashMap<String, Double> nodePositions = new HashMap<String, Double>();
+    private final HashMap<String, Double> nodePositions = new HashMap<String, Double>();
 
 
     /**
      * DijkstraDistance is used to find out if there is a path between two nodes.
      */
-    private DijkstraDistance<V, E> distances;
+    private final DijkstraDistance<V, E> distances;
 
     /**
      * Repository from where this log is being drawn
@@ -87,6 +89,8 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
 
     /**
      * Creates an instance for the specified graph.
+     * @param mapper The {@link #GraphDomainMapper} to be used
+     * @param rep The monitored repository to create the layout to
      */
     public RepositoryHistoryLayout(GraphDomainMapper<Map<String, CommitInfo>> mapper, MonitoredRepository rep) {
         super(mapper.getGraph());
@@ -581,6 +585,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
 
     /**
      * This one is an incremental visualization.
+     * @return Always true (this layout implements a incremental visualization)
      */
     public boolean isIncremental() {
         return true;
@@ -589,6 +594,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     /**
      * Returns true once the current iteration has passed the maximum count,
      * <tt>MAX_ITERATIONS</tt>.
+     * @return Always true.
      */
     @Override
     public boolean done() {

@@ -41,7 +41,7 @@ public class ApplicationVersionUtils {
             try {
                 manifest = new Manifest(new URL(manifestPath).openStream());
                 Attributes attr = manifest.getMainAttributes();
-                out = "DyeVC Version: " + attr.getValue("Implementation-Version");
+                out = attr.getValue("Implementation-Version");
             } catch (IOException ex) {
                 LoggerFactory.getLogger(ApplicationVersionUtils.class).warn("Error reading manifest file.", ex);
             }

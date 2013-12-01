@@ -7,7 +7,6 @@ import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
-import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.topology.CloneRelationship;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.model.topology.Topology;

@@ -42,7 +42,7 @@ public final class PreferencesUtils {
     /**
      * Object the points to a preferences instance.
      */
-    private static Preferences pref;
+    private static final Preferences pref;
 
     /**
      * Bean containing application general preferences.
@@ -67,7 +67,7 @@ public final class PreferencesUtils {
     }
 
     /**
-     * Constructs ...
+     * Constructs an object of this type.
      */
     private PreferencesUtils() {}
 
@@ -80,6 +80,11 @@ public final class PreferencesUtils {
         Preferences nodeToStore = pref.node(NODE_GENERAL_SETTINGS);
         nodeToStore.putInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL, bean.getRefreshInterval());
         nodeToStore.put(ApplicationSettingsBean.PROP_LAST_USED_PATH, bean.getLastUsedPath());
+
+        if (bean.getLastApplicationVersionUsed() != null) {
+            nodeToStore.put(ApplicationSettingsBean.PROP_LAST_APP_VERSION_USED, bean.getLastApplicationVersionUsed());
+        }
+
         settingsBean = bean;
     }
 
@@ -95,6 +100,8 @@ public final class PreferencesUtils {
             bean.setRefreshInterval(nodeToLoad.getInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL,
                     DEFAULT_CHECK_INTERVAL));
             bean.setLastUsedPath(nodeToLoad.get(ApplicationSettingsBean.PROP_LAST_USED_PATH, ""));
+            bean.setLastApplicationVersionUsed(nodeToLoad.get(ApplicationSettingsBean.PROP_LAST_APP_VERSION_USED,
+                    "0.0"));
             settingsBean = bean;
         }
 
@@ -143,8 +150,8 @@ public final class PreferencesUtils {
             if (pref.nodeExists(NODE_MONITORED_REPOSITORIES)) {
                 Preferences nodeToStore = pref.node(NODE_MONITORED_REPOSITORIES);
                 String[]    reps        = nodeToStore.childrenNames();
-                for (int i = 0; i < reps.length; i++) {
-                    Preferences         repNode = nodeToStore.node(reps[i]);
+                for (String rep : reps) {
+                    Preferences         repNode = nodeToStore.node(rep);
                     MonitoredRepository bean    = new MonitoredRepository(repNode.name());
                     bean.setSystemName(repNode.get("systemName", "no name"));
                     bean.setName(repNode.get("name", "no name"));

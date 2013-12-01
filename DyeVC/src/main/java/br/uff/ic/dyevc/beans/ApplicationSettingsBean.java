@@ -1,7 +1,13 @@
 package br.uff.ic.dyevc.beans;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.application.IConstants;
+
+//~--- JDK imports ------------------------------------------------------------
+
 import java.beans.*;
+
 import java.io.Serializable;
 
 /**
@@ -9,11 +15,9 @@ import java.io.Serializable;
  * @author Cristiano
  */
 public class ApplicationSettingsBean implements Serializable {
-    
-    private static final long serialVersionUID = 6840556021845882092L;
+    private static final long     serialVersionUID = 6840556021845882092L;
     private PropertyChangeSupport propertySupport;
-    private static final String WORKING_PATH = System.getProperty("user.home") + IConstants.DIR_SEPARATOR + ".dyevc";;
-    public static final String PROP_WORKING_PATH = "workingpath";
+    private static final String   WORKING_PATH = System.getProperty("user.home") + IConstants.DIR_SEPARATOR + ".dyevc";;
 
     /**
      * Get the value of workingPath
@@ -25,6 +29,8 @@ public class ApplicationSettingsBean implements Serializable {
     }
 
     private int refreshInterval;
+
+    /** Published name for the refreshInterval property */
     public static final String PROP_REFRESHINTERVAL = "refreshinterval";
 
     /**
@@ -46,8 +52,10 @@ public class ApplicationSettingsBean implements Serializable {
         this.refreshInterval = refreshInterval;
         propertySupport.firePropertyChange(PROP_REFRESHINTERVAL, oldRefreshInterval, refreshInterval);
     }
-    
+
     private String lastUsedPath;
+
+    /** Published name for the lastUsedPath property */
     public static final String PROP_LAST_USED_PATH = "lastusedpath";
 
     public String getLastUsedPath() {
@@ -57,16 +65,32 @@ public class ApplicationSettingsBean implements Serializable {
     public void setLastUsedPath(String lastUsedPath) {
         this.lastUsedPath = lastUsedPath;
     }
-    
+
+    private String lastApplicationVersionUsed;
+
+    /** Published name for the lastApplicationVersionUsed property */
+    public static final String PROP_LAST_APP_VERSION_USED = "lastAppVersionUsed";
+
+    public String getLastApplicationVersionUsed() {
+        return lastApplicationVersionUsed;
+    }
+
+    public void setLastApplicationVersionUsed(String lastApplicationVersionUsed) {
+        this.lastApplicationVersionUsed = lastApplicationVersionUsed;
+    }
+
+    /**
+     * Constructs an object of this type.
+     */
     public ApplicationSettingsBean() {
         propertySupport = new PropertyChangeSupport(this);
     }
-    
+
 
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         propertySupport.addPropertyChangeListener(listener);
     }
-    
+
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         propertySupport.removePropertyChangeListener(listener);
     }

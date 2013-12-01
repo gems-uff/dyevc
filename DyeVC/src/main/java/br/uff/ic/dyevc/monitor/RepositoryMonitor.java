@@ -16,6 +16,7 @@ import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.tools.vcs.git.GitTools;
+import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
 import br.uff.ic.dyevc.utils.PreferencesUtils;
 
 import org.apache.commons.io.FileUtils;
@@ -44,6 +45,7 @@ public class RepositoryMonitor extends Thread {
     private final List<MonitoredRepository> queue = Collections.synchronizedList(new ArrayList<MonitoredRepository>());
     private MonitoredRepository             repositoryToMonitor;
     private Topology                        topology;
+    private final String                    currentApplicationVersion;
 
     /**
      * Associates the specified window container and continuously monitors the
@@ -54,8 +56,9 @@ public class RepositoryMonitor extends Thread {
      */
     public RepositoryMonitor(MainWindow container) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
-        settings       = PreferencesUtils.loadPreferences();
-        this.container = container;
+        settings                  = PreferencesUtils.loadPreferences();
+        currentApplicationVersion = ApplicationVersionUtils.getAppVersion();
+        this.container            = container;
         this.start();
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Exit.");
     }
@@ -110,6 +113,12 @@ public class RepositoryMonitor extends Thread {
                 }
 
                 PreferencesUtils.persistRepositories();
+
+                if (!(currentApplicationVersion.equals(settings.getLastApplicationVersionUsed()))) {
+                    settings.setLastApplicationVersionUsed(currentApplicationVersion);
+                    PreferencesUtils.storePreferences(settings);
+                }
+
                 container.notifyMessages(statusList);
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug("Will now sleep for {} seconds.", sleepTime);
                 MessageManager.getInstance().addMessage("Repository monitor is sleeping.");
