@@ -4,7 +4,7 @@
 
     <groupId>UFF</groupId>
     <artifactId>DyeVC</artifactId>
-    <version>0.2.6</version>
+    <version>0.2.7</version>
     <packaging>jar</packaging>
 
     <name>DyeVC</name>
@@ -85,6 +85,11 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <mainClass>br.uff.ic.dyevc.application.DyeVC</mainClass>
                         </manifest>
+                        <manifestEntries>
+                            <Permissions>all-permissions</Permissions>
+                            <Codebase>http://www.ic.uff.br/~ccesario/DyeVC</Codebase>
+                            <Application-Name>DyeVC</Application-Name>
+                        </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>
@@ -219,6 +224,11 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson-provider</artifactId>
             <version>2.3.6.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>2.11.3</version>
         </dependency>
     </dependencies>
 </project>
