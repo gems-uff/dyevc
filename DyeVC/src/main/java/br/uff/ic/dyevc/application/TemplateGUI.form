@@ -93,7 +93,7 @@
         </Container>
       </SubComponents>
     </Container>
-    <Component class="br.uff.ic.dyevc.beans.ApplicationVersionBean" name="applicationPropertiesBean1">
+    <Component class="br.uff.ic.dyevc.utils.ApplicationVersionUtils" name="applicationPropertiesBean1">
     </Component>
     <Component class="br.uff.ic.dyevc.model.MonitoredRepositories" name="monitoredRepositoriesBean1">
     </Component>

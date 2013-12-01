@@ -43,7 +43,7 @@ public class TemplateGUI extends javax.swing.JFrame {
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         AboutOK = new javax.swing.JButton();
-        applicationPropertiesBean1 = new br.uff.ic.dyevc.beans.ApplicationVersionBean();
+        applicationPropertiesBean1 = new br.uff.ic.dyevc.utils.ApplicationVersionUtils();
         monitoredRepositoriesBean1 = new br.uff.ic.dyevc.model.MonitoredRepositories();
         settingsWindow = new javax.swing.JFrame();
         jPanel3 = new javax.swing.JPanel();
@@ -565,7 +565,7 @@ public class TemplateGUI extends javax.swing.JFrame {
     private javax.swing.JMenu Help;
     private javax.swing.JMenuItem addProjectMnuItem;
     private javax.swing.JFrame addRepositoryWindow;
-    private br.uff.ic.dyevc.beans.ApplicationVersionBean applicationPropertiesBean1;
+    private br.uff.ic.dyevc.utils.ApplicationVersionUtils applicationPropertiesBean1;
     private br.uff.ic.dyevc.beans.ApplicationSettingsBean applicationSettingsBean1;
     private javax.swing.JButton cancelButton;
     private javax.swing.JTextField cloneAddresTxt;
