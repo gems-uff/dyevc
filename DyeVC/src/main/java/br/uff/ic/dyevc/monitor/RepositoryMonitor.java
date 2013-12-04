@@ -94,10 +94,6 @@ public class RepositoryMonitor extends Thread {
                     }
                 }
 
-                MessageManager.getInstance().addMessage(
-                    "Finished checking monitored repositories. Now verifying deleted repositories.");
-                updater.verifyDeletedRepositories();
-
                 while (!queue.isEmpty()) {
                     repositoryToMonitor = queue.remove(0);
                     LoggerFactory.getLogger(RepositoryMonitor.class).debug(
@@ -111,6 +107,10 @@ public class RepositoryMonitor extends Thread {
 
                     repositoryToMonitor = null;
                 }
+
+                MessageManager.getInstance().addMessage(
+                    "Finished checking monitored repositories. Now verifying deleted repositories.");
+                updater.verifyDeletedRepositories();
 
                 PreferencesUtils.persistRepositories();
 

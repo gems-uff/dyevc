@@ -6,6 +6,7 @@ import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.graph.GraphBuilder;
 import br.uff.ic.dyevc.graph.transform.common.VertexStrokeHighlightTransformer;
+import br.uff.ic.dyevc.graph.transform.topology.TopologyEdgeLabelTransformer;
 import br.uff.ic.dyevc.graph.transform.topology.TopologyEdgePaintTransformer;
 import br.uff.ic.dyevc.graph.transform.topology.TopologyEdgeStrokeTransformer;
 import br.uff.ic.dyevc.graph.transform.topology.TopologyPickWithIconListener;
@@ -17,10 +18,13 @@ import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.topology.CloneRelationship;
+import br.uff.ic.dyevc.model.topology.CommitFilter;
 import br.uff.ic.dyevc.model.topology.PullRelationship;
 import br.uff.ic.dyevc.model.topology.PushRelationship;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
+import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
+import br.uff.ic.dyevc.utils.DateUtil;
 
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
@@ -53,8 +57,10 @@ import java.awt.event.WindowEvent;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
 
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.event.ChangeEvent;
@@ -255,6 +261,10 @@ public class TopologyWindow extends javax.swing.JFrame {
         // create the commit history graph with all commits from repository
         graph = GraphBuilder.createTopologyGraph(systemName);
 
+        CommitFilter filter = new CommitFilter();
+        filter.setSystemName("dyevc");
+        Set<CommitInfo> allSystemCommits = new CommitDAO().getCommitsByQuery(filter);
+
         // Choosing layout
         layout = new FRLayout<RepositoryInfo, CloneRelationship>(graph);
         Dimension preferredSize = new Dimension(800, 600);
@@ -304,8 +314,12 @@ public class TopologyWindow extends javax.swing.JFrame {
         ps.addItemListener(new TopologyPickWithIconListener(vertexIconTransformer));
 
         // </editor-fold>
+
         // <editor-fold defaultstate="collapsed" desc="edge transformers">
         // EdgeLabel - not defined
+        Transformer<Object, String> edgeLabel = new TopologyEdgeLabelTransformer(allSystemCommits);
+        vv.getRenderContext().setEdgeLabelTransformer(edgeLabel);
+
         // EdgeDrawPaint
         TopologyEdgePaintTransformer ept = new TopologyEdgePaintTransformer(vv.getPickedEdgeState());
         vv.getRenderContext().setEdgeDrawPaintTransformer(ept);
@@ -370,18 +384,21 @@ public class TopologyWindow extends javax.swing.JFrame {
      * @param <V> The type of vertices
      * @param <E> The type of edges
      *
-     * @author         Cristiano Cesario
+     * @author Cristiano Cesario
      */
     private final static class DirectionDisplayPredicate<V, E> implements Predicate<Context<Graph<V, E>, E>> {
-        /** If true, than show push edges */
+        /**
+         * If true, than show push edges
+         */
         protected boolean showPush;
 
-        /** If true, than show pull edges */
+        /**
+         * If true, than show pull edges
+         */
         protected boolean showPull;
 
         /**
-         * Builds the predicate with initial values specified for <code>showPush</code> and
-         * <code>showPull</code>
+         * Builds the predicate with initial values specified for <code>showPush</code> and <code>showPull</code>
          *
          * @param showPush The initial value for showPush
          * @param showPull Theh initial value for showPull
