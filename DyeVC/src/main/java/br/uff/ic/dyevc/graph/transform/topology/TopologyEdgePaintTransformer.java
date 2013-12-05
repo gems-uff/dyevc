@@ -24,16 +24,12 @@ public class TopologyEdgePaintTransformer extends PickableEdgePaintTransformer<C
      * @param pi The info about whether the edge is picked or not
      */
     public TopologyEdgePaintTransformer(PickedInfo<CloneRelationship> pi) {
-        super(pi, Color.BLACK, Color.YELLOW);
+        super(pi, Color.GREEN, Color.YELLOW);
     }
 
     /**
-     * Paints edges. Default color is black. Otherwise:
-     * <ul>
-     *      <li>Red, if edge corresponds to a Push relationship. </li>
-     *      <li>Green, if edge corresponds to a Pull relationship. </li>
-     *      <li>Yellow, if edge is picked. </li>
-     * </ul>
+     * Paints edges. Default color is green and indicates that the origin node of the relationship is in sync with the
+     * destination node of the relationship. If it's not, than color is changed to red.
      *
      * @param e The edge to be painted
      *
@@ -41,17 +37,13 @@ public class TopologyEdgePaintTransformer extends PickableEdgePaintTransformer<C
      */
     @Override
     public Paint transform(CloneRelationship e) {
-        return super.transform(e);
+        Paint paint = super.transform(e);
+        if (!pi.isPicked(e)) {
+            if (e.getNonSyncCommitsCount() != 0) {
+                paint = Color.RED;
+            }
+        }
 
-//      Paint paint = super.transform(e);
-//      if (!pi.isPicked(e)) {
-//          if (e instanceof PushRelationship) {
-//              paint = Color.RED;
-//          }
-//          if (e instanceof PullRelationship) {
-//              paint = Color.GREEN;
-//          }
-//      }
-//      return paint;
+        return paint;
     }
 }
