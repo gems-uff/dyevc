@@ -18,13 +18,10 @@ import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.topology.CloneRelationship;
-import br.uff.ic.dyevc.model.topology.CommitFilter;
 import br.uff.ic.dyevc.model.topology.PullRelationship;
 import br.uff.ic.dyevc.model.topology.PushRelationship;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
-import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
-import br.uff.ic.dyevc.utils.DateUtil;
 
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
@@ -39,6 +36,7 @@ import edu.uci.ics.jung.visualization.decorators.AbstractEdgeShapeTransformer;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
 import edu.uci.ics.jung.visualization.picking.PickedState;
+import edu.uci.ics.jung.visualization.renderers.EdgeLabelRenderer;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 
@@ -57,10 +55,8 @@ import java.awt.event.WindowEvent;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
 
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.event.ChangeEvent;
@@ -261,10 +257,6 @@ public class TopologyWindow extends javax.swing.JFrame {
         // create the commit history graph with all commits from repository
         graph = GraphBuilder.createTopologyGraph(systemName);
 
-        CommitFilter filter = new CommitFilter();
-        filter.setSystemName("dyevc");
-        Set<CommitInfo> allSystemCommits = new CommitDAO().getCommitsByQuery(filter);
-
         // Choosing layout
         layout = new FRLayout<RepositoryInfo, CloneRelationship>(graph);
         Dimension preferredSize = new Dimension(800, 600);
@@ -316,9 +308,11 @@ public class TopologyWindow extends javax.swing.JFrame {
         // </editor-fold>
 
         // <editor-fold defaultstate="collapsed" desc="edge transformers">
-        // EdgeLabel - not defined
-        Transformer<Object, String> edgeLabel = new TopologyEdgeLabelTransformer(allSystemCommits);
+        // EdgeLabel
+        Transformer<Object, String> edgeLabel = new TopologyEdgeLabelTransformer();
         vv.getRenderContext().setEdgeLabelTransformer(edgeLabel);
+        EdgeLabelRenderer edgeLabelRenderer = vv.getRenderContext().getEdgeLabelRenderer();
+        edgeLabelRenderer.setRotateEdgeLabels(false);
 
         // EdgeDrawPaint
         TopologyEdgePaintTransformer ept = new TopologyEdgePaintTransformer(vv.getPickedEdgeState());
