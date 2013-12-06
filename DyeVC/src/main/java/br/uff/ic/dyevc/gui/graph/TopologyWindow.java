@@ -81,16 +81,22 @@ public class TopologyWindow extends javax.swing.JFrame {
     private String                       instructions     =
         "<html><p>Each vertex in the graph represents a known clone of this system in the topology.</p>"
         + "<p>Each vertex label shows the hostname and the clone name of the vertex, separated by a dash.</p>"
-        + "<p>Each vertex type has a different meaning: </p>" + "<ul>"
-        + "<li>Green computer: the vertex that represents your clone;</li>"
-        + "<li>Red computers: ordinary clones;</li>" + "<li>Server: central repositories (do not pull or push "
+        + "<p>Each vertex type/color has a different meaning: </p>" + "<ul>"
+        + "<li>Blue computer: the vertex that represents your clone;</li>"
+        + "<li>Black computers: ordinary clones;</li>" + "<li>Server: central repositories (do not pull or push "
         + "to any other clone) or clones where DyeVC is not running;</li>"
-        + "<li>Vertices with a green checkmark: picked vertices</li>" + "</ul>"
-        + "<p>Each edge stroke in the graph represents a relationship between two repositories:</p>" + "<ul>"
-        + "<li>Continuous: the source vertex pushes to the destination vertex. </li>"
-        + "<li>Dotted, the destination vertex pulls from the source vertex. </li>" + "</ul>"
-        + "<p>Yellow edges represent a picked edge.</p>"
-        + "<p>Place the mouse over a vertex to view detailed information " + "regarding it.</p>" + "</html>";
+        + "<li>Vertices with a green checkmark: picked vertices.</li>" + "</ul>"
+        + "<p>Each edge in the graph represents a relationship between two repositories. Different"
+        + "strokes  represent different relationships:</p>" + "<ul>"
+        + "<li>Continuous edges: the source clone pushes to the destination vertex; </li>"
+        + "<li>Dotted edges: the destination clone pulls from the source vertex. </li>" + "</ul>"
+        + "<p>Edge colors depict the synchronism between two clones:</p>" + "<ul>"
+        + "<li>Yellow edges represent a picked edge;</li>"
+        + "<li>Green edges represent that source clone is synchronized with destination clone;</li>"
+        + "<li>Red edges represent that source clone is not synchronized with destination clone.</li>" + "</ul>"
+        + "<p>Each edge label tells how many commits from the source clone are missing in "
+        + "the destination clone.</p>" + "<br><p>Place the mouse over a vertex to view detailed information "
+        + "regarding it.</p>" + "</html>";
     private String                                                       systemName;
     private String                                                       callerId;
     private DirectedSparseMultigraph                                     graph;
