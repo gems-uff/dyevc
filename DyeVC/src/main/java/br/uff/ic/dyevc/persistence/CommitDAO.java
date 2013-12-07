@@ -294,9 +294,7 @@ public class CommitDAO {
         String systemName = commits.get(0).getSystemName();
 
         // Create filter for the list of commits to be updated
-        MongoLabServiceParms parms  = new MongoLabServiceParms();
-        CommitFilter         filter = new CommitFilter();
-        filter.setSystemName(systemName);
+        MongoLabServiceParms parms = new MongoLabServiceParms();
 
         // Sets parameter to update multiple documents
         parms.setMulti(true);
@@ -307,7 +305,7 @@ public class CommitDAO {
             LoggerFactory.getLogger(CommitDAO.class).info(
                 "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, j, size,
                 systemName);
-            updateParms(i, j, commits, filter, parms);
+            updateParms(systemName, i, j, commits, parms);
 
             // Calls Mongo Lab to update commits
             MongoLabProvider.updateCommits(parms, updateCmd);
@@ -319,7 +317,7 @@ public class CommitDAO {
             LoggerFactory.getLogger(CommitDAO.class).info(
                 "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, size, size,
                 systemName);
-            updateParms(i, size, commits, filter, parms);
+            updateParms(systemName, i, size, commits, parms);
 
             // Calls Mongo Lab to update commits
             MongoLabProvider.updateCommits(parms, updateCmd);
@@ -404,11 +402,10 @@ public class CommitDAO {
      * @param begin The beginning index to get hashes from <code>commits</code> (inclusive)
      * @param end The ending index to get hashes from <code>commits</code> (exclusive)
      * @param commits The list of commits to get hashes from
-     * @param filter The filter to be included in parms
      * @param parms The parms to be updated
      * @throws ServiceException
      */
-    private void updateParms(int begin, int end, List<CommitInfo> commits, CommitFilter filter,
+    private void updateParms(String systemName, int begin, int end, List<CommitInfo> commits,
                              MongoLabServiceParms parms)
             throws ServiceException {
 
@@ -416,7 +413,7 @@ public class CommitDAO {
         String hashes = serializeHashesToJsonArray(begin, end, commits);
 
         // Sets the list of hashes to be updated
-        StringBuilder query = new StringBuilder("{\"systemName\":\"dyevc\",\"_id\":{\"$in\": ");
+        StringBuilder query = new StringBuilder("{\"systemName\":\"" + systemName + "\",\"_id\":{\"$in\": ");
         query.append(hashes).append("}}");
         parms.setQuery(query.toString());
     }
@@ -440,5 +437,58 @@ public class CommitDAO {
         // Calls Mongo Lab to update commits
         MongoLabProvider.deleteCommits(parms);
         LoggerFactory.getLogger(CommitDAO.class).trace("deleteCommits -> Exit");
+    }
+
+    /**
+     * Updates a list of commits, changing its tracked attribute to true.
+     *
+     * @param commits List that contain the hashes to be updated
+     * @exception DyeVCException
+     */
+    public void updateNowTrackedCommits(ArrayList<CommitInfo> commits) throws ServiceException {
+        LoggerFactory.getLogger(CommitDAO.class).trace("updateNowTrackedCommits -> Entry");
+
+        if (commits.isEmpty()) {
+            LoggerFactory.getLogger(CommitDAO.class).trace("No commits to update tracked attribute.");
+
+            return;
+        }
+
+        int    i          = 0;
+        int    j          = i + BULK_UPDATE_COMMITS_SIZE;
+        int    size       = commits.size();
+        String systemName = commits.get(0).getSystemName();
+
+        // Create filter for the list of commits to be updated
+        MongoLabServiceParms parms = new MongoLabServiceParms();
+
+        // Sets parameter to update multiple documents
+        parms.setMulti(true);
+
+        // Sets the update command
+        String updateCmd = "{\"$set\" : { \"tracked\" : true }}";
+        while (j <= size) {
+            LoggerFactory.getLogger(CommitDAO.class).info(
+                "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, j, size,
+                systemName);
+            updateParms(systemName, i, j, commits, parms);
+
+            // Calls Mongo Lab to update commits
+            MongoLabProvider.updateCommits(parms, updateCmd);
+            i = j;
+            j = i + BULK_INSERT_SIZE;
+        }
+
+        if (i < size) {
+            LoggerFactory.getLogger(CommitDAO.class).info(
+                "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, size, size,
+                systemName);
+            updateParms(systemName, i, size, commits, parms);
+
+            // Calls Mongo Lab to update commits
+            MongoLabProvider.updateCommits(parms, updateCmd);
+        }
+
+        LoggerFactory.getLogger(CommitDAO.class).trace("updateNowTrackedCommits -> Exit");
     }
 }

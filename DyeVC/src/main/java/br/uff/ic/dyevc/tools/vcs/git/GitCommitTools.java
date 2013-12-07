@@ -2,11 +2,13 @@ package br.uff.ic.dyevc.tools.vcs.git;
 
 //~--- non-JDK imports --------------------------------------------------------
 
+import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
+import br.uff.ic.dyevc.model.git.TrackedBranch;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
@@ -58,6 +60,16 @@ public class GitCommitTools {
     private Map<String, CommitInfo> commitInfoMap;
 
     /**
+     * Map of commits found in tracked branches.
+     */
+    private Map<String, CommitInfo> commitInfoTrackedMap;
+
+    /**
+     * Map of commits found in non-tracked branches.
+     */
+    private Map<String, CommitInfo> commitInfoNonTrackedMap;
+
+    /**
      * Map of commits not found in any of the repositories that {@link #rep} pushes from.
      */
     Set<CommitInfo> notInPushListSet;
@@ -81,6 +93,8 @@ public class GitCommitTools {
      * Connector used by this class to connect to a Git repository.
      */
     private GitConnector git;
+
+    private RevWalk      walk;
 
     /**
      * The monitored repository used to instantiate this class, or null if not informed.
@@ -154,6 +168,7 @@ public class GitCommitTools {
     /**
      * Sets the connection this instance must work with. Must be called before the class is initialized. Use it if you
      * want to work with a connection to a different clone of the repository (e.g. the temporary working clone).
+     *
      * @param connection A connection to a repository
      */
     public void setConnection(GitConnector connection) throws VCSException {
@@ -171,8 +186,10 @@ public class GitCommitTools {
      * @throws VCSException
      */
     private void initialize() throws VCSException {
-        this.commitInfoMap          = new TreeMap<String, CommitInfo>();
-        this.commitRelationshipList = new ArrayList<CommitRelationship>();
+        this.commitInfoMap           = new TreeMap<String, CommitInfo>();
+        this.commitInfoTrackedMap    = new TreeMap<String, CommitInfo>();
+        this.commitInfoNonTrackedMap = new TreeMap<String, CommitInfo>();
+        this.commitRelationshipList  = new ArrayList<CommitRelationship>();
         populateHistory();
         initialized = true;
     }
@@ -224,6 +241,34 @@ public class GitCommitTools {
     }
 
     /**
+     * Returns a map with all commits in tracked branches, keyed by hash.
+     *
+     * @return a map with all commits in tracked branches, keyed by hash.
+     * @throws VCSException
+     */
+    public Map<String, CommitInfo> getCommitInfoTrackedMap() throws VCSException {
+        if (!initialized) {
+            initialize();
+        }
+
+        return commitInfoTrackedMap;
+    }
+
+    /**
+     * Returns a map with all commits in non-tracked branches, keyed by hash.
+     *
+     * @return a map with all commits in non-tracked branches, keyed by hash.
+     * @throws VCSException
+     */
+    public Map<String, CommitInfo> getCommitInfoNonTrackedMap() throws VCSException {
+        if (!initialized) {
+            initialize();
+        }
+
+        return commitInfoNonTrackedMap;
+    }
+
+    /**
      * Returns a set with all commits not found locally.
      *
      * @return a set with all commits not found locally.
@@ -266,10 +311,10 @@ public class GitCommitTools {
     }
 
     /**
-     * Loads external commits (not found locally) into the list of commits. After this, all known commits in the topology
-     * that includes {@link #rep} will be loaded into {@link #commitInfoMap}. The method also loads different sets, each one
-     * holding commits not found locally, commits not found in any of the push list repositories and commits not found in
-     * any of the pull list repositories.
+     * Loads external commits (not found locally) into the list of commits. After this, all known commits in the
+     * topology that includes {@link #rep} will be loaded into {@link #commitInfoMap}. The method also loads different
+     * sets, each one holding commits not found locally, commits not found in any of the push list repositories and
+     * commits not found in any of the pull list repositories.
      *
      * @param info The repository info to get related repositories from
      *
@@ -292,7 +337,6 @@ public class GitCommitTools {
                   pullsFromSet = new HashSet<String>();
         pushesToSet.addAll(info.getPushesTo());
         pullsFromSet.addAll(info.getPullsFrom());
-
 
         notInPullListSet            = dao.getCommitsNotFoundInRepositories(pullsFromSet, info.getSystemName());
         notInPushListSet            = dao.getCommitsNotFoundInRepositories(pushesToSet, info.getSystemName());
@@ -323,26 +367,34 @@ public class GitCommitTools {
      */
     private void populateHistory() throws VCSException {
         LoggerFactory.getLogger(GitCommitTools.class).trace("populateHistory -> Entry.");
-        RevWalk walk = null;
-        try {
-            Iterator<RevCommit> commitsIterator = git.getAllCommitsIterator();
-            walk = new RevWalk(git.getRepository());
 
-            for (Iterator<RevCommit> it = commitsIterator; it.hasNext(); ) {
-                RevCommit commit = walk.parseCommit(it.next());
-                if (!commitInfoMap.containsKey(commit.getName())) {
-                    createCommitInfo(commit, walk);
+        try {
+            // separate tracked branches from local branches
+            Set<String>         nonTrackedBranches = git.getLocalBranches();
+            Set<String>         trackedBranches    = new HashSet<String>();
+            List<TrackedBranch> tb                 = git.getTrackedBranches();
+
+            for (TrackedBranch tracked : tb) {
+                String ref = IConstants.REFS_HEADS + tracked.getName();
+                if (nonTrackedBranches.contains(ref)) {
+                    nonTrackedBranches.remove(ref);
+                    trackedBranches.add(ref);
                 }
             }
 
+            walk = new RevWalk(git.getRepository());
+            parseCommits(trackedBranches, true);
+
+            parseCommits(nonTrackedBranches, false);
+
             for (String commitId : commitInfoMap.keySet()) {
                 RevCommit commit = CommitUtils.getCommit(git.getRepository(), commitId);
-                createCommitRelations(commit, walk);
+                createCommitRelations(commit);
             }
 
             LoggerFactory.getLogger(GitCommitTools.class).debug("populateHistory -> created history with {} items.",
                                     commitInfoMap.size());
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             LoggerFactory.getLogger(GitCommitTools.class).error("Error in populateHistory.", ex);
 
             throw new VCSException("Error getting repository history.", ex);
@@ -356,16 +408,42 @@ public class GitCommitTools {
     }
 
     /**
-     * Extracts the commit info from repository and creates an object containing
-     * the commit properties. After that, calls {@link #createCommitRelations(org.eclipse.jgit.revwalk.RevCommit, org.eclipse.jgit.revwalk.RevWalk)}
-     * to check relations between this commit and others.
+     * Parse commits from the repository, starting with references specified in the branchHeads and taking all their
+     * parents, until all the repository commits are processed. The method stops when queue is empty.
+     * @param branchHeads List of heads for each branch to start traverse from. Taken from the refs/heads of the repository.
+     * @param tracked Indicates whether or not these set of references are heads of tracked branches
+     * @throws IOException
+     */
+    private void parseCommits(Set<String> branchHeads, boolean tracked) throws IOException {
+        ArrayList<RevCommit> queue = new ArrayList<RevCommit>();
+
+        for (String ref : branchHeads) {
+            queue.add(CommitUtils.getCommit(git.getRepository(), ref));
+        }
+
+        while (!queue.isEmpty()) {
+            RevCommit commit = walk.parseCommit(queue.remove(0));
+            createCommitInfo(commit, tracked);
+
+            for (RevCommit parent : commit.getParents()) {
+                if (!commitInfoMap.containsKey(parent.getName())) {
+                    queue.add(parent);
+                }
+            }
+        }
+    }
+
+    /**
+     * Extracts the commit info from repository and creates an object containing the commit properties. After that,
+     * calls {@link #createCommitRelations(org.eclipse.jgit.revwalk.RevCommit, org.eclipse.jgit.revwalk.RevWalk)} to
+     * check relations between this commit and others.
      *
      * @param commit the repository commit object to extract properties from.
-     * @param walk the walk to be used to check for relations with this commit.
+     * @param tracked Indicates whether or not these set of references are heads of tracked branches
      * @return a CommitInfo object
      * @throws IOException
      */
-    private CommitInfo createCommitInfo(RevCommit commit, RevWalk walk) throws IOException {
+    private CommitInfo createCommitInfo(RevCommit commit, boolean tracked) throws IOException {
         LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitInfo -> Entry.");
         CommitInfo ci = new CommitInfo(commit.getName(), git.getId());
         ci.setCommitDate(new Date(commit.getCommitTime() * 1000L));
@@ -373,6 +451,7 @@ public class GitCommitTools {
         ci.setCommitter(commit.getCommitterIdent().getName());
         ci.setShortMessage(commit.getShortMessage());
         ci.setRepositoryId(git.getId());
+        ci.setTracked(tracked);
 
         if (includeTopologyData) {
             ci.getFoundIn().add(rep.getId());
@@ -381,22 +460,27 @@ public class GitCommitTools {
 
         commitInfoMap.put(ci.getHash(), ci);
 
+        if (tracked) {
+            commitInfoTrackedMap.put(ci.getHash(), ci);
+        } else {
+            commitInfoNonTrackedMap.put(ci.getHash(), ci);
+        }
+
         LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitInfo -> Exit.");
 
         return ci;
     }
 
     /**
-     * Includes the existing relationships between the specified commit and others. Basically,
-     * the relationships consist of finding the parents of the specified commit.
+     * Includes the existing relationships between the specified commit and others. Basically, the relationships consist
+     * of finding the parents of the specified commit.
      *
      * @param commit the commit to be checked for relationships
-     * @param walk the walk used to parse parent commits.
      * @throws MissingObjectException
      * @throws IncorrectObjectTypeException
      * @throws IOException
      */
-    private void createCommitRelations(RevCommit commit, RevWalk walk)
+    private void createCommitRelations(RevCommit commit)
             throws MissingObjectException, IncorrectObjectTypeException, IOException {
         LoggerFactory.getLogger(GitCommitTools.class).trace("createCommitRelations -> Entry.");
 

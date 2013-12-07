@@ -69,6 +69,9 @@ public interface IConstants {
     /** Color used to identify a commit located in a repository not related to the one being analyzed. */
     public static final Color TOPOLOGY_COLOR_NON_RELATED_HAS = Color.LIGHT_GRAY;
 
+    /** Color used to identify a commit that does not belong to a tracked branch and thus cannot be sent to other repositories. */
+    public static final Color TOPOLOGY_COLOR_NOT_TRACKED = Color.YELLOW;
+
     /** Default size for single vertices in graphs. */
     public static final int GRAPH_VERTEX_SINGLE_SIZE = 40;
 

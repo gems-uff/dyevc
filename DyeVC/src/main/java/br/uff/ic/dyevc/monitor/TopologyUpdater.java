@@ -8,6 +8,7 @@ import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.MonitorException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
 import br.uff.ic.dyevc.exception.ServiceException;
+import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
@@ -24,6 +25,7 @@ import br.uff.ic.dyevc.utils.RepositoryConverter;
 import br.uff.ic.dyevc.utils.SystemUtils;
 
 import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.collections15.Predicate;
 
 import org.eclipse.jgit.transport.URIish;
 
@@ -48,6 +50,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -212,15 +216,19 @@ public class TopologyUpdater {
             ArrayList<CommitInfo> currentSnapshot = (ArrayList)tools.getCommitInfos();
 
             // Identifies new local commits since previous snapshot
-            ArrayList<CommitInfo> newCommits = new ArrayList<CommitInfo>(currentSnapshot);
-            if (previousSnapshot != null) {
+            ArrayList<CommitInfo> newCommits;
+            if (previousSnapshot == null) {
+                newCommits = new ArrayList<CommitInfo>(currentSnapshot);
+            } else {
                 newCommits = (ArrayList)CollectionUtils.subtract(currentSnapshot, previousSnapshot);
             }
 
             // Identifies commits that are potentially not synchronized in the database, before inserting new commits
-            boolean         dbIsEmpty                 = checkIfDbIsEmpty();
-            Set<CommitInfo> commitsNotFoundInSomeReps = new HashSet<CommitInfo>();
-            if (!dbIsEmpty) {
+            boolean         dbIsEmpty = checkIfDbIsEmpty();
+            Set<CommitInfo> commitsNotFoundInSomeReps;
+            if (dbIsEmpty) {
+                commitsNotFoundInSomeReps = new HashSet<CommitInfo>();
+            } else {
                 commitsNotFoundInSomeReps = getCommitsNotFoundInSomeReps();
             }
 
@@ -231,8 +239,10 @@ public class TopologyUpdater {
             }
 
             // Identifies commits that were deleted since previous snapshot
-            ArrayList<CommitInfo> commitsToDelete = new ArrayList<CommitInfo>();
-            if (previousSnapshot != null) {
+            ArrayList<CommitInfo> commitsToDelete;
+            if (previousSnapshot == null) {
+                commitsToDelete = new ArrayList<CommitInfo>();
+            } else {
                 commitsToDelete = (ArrayList<CommitInfo>)CollectionUtils.subtract(previousSnapshot, currentSnapshot);
             }
 
@@ -244,9 +254,22 @@ public class TopologyUpdater {
             // save current snapshot to disk
             saveSnapshot(currentSnapshot);
 
-            // updates commits in the database (those that were not deleted)
+            // update commits that had their tracked attribute changed from false to true
+            ArrayList<CommitInfo> nowTrackedCommits;
+            if (previousSnapshot != null) {
+                nowTrackedCommits = getNowTrackedCommits(previousSnapshot);
+            } else {
+                nowTrackedCommits = new ArrayList<CommitInfo>();
+            }
+
+            if (!nowTrackedCommits.isEmpty()) {
+                updateNowTrackedCommits(nowTrackedCommits);
+            }
+
+            // update commits that were not deleted
             ArrayList<CommitInfo> commitsToUpdate = (ArrayList)CollectionUtils.subtract(commitsNotFoundInSomeReps,
                                                         commitsToDelete);
+
             if (!commitsToUpdate.isEmpty()) {
                 updateCommits(commitsToUpdate);
             }
@@ -500,9 +523,24 @@ public class TopologyUpdater {
     }
 
     /**
+     * Updates commits into the database that had their tracked attribute changed from false to true.
+     *
+     * @param nowTrackedCommits Commits to be updated.
+     * @throws DyeVCException
+     */
+    private void updateNowTrackedCommits(ArrayList<CommitInfo> nowTrackedCommits) throws DyeVCException {
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommitsNowTracked -> Entry.");
+        commitDAO.updateNowTrackedCommits(nowTrackedCommits);
+        LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommitsNowTracked -> Exit.");
+    }
+
+    /**
      * Updates commits into the database. Prior to the update, update each commit with the list of repositories where
      * they are known to be found. If the list of repositories has not changed since last run, then do not update the
      * commit. updateableCommits commitsToUpdate the list of commits to be updated
+     *
+     * @param commitsToUpdate Commits to be updated.
+     * @throws DyeVCException
      */
     private void updateCommits(ArrayList<CommitInfo> commitsToUpdate) throws DyeVCException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommits -> Entry.");
@@ -553,6 +591,7 @@ public class TopologyUpdater {
      */
     private ArrayList<CommitInfo> updateWhereExists(ArrayList<CommitInfo> commitList) throws DyeVCException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateWhereExists -> Entry.");
+        Map<String, CommitInfo> commitsTrackedMap = tools.getCommitInfoTrackedMap();
 
         for (CommitInfo ci : commitList) {
             ci.setPreviousFoundIn(new HashSet<String>(ci.getFoundIn()));
@@ -562,9 +601,14 @@ public class TopologyUpdater {
             if (aheadSet.isEmpty() && behindSet.isEmpty()) {
                 if (tools.getCommitInfoMap().containsKey(ci.getHash())) {
                     // If the commit is neither ahead nor behind any related repository, and exists locally,
-                    // then it exists in all related repositories
-                    ci.addAllToFoundIn(converter.toRepositoryInfo().getPullsFrom());
-                    ci.addAllToFoundIn(converter.toRepositoryInfo().getPushesTo());
+                    // check whether it belongs to a tracked branch or not.
+                    if (commitsTrackedMap.containsKey(ci.getHash())) {
+                        // If it belongs to a tracked branch, than it exists in all push / pull repositories
+                        ci.addAllToFoundIn(converter.toRepositoryInfo().getPullsFrom());
+                        ci.addAllToFoundIn(converter.toRepositoryInfo().getPushesTo());
+                    }
+
+                    // In either case, it exists locally
                     ci.addFoundIn(repositoryToUpdate.getId());
                 }
 
@@ -590,5 +634,47 @@ public class TopologyUpdater {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateWhereExists -> Exit.");
 
         return commitList;
+    }
+
+    /**
+     * Gets commits that had their tracked attribute changed since previous snapshot, from false to true. Only existing
+     * commits are returned (those that were deleted are discarded).
+     *
+     * @param previousSnapshot Previous snapshot
+     * @return the set of commits that had their tracked attribute changed.
+     * @throws VCSException
+     */
+    private ArrayList<CommitInfo> getNowTrackedCommits(ArrayList<CommitInfo> previousSnapshot) throws VCSException {
+        // Finds commits that had their "tracked" attribute changed from false to true
+        Predicate<CommitInfo> changedTrackedAttribute = new Predicate<CommitInfo>() {
+            @Override
+            public boolean evaluate(CommitInfo previousCommit) {
+                boolean                 result        = false;
+                Map<String, CommitInfo> nonTrackedMap = null;
+                Map<String, CommitInfo> trackedMap    = null;
+                try {
+                    nonTrackedMap = tools.getCommitInfoNonTrackedMap();
+                    trackedMap    = tools.getCommitInfoTrackedMap();
+                } catch (VCSException ex) {
+                    Logger.getLogger(TopologyUpdater.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                // previous commit was not tracked and now is, but was not deleted (exists in trackedMap)
+                if (!previousCommit.isTracked() &&!nonTrackedMap.containsKey(previousCommit.getHash())
+                        && trackedMap.containsKey(previousCommit.getHash())) {
+                    result = true;
+                }
+
+                return result;
+            }
+        };
+        Collection<CommitInfo>  changedCommits    = CollectionUtils.select(previousSnapshot, changedTrackedAttribute);
+        ArrayList<CommitInfo>   nowTrackedCommits = new ArrayList<CommitInfo>();
+        Map<String, CommitInfo> trackedMap        = tools.getCommitInfoTrackedMap();
+        for (CommitInfo info : changedCommits) {
+            nowTrackedCommits.add(trackedMap.get(info.getHash()));
+        }
+
+        return nowTrackedCommits;
     }
 }

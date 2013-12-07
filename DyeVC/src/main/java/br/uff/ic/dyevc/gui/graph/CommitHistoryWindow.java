@@ -103,7 +103,8 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         + "<li>If vertex exists locally and in all related repositories, it is painted in WHITE;</li>"
         + "<li>If vertex exists locally but do not exists in any push list, it is painted in GREEN;</li>"
         + "<li>If vertex doesn't exist locally, but exists in any pull list, it is painted in RED;</li>"
-        + "<li>Finally, if vertex exists in a node not related to the local one (can't be pulled from it), it is painted GRAY.</li>"
+        + "<li>If vertex does not belong to a tracked branch, it is painted in YELLOW;</li>"
+        + "<li>Finally, if vertex exists in a node not related to the local one (can't be pulled from it), it is painted in GRAY.</li>"
         + "</ul>" + "<p>Place the mouse over a vertex to view detailed information regarding it.</p>" + "</html>";
 
     /**
@@ -301,7 +302,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         });
 
         // <editor-fold defaultstate="collapsed" desc="vertex tooltip transformer">
-        Transformer<Object, String> vertexTooltip = new CHVertexTooltipTransformer();
+        Transformer<Object, String> vertexTooltip = new CHVertexTooltipTransformer(info);
         vv.setVertexToolTipTransformer(vertexTooltip);
         ToolTipManager.sharedInstance().setDismissDelay(15000);
 

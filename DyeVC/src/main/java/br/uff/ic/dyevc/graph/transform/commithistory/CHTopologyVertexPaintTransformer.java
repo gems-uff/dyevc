@@ -24,7 +24,7 @@ import java.util.TreeMap;
  * @author Cristiano
  */
 public class CHTopologyVertexPaintTransformer implements Transformer<Object, Paint> {
-    private RepositoryInfo info;
+    private final RepositoryInfo info;
 
     /**
      * Map of commits not found in any of the repositories that {@link #rep} pushes from.
@@ -45,6 +45,9 @@ public class CHTopologyVertexPaintTransformer implements Transformer<Object, Pai
      * Constructs a transformer.
      *
      * @param info RepositoryInfo to use to check related repositories.
+     * @param notInPushList the set of commits that do not exist in any repositories in the push list.
+     * @param notInPullList the set of commits that do not exist in any repositories in the pull list.
+     * @param notInRepList the set of commits that do not exist locally.
      */
     public CHTopologyVertexPaintTransformer(RepositoryInfo info, final Set<CommitInfo> notInPushList,
             final Set<CommitInfo> notInPullList, final Set<CommitInfo> notInRepList) {
@@ -72,6 +75,8 @@ public class CHTopologyVertexPaintTransformer implements Transformer<Object, Pai
      * <p>If vertex exists locally but do not exists in any push list, it is painted in red.
      * <p>If vertex exists in any pull list but not locally, it is painted in green.
      * <p>Finally, if vertex exists in a node not related to the local one, it is painted gray.
+     * @param o the Object to be transformed. It can be either a Graph with collapsed nodes or a CommitInfo
+     * @return the color to be used to paint the vertex
      */
     @Override
     public Paint transform(Object o) {
@@ -94,6 +99,10 @@ public class CHTopologyVertexPaintTransformer implements Transformer<Object, Pai
             boolean noOneKnownHas = notInLocalRepositoryListMap.containsKey(ci.getHash())
                                     && notInPushListMap.containsKey(ci.getHash())
                                     && notInPullListMap.containsKey(ci.getHash());
+
+            if (!ci.isTracked()) {
+                return IConstants.TOPOLOGY_COLOR_NOT_TRACKED;
+            }
 
             if (allHave) {
                 return IConstants.TOPOLOGY_COLOR_ALL_HAVE;

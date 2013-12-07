@@ -31,7 +31,7 @@ import java.util.TreeSet;
     ignoreUnknown = true
 )
 @JsonPropertyOrder(value = {
-    "_id", "systemName", "commitDate", "committer", "shortMessage", "parents", "foundIn", "lastChanged"
+    "_id", "systemName", "commitDate", "committer", "shortMessage", "parents", "foundIn", "lastChanged", "tracked"
 })
 public class CommitInfo implements Comparable<CommitInfo>, Serializable {
     /**
@@ -86,6 +86,15 @@ public class CommitInfo implements Comparable<CommitInfo>, Serializable {
     private Set<String> parents;
     private Set<String> foundIn;
     private Set<String> previousFoundIn;
+    private boolean     tracked;
+
+    public boolean isTracked() {
+        return tracked;
+    }
+
+    public void setTracked(boolean tracked) {
+        this.tracked = tracked;
+    }
 
     public Set<String> getPreviousFoundIn() {
         return previousFoundIn;

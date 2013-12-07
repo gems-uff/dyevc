@@ -18,10 +18,11 @@ import java.util.Date;
 
 public class CommitFilter extends GenericFilter {
     @JsonProperty(value = "_id")
-    private String hash;
-    private String systemName;
-    private Date   commitDate;
-    private String committer;
+    private String  hash;
+    private String  systemName;
+    private Date    commitDate;
+    private String  committer;
+    private Boolean tracked;
 
     public String getHash() {
         return hash;
@@ -53,5 +54,13 @@ public class CommitFilter extends GenericFilter {
 
     public void setCommitter(String committer) {
         this.committer = committer;
+    }
+
+    public Boolean isTracked() {
+        return tracked;
+    }
+
+    public void setTracked(Boolean tracked) {
+        this.tracked = tracked;
     }
 }

@@ -4,6 +4,7 @@ package br.uff.ic.dyevc.graph.transform.commithistory;
 
 import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.CommitInfo;
+import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.utils.DateUtil;
 
 import edu.uci.ics.jung.graph.Graph;
@@ -16,11 +17,23 @@ import org.apache.commons.collections15.Transformer;
  * @author Cristiano
  */
 public class CHVertexTooltipTransformer implements Transformer<Object, String> {
+    private final RepositoryInfo info;
+
+    /**
+     * Constructs ...
+     *
+     * @param info
+     */
+    public CHVertexTooltipTransformer(RepositoryInfo info) {
+        super();
+        this.info = info;
+    }
+
     /**
      * Returns a string to be used as a tooltip in a graph
      *
-     * @param ci Info to be transformed in tooltip
-     * @return the info formatted as a tooltip
+     * @param o the object to be transformed in a tooltip. It can be either a Graph with collapsed vertices of a CommitInfo.
+     * @return the object formatted as a tooltip
      */
     @Override
     public String transform(Object o) {
@@ -36,7 +49,7 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
             CommitInfo    ci       = (CommitInfo)o;
             int           children = ci.getChildrenCount();
             int           parents  = ci.getParentsCount();
-            details.append("<html>");
+            details.append("<html><body width=\"450px\">");
 
             if (parents == 0) {
                 header.append("<b>This is the first commit!</b><br>");
@@ -67,7 +80,12 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
 
             details.append("<br><br>");
 
-            if (!ci.getChangeSet().isEmpty()) {
+            if (!ci.isTracked()) {
+                details.append("<span style=\"color:red\">This commit does not belong to a tracked branch and thus"
+                               + " cannot be retrieved by any other repository</span><br><br>");
+            }
+
+            if (ci.getFoundIn().contains(info.getId())) {
                 details.append("<b>Affected paths:</b><br>");
             } else {
                 details.append("Affected paths could not be retrieved for this commit.<br>");
@@ -84,7 +102,7 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
                 details.append("&nbsp;&nbsp;&nbsp;&nbsp;").append(cc.toString()).append("<br>");
             }
 
-            details.append("</html>");
+            details.append("</body></html>");
         }
 
         return details.toString();
