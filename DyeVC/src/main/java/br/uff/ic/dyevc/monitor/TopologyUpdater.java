@@ -349,9 +349,11 @@ public class TopologyUpdater {
                 updateNowTrackedCommits(nowTrackedCommits);
             }
 
-            // update commits that were not deleted
-            ArrayList<CommitInfo> commitsToUpdate = (ArrayList)CollectionUtils.subtract(commitsNotFoundInSomeReps,
-                                                        commitsToDelete);
+            // update commits that were not deleted and exist locally
+            ArrayList<CommitInfo> commitsNotFoundInSomeRepsWithoutDeletions =
+                (ArrayList)CollectionUtils.subtract(commitsNotFoundInSomeReps, commitsToDelete);
+            ArrayList<CommitInfo> commitsToUpdate =
+                (ArrayList)CollectionUtils.intersection(commitsNotFoundInSomeRepsWithoutDeletions, currentSnapshot);
             LoggerFactory.getLogger(TopologyUpdater.class).info(
                 "{}:{}({}) -> commitsToUpdate: {} commits.\n\t Will now check which of them should be updated.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
