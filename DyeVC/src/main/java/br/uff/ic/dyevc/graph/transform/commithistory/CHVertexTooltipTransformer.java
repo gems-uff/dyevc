@@ -32,7 +32,8 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
     /**
      * Returns a string to be used as a tooltip in a graph
      *
-     * @param o the object to be transformed in a tooltip. It can be either a Graph with collapsed vertices of a CommitInfo.
+     * @param o the object to be transformed in a tooltip. It can be either a Graph with collapsed vertices of a
+     * CommitInfo.
      * @return the object formatted as a tooltip
      */
     @Override
@@ -87,6 +88,11 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
 
             if (ci.getFoundIn().contains(info.getId())) {
                 details.append("<b>Affected paths:</b><br>");
+
+                for (CommitChange cc : ci.getChangeSet()) {
+                    details.append("&nbsp;&nbsp;&nbsp;&nbsp;").append(cc.toString()).append("<br>");
+                }
+
             } else {
                 details.append("Affected paths could not be retrieved for this commit.<br>");
                 details.append("This commit is known to exist in the repositories with the following ids:<ul>");
@@ -96,10 +102,6 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
                 }
 
                 details.append("</ul>");
-            }
-
-            for (CommitChange cc : ci.getChangeSet()) {
-                details.append("&nbsp;&nbsp;&nbsp;&nbsp;").append(cc.toString()).append("<br>");
             }
 
             details.append("</body></html>");
