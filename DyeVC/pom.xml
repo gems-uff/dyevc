@@ -85,11 +85,11 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <mainClass>br.uff.ic.dyevc.application.DyeVC</mainClass>
                         </manifest>
-                        <manifestEntries>
+                        <!--<manifestEntries>
                             <Permissions>all-permissions</Permissions>
                             <Codebase>http://www.ic.uff.br/~ccesario/DyeVC</Codebase>
                             <Application-Name>DyeVC</Application-Name>
-                        </manifestEntries>
+                        </manifestEntries> -->
                     </archive>
                 </configuration>
             </plugin>
