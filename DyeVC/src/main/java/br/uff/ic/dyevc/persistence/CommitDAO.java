@@ -15,8 +15,6 @@ import org.slf4j.LoggerFactory;
 
 //~--- JDK imports ------------------------------------------------------------
 
-import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -36,10 +34,10 @@ public class CommitDAO {
     private static final int BULK_INSERT_SIZE = 3000;
 
     /**
-     * Number of elements to send in bulk commit update by hashes. More than this will make command too long and mongodb
-     * will reject it;
+     * Number of elements to send in bulk commit update or read by hashes. More than this will make command too long
+     * and REST API will reject it;
      */
-    private static final int BULK_UPDATE_COMMITS_SIZE = 80;
+    private static final int BULK_READ_UPDATE_COMMITS_SIZE = 80;
 
     /**
      * Limit of commits to be returned in queries
@@ -120,11 +118,52 @@ public class CommitDAO {
             throw new ServiceException("System name must be specified");
         }
 
-        CommitFilter  filter = new CommitFilter();
-        StringBuilder query  = new StringBuilder("{\"systemName\": \"").append(systemName).append("\"");
-        query.append(", \"_id\": {$in: ").append(JsonSerializerUtils.serializeHashes(cis)).append("}}");
-        filter.setCustomQuery(query.toString());
-        Set<CommitInfo> result = getCommitsByQuery(filter);
+        int             i          = 0;
+        int             j          = i + BULK_READ_UPDATE_COMMITS_SIZE;
+        int             size       = cis.size();
+
+        CommitFilter    filter     = new CommitFilter();
+        String          queryStart = "{\"systemName\": \"" + systemName + "\"";
+        String          queryEnd   = "}";
+        Set<CommitInfo> result     = new HashSet<CommitInfo>();
+
+        if (size < 3 * BULK_READ_UPDATE_COMMITS_SIZE) {
+            // size not too long, get just the specified hashes
+            while (j <= size) {
+                LoggerFactory.getLogger(CommitDAO.class).info(
+                    "Getting hashes for commits from {} to {} from a total of {} commits for the system <{}>.", i, j,
+                    size, systemName);
+
+                StringBuilder queryMiddle =
+                    new StringBuilder(", \"_id\": {$in: ").append(JsonSerializerUtils.serializeHashes(cis.subList(i,
+                        j))).append("}");
+                filter.setCustomQuery(queryStart + queryMiddle.toString() + queryEnd);
+
+                result.addAll(getCommitsByQuery(filter));
+
+                i = j;
+                j = i + BULK_READ_UPDATE_COMMITS_SIZE;
+            }
+
+            if (i < size) {
+                LoggerFactory.getLogger(CommitDAO.class).info(
+                    "Getting hashes for commits from {} to {} from a total of {} commits for the system <{}>.", i,
+                    size, size, systemName);
+                StringBuilder queryMiddle =
+                    new StringBuilder(", \"_id\": {$in: ").append(JsonSerializerUtils.serializeHashes(cis.subList(i,
+                        size))).append("}");
+                filter.setCustomQuery(queryStart + queryMiddle.toString() + queryEnd);
+
+                result.addAll(getCommitsByQuery(filter));
+            }
+        } else {
+            // too many hashes to get, then get all commits at once to avoid multiple roundtrip queries to database
+            LoggerFactory.getLogger(CommitDAO.class).info("Getting hashes for all commits in database in system <{}>.",
+                                    systemName);
+            filter.setCustomQuery(queryStart + queryEnd);
+
+            result.addAll(getCommitsByQuery(filter));
+        }
 
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByHashes -> Exit");
 
@@ -289,7 +328,7 @@ public class CommitDAO {
     public void updateCommitsWithNewRepository(List<CommitInfo> commits, String repositoryId) throws DyeVCException {
         LoggerFactory.getLogger(CommitDAO.class).trace("updateCommitsWithNewRepository -> Entry");
         int    i          = 0;
-        int    j          = i + BULK_UPDATE_COMMITS_SIZE;
+        int    j          = i + BULK_READ_UPDATE_COMMITS_SIZE;
         int    size       = commits.size();
         String systemName = commits.get(0).getSystemName();
 
@@ -310,7 +349,7 @@ public class CommitDAO {
             // Calls Mongo Lab to update commits
             MongoLabProvider.updateCommits(parms, updateCmd);
             i = j;
-            j = i + BULK_INSERT_SIZE;
+            j = i + BULK_READ_UPDATE_COMMITS_SIZE;
         }
 
         if (i < size) {
@@ -357,7 +396,7 @@ public class CommitDAO {
      * Deletes all commits for which foundIn list contains no elements
      *
      * @param systemName The system name where commits will be deleted
-     * @exception DyeVCException
+     * @throws br.uff.ic.dyevc.exception.ServiceException
      */
     public void deleteOrphanedCommits(String systemName) throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("deleteOrphanedCommits -> Entry");
@@ -375,29 +414,6 @@ public class CommitDAO {
     }
 
     /**
-     * Gets a list of commits and return their hashes as a serialized json array of strings.
-     * @param i The first element in the list to be considered (inclusive)
-     * @param j The last element in the list to be considered (exclusive)
-     * @param commits The list to get the hashes from
-     * @return The serialized hashes as a json array of strings
-     */
-    private String serializeHashesToJsonArray(int i, int j, List<CommitInfo> commits) throws ServiceException {
-        ArrayList<String> hashesToUpdate = new ArrayList<String>();
-        String            result         = "[]";
-        for (int c = i; c < j; c++) {
-            hashesToUpdate.add(commits.get(c).getHash());
-        }
-
-        try {
-            result = mapper.writeValueAsString(hashesToUpdate);
-        } catch (IOException ex) {
-            throw new ServiceException("Could not serialize hashes from commits: " + this, ex);
-        }
-
-        return result;
-    }
-
-    /**
      * Update parms with a new list of hashes to be updated
      * @param begin The beginning index to get hashes from <code>commits</code> (inclusive)
      * @param end The ending index to get hashes from <code>commits</code> (exclusive)
@@ -410,7 +426,7 @@ public class CommitDAO {
             throws ServiceException {
 
         // serializes hashes to json array
-        String hashes = serializeHashesToJsonArray(begin, end, commits);
+        String hashes = JsonSerializerUtils.serializeHashes(commits.subList(begin, end));
 
         // Sets the list of hashes to be updated
         StringBuilder query = new StringBuilder("{\"systemName\":\"" + systemName + "\",\"_id\":{\"$in\": ");
@@ -422,6 +438,7 @@ public class CommitDAO {
      * Remove the specified list of commits from the database
      * @param cis the List of commits to be deleted
      * @param systemName The system name where commits will be deleted
+     * @throws br.uff.ic.dyevc.exception.ServiceException
      */
     public void deleteCommits(ArrayList<CommitInfo> cis, String systemName) throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("deleteCommits -> Entry");
@@ -443,7 +460,7 @@ public class CommitDAO {
      * Updates a list of commits, changing its tracked attribute to true.
      *
      * @param commits List that contain the hashes to be updated
-     * @exception DyeVCException
+     * @throws br.uff.ic.dyevc.exception.ServiceException
      */
     public void updateNowTrackedCommits(ArrayList<CommitInfo> commits) throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("updateNowTrackedCommits -> Entry");
@@ -455,7 +472,7 @@ public class CommitDAO {
         }
 
         int    i          = 0;
-        int    j          = i + BULK_UPDATE_COMMITS_SIZE;
+        int    j          = i + BULK_READ_UPDATE_COMMITS_SIZE;
         int    size       = commits.size();
         String systemName = commits.get(0).getSystemName();
 
@@ -476,7 +493,7 @@ public class CommitDAO {
             // Calls Mongo Lab to update commits
             MongoLabProvider.updateCommits(parms, updateCmd);
             i = j;
-            j = i + BULK_INSERT_SIZE;
+            j = i + BULK_READ_UPDATE_COMMITS_SIZE;
         }
 
         if (i < size) {

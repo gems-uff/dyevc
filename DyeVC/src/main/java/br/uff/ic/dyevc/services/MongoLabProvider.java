@@ -11,9 +11,11 @@ import br.uff.ic.dyevc.persistence.MongoLabServiceParms;
 
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
+import org.jboss.resteasy.client.core.BaseClientResponse;
 import org.jboss.resteasy.util.GenericType;
 
 import org.slf4j.LoggerFactory;
@@ -175,13 +177,12 @@ public class MongoLabProvider {
      */
     public static Set<CommitInfo> getCommits(MongoLabServiceParms params) throws ServiceException {
         LoggerFactory.getLogger(MongoLabProvider.class).trace("getCommits -> Entry");
-        Set<CommitInfo>                 result = null;
-        ClientRequest                   req;
-        ClientResponse<Set<CommitInfo>> res;
+        Object                     result = null;
+        ClientRequest              req;
+        BaseClientResponse<Object> res;
         try {
             req = prepareRequest(COLLECTION_COMMITS, params);
-            res = req.get(new GenericType<Set<CommitInfo>>() {}
-            );
+            res = (BaseClientResponse<Object>)req.get(Object.class);
 
             if (res.getStatus() == 200) {
                 result = res.getEntity();
@@ -198,7 +199,8 @@ public class MongoLabProvider {
 
         LoggerFactory.getLogger(MongoLabProvider.class).trace("getCommits -> Exit");
 
-        return result;
+        return mapper.convertValue(result, new TypeReference<Set<CommitInfo>>() {}
+        );
     }
 
     /**
@@ -402,7 +404,8 @@ public class MongoLabProvider {
             HashMap<String, Object> params)
             throws ServiceException {
         StringBuilder message = new StringBuilder("Error invoking service: ").append(service).append(
-                                    ". Return code received on service invocation: ").append(status);
+                                    ". Return code received on service invocation: ").append(status).append(
+                                    " - ").append(HttpStatus.getStatusText(status));
 
         if (error != null) {
             message.append(IConstants.LINE_SEPARATOR).append("\tError message: ").append(error.toString());
