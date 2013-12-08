@@ -34,8 +34,8 @@ public class CommitDAO {
     private static final int BULK_INSERT_SIZE = 3000;
 
     /**
-     * Number of elements to send in bulk commit update or read by hashes. More than this will make command too long
-     * and REST API will reject it;
+     * Number of elements to send in bulk commit update or read by hashes. More than this will make command too long and
+     * REST API will reject it;
      */
     private static final int BULK_READ_UPDATE_COMMITS_SIZE = 80;
 
@@ -87,6 +87,7 @@ public class CommitDAO {
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByQuery -> Entry");
         MongoLabServiceParms parms = new MongoLabServiceParms();
         parms.setQuery(commitFilter);
+        parms.setLimit(COMMIT_LIMIT);
         Set<CommitInfo> result = MongoLabProvider.getCommits(parms);
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByQuery -> Exit");
 
@@ -118,8 +119,6 @@ public class CommitDAO {
             throw new ServiceException("System name must be specified");
         }
 
-        int             i          = 0;
-        int             j          = i + BULK_READ_UPDATE_COMMITS_SIZE;
         int             size       = cis.size();
 
         CommitFilter    filter     = new CommitFilter();
@@ -128,6 +127,8 @@ public class CommitDAO {
         Set<CommitInfo> result     = new HashSet<CommitInfo>();
 
         if (size < 3 * BULK_READ_UPDATE_COMMITS_SIZE) {
+            int i = 0;
+            int j = i + BULK_READ_UPDATE_COMMITS_SIZE;
             // size not too long, get just the specified hashes
             while (j <= size) {
                 LoggerFactory.getLogger(CommitDAO.class).info(
@@ -188,19 +189,21 @@ public class CommitDAO {
     }
 
     /**
-     * <p>Retrieves a list of commits that are not found in the specified {@literal repositoryIds}. The search is done according to the
-     * {@literal considerAll} parameter. This is:</p>
+     * <p>
+     * Retrieves a list of commits that are not found in the specified {@literal repositoryIds}. The search is done
+     * according to the {@literal considerAll} parameter. This is:</p>
      * <ul>
-     *  <li>If considerAll is true, makes an <code>AND</code> search, meaning that commits returned do not exist in ANY
+     * <li>If considerAll is true, makes an <code>AND</code> search, meaning that commits returned do not exist in ANY
      * of the specified {@literal repositoryIds}.</li>
-     *  <li>If considerAll is false, makes an <code>OR</code> search, meaning that commits returned do not exist in
-     * AT LEAST ONE of the specified {@literal repositoryIds}.</li>
+     * <li>If considerAll is false, makes an <code>OR</code> search, meaning that commits returned do not exist in AT
+     * LEAST ONE of the specified {@literal repositoryIds}.</li>
      * </ul>
      *
-     * @param repositoryIds The id of the repositories to look for commits not found in. At least one repositoryId should
-     * be specified.
+     * @param repositoryIds The id of the repositories to look for commits not found in. At least one repositoryId
+     * should be specified.
      * @param systemName System name where commits will be searched.
-     * @param considerAll If true, makes an AND search across the specified {@literal repositoryIds}, otherwise, makes an OR search.
+     * @param considerAll If true, makes an AND search across the specified {@literal repositoryIds}, otherwise, makes
+     * an OR search.
      * @return List of commits that are not found in the specified repositoryIds
      * @throws ServiceException
      */
@@ -248,10 +251,11 @@ public class CommitDAO {
     }
 
     /**
-     * <p>Retrieves a list of commits that are not found in any of the specified {@literal repositoryIds}.</p>
+     * <p>
+     * Retrieves a list of commits that are not found in any of the specified {@literal repositoryIds}.</p>
      *
-     * @param repositoryIds The id of the repositories to look for commits not found in. At least one repositoryId should
-     * be specified.
+     * @param repositoryIds The id of the repositories to look for commits not found in. At least one repositoryId
+     * should be specified.
      * @param systemName System name where commits will be searched.
      * @return List of commits that are not found in any of the specified repositoryIds
      * @throws ServiceException
@@ -287,8 +291,7 @@ public class CommitDAO {
     }
 
     /**
-     * Inserts in the database all commits in the list, in packages with <code>BULK_INSERT_SIZE</code>
-     * elements.
+     * Inserts in the database all commits in the list, in packages with <code>BULK_INSERT_SIZE</code> elements.
      *
      * @param commits List of commits to be inserted
      * @exception DyeVCException
@@ -366,8 +369,8 @@ public class CommitDAO {
     }
 
     /**
-     * Updates all commits, removing the specified repository Id from the foundIn list. This method is typically
-     * used when a repository is removed from the topology.
+     * Updates all commits, removing the specified repository Id from the foundIn list. This method is typically used
+     * when a repository is removed from the topology.
      *
      * @param systemName The system name where commits will be updated
      * @param repositoryId The repository Id to be included in foundIn list
@@ -415,6 +418,7 @@ public class CommitDAO {
 
     /**
      * Update parms with a new list of hashes to be updated
+     *
      * @param begin The beginning index to get hashes from <code>commits</code> (inclusive)
      * @param end The ending index to get hashes from <code>commits</code> (exclusive)
      * @param commits The list of commits to get hashes from
@@ -436,6 +440,7 @@ public class CommitDAO {
 
     /**
      * Remove the specified list of commits from the database
+     *
      * @param cis the List of commits to be deleted
      * @param systemName The system name where commits will be deleted
      * @throws br.uff.ic.dyevc.exception.ServiceException

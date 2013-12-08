@@ -383,9 +383,14 @@ public class GitCommitTools {
             }
 
             walk = new RevWalk(git.getRepository());
-            parseCommits(trackedBranches, true);
 
-            parseCommits(nonTrackedBranches, false);
+            Iterator<RevCommit> it = git.getLogForHeads(trackedBranches);
+            while (it.hasNext()) {
+                RevCommit commit = it.next();
+                createCommitInfo(commit, true);
+            }
+
+            parseLocalCommits(nonTrackedBranches);
 
             for (String commitId : commitInfoMap.keySet()) {
                 RevCommit commit = CommitUtils.getCommit(git.getRepository(), commitId);
@@ -411,19 +416,21 @@ public class GitCommitTools {
      * Parse commits from the repository, starting with references specified in the branchHeads and taking all their
      * parents, until all the repository commits are processed. The method stops when queue is empty.
      * @param branchHeads List of heads for each branch to start traverse from. Taken from the refs/heads of the repository.
-     * @param tracked Indicates whether or not these set of references are heads of tracked branches
      * @throws IOException
      */
-    private void parseCommits(Set<String> branchHeads, boolean tracked) throws IOException {
+    private void parseLocalCommits(Set<String> branchHeads) throws IOException {
         ArrayList<RevCommit> queue = new ArrayList<RevCommit>();
 
         for (String ref : branchHeads) {
-            queue.add(CommitUtils.getCommit(git.getRepository(), ref));
+            RevCommit commit = CommitUtils.getCommit(git.getRepository(), ref);
+            if (!commitInfoMap.containsKey(commit.getName())) {
+                queue.add(commit);
+            }
         }
 
         while (!queue.isEmpty()) {
             RevCommit commit = walk.parseCommit(queue.remove(0));
-            createCommitInfo(commit, tracked);
+            createCommitInfo(commit, false);
 
             for (RevCommit parent : commit.getParents()) {
                 if (!commitInfoMap.containsKey(parent.getName())) {

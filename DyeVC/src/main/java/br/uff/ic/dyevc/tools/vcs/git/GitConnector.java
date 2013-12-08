@@ -648,11 +648,42 @@ public class GitConnector {
 
             result = logcmd.call().iterator();
 
-        } catch (Exception ex) {
+        } catch (IOException ex) {
+            LoggerFactory.getLogger(GitConnector.class).error("Error in getAllCommitsIterator.", ex);
+        } catch (GitAPIException ex) {
             LoggerFactory.getLogger(GitConnector.class).error("Error in getAllCommitsIterator.", ex);
         }
 
         LoggerFactory.getLogger(GitConnector.class).trace("getAllCommitsIterator -> Exit.");
+
+        return result;
+    }
+
+    /**
+     * Gets an iterator with all commits reachable from the specified set of branchHeads.
+     *
+     * @param branchHeads the set of branch heads to begin log. Each one of them must be specified in the form
+     * <b>/ref/heads/<branch name></b>.
+     * @return the iterator containing all commits reachable from branchHeads
+     */
+    public Iterator<RevCommit> getLogForHeads(Set<String> branchHeads) {
+        LoggerFactory.getLogger(GitConnector.class).trace("getLogForHeads -> Entry.");
+        Iterator<RevCommit> result = new TreeSet<RevCommit>().iterator();
+        try {
+            LogCommand logcmd = git.log();
+            for (String ref : branchHeads) {
+                logcmd.add(repository.resolve(ref));
+            }
+
+            result = logcmd.call().iterator();
+
+        } catch (IOException ex) {
+            LoggerFactory.getLogger(GitConnector.class).error("Error in getLogForHeads.", ex);
+        } catch (GitAPIException ex) {
+            LoggerFactory.getLogger(GitConnector.class).error("Error in getLogForHeads.", ex);
+        }
+
+        LoggerFactory.getLogger(GitConnector.class).trace("getLogForHeads -> Exit.");
 
         return result;
     }
