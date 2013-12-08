@@ -4,7 +4,6 @@ package br.uff.ic.dyevc.graph.layout;
 
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.graph.GraphDomainMapper;
-import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.tools.vcs.git.CommonAncestorFinder;
@@ -123,7 +122,8 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
 
     private void doInit() {
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Entry");
-        SplashScreen splash = SplashScreen.getInstance();
+
+//      SplashScreen splash = SplashScreen.getInstance();
         try {
 
             // Starting X position
@@ -133,15 +133,15 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
             processedHeads.clear();
             nodes.clear();
 
-            splash.setStatus("Calculating X positions...");
-            splash.setVisible(true);
+//          splash.setStatus("Calculating X positions...");
+//          splash.setVisible(true);
             calcXPositionsAndFindHeads(xPos);
             LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug("doInit -> Graph has {} nodes and {} heads",
                                     nodes.size(), heads.size());
             LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace(
                 "doInit -> Initializing visited state for all graph nodes");
 
-            splash.setStatus("Resetting visited status for " + graph.getVertexCount() + " vertices...");
+//          splash.setStatus("Resetting visited status for " + graph.getVertexCount() + " vertices...");
 
             for (V v : graph.getVertices()) {
 
@@ -156,7 +156,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
 
             int i = 1;
             while (!heads.isEmpty()) {
-                splash.setStatus("Calculating Y positions starting in head " + i++ + "/" + heads.size() + "...");
+//              splash.setStatus("Calculating Y positions starting in head " + i++ + "/" + heads.size() + "...");
 
                 // Initial height of tree
                 int height = 0;
@@ -174,7 +174,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
                 calcYPositions(v, height);
             }
 
-            splash.setVisible(false);
+//          splash.setVisible(false);
         } catch (DyeVCException vcse) {
             JOptionPane.showMessageDialog(
                 null,
@@ -188,7 +188,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
                 "Application received the following exception trying to show repository commit history:\n" + ex
                 + "\n\nOpen console window to see error details.", "Error found!", JOptionPane.ERROR_MESSAGE);
         } finally {
-            splash.dispose();
+//          splash.dispose();
         }
 
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("doInit -> Exit");

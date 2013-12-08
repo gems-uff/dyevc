@@ -11,7 +11,6 @@ import br.uff.ic.dyevc.graph.transform.commithistory.CHTopologyVertexPaintTransf
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexLabelTransformer;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexTooltipTransformer;
 import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
-import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepository;
@@ -113,18 +112,18 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * @param rep
      */
     public CommitHistoryWindow(MonitoredRepository rep) {
-        SplashScreen splash = SplashScreen.getInstance();
+//      SplashScreen splash = SplashScreen.getInstance();
         try {
-            splash.setStatus("Initializing Graph component");
+//          splash.setStatus("Initializing Graph component");
             this.rep = rep;
-            SplashScreen.getInstance().setVisible(true);
+//          SplashScreen.getInstance().setVisible(true);
             initGraphComponent();
-            SplashScreen.getInstance().setStatus("Initializing Window components");
+//          SplashScreen.getInstance().setStatus("Initializing Window components");
             initComponents();
             translateGraph();
-            SplashScreen.getInstance().setVisible(false);
+//          SplashScreen.getInstance().setVisible(false);
         } catch (DyeVCException ex) {
-            splash.dispose();
+//          splash.dispose();
             JOptionPane.showMessageDialog(
                 null,
                 "Application received the following exception trying to show repository log:\n" + ex
@@ -135,7 +134,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             dispose();
         } catch (RuntimeException ex) {
             ex.printStackTrace(System.err);
-            splash.dispose();
+//          splash.dispose();
             JOptionPane.showMessageDialog(
                 null,
                 "Application received the following exception trying to show repository log:\n" + ex

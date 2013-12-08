@@ -14,7 +14,6 @@ import br.uff.ic.dyevc.graph.transform.topology.TopologyVertexIconShapeTransform
 import br.uff.ic.dyevc.graph.transform.topology.TopologyVertexIconTransformer;
 import br.uff.ic.dyevc.graph.transform.topology.TopologyVertexPaintTransformer;
 import br.uff.ic.dyevc.graph.transform.topology.TopologyVertexTooltipTransformer;
-import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.topology.CloneRelationship;
@@ -127,18 +126,18 @@ public class TopologyWindow extends javax.swing.JFrame {
      * @param callerId The caller Id (node from which the plotting was asked
      */
     public TopologyWindow(String systemName, String callerId) {
-        SplashScreen splash = SplashScreen.getInstance();
+//      SplashScreen splash = SplashScreen.getInstance();
         try {
-            splash.setStatus("Initializing Graph component");
+//          splash.setStatus("Initializing Graph component");
             this.systemName = systemName;
             this.callerId   = callerId;
-            SplashScreen.getInstance().setVisible(true);
+//          SplashScreen.getInstance().setVisible(true);
             initGraphComponent();
-            SplashScreen.getInstance().setStatus("Initializing Window components");
+//          SplashScreen.getInstance().setStatus("Initializing Window components");
             initComponents();
-            SplashScreen.getInstance().setVisible(false);
+//          SplashScreen.getInstance().setVisible(false);
         } catch (DyeVCException ex) {
-            splash.dispose();
+//          splash.dispose();
             JOptionPane.showMessageDialog(null,
                                           "Application received the following exception trying to show topology:\n"
                                           + ex + "\n\nOpen console window to see error details.", "Error found!",
@@ -149,7 +148,7 @@ public class TopologyWindow extends javax.swing.JFrame {
             dispose();
         } catch (RuntimeException ex) {
             ex.printStackTrace(System.err);
-            splash.dispose();
+//          splash.dispose();
             JOptionPane.showMessageDialog(null,
                                           "Application received the following exception trying to show topology:\n"
                                           + ex + "\n\nOpen console window to see error details.", "Error found!",
