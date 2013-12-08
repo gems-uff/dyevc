@@ -444,9 +444,9 @@ public class TopologyUpdater {
     private ArrayList<CommitInfo> retrieveSnapshot() throws DyeVCException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("retrieveSnapshot -> Entry.");
 
-        if (!currentApplicationVersion.equals(settings.getLastApplicationVersionUsed())) {
-            return null;
-        }
+//      if (!currentApplicationVersion.equals(settings.getLastApplicationVersionUsed())) {
+//          return null;
+//      }
 
         ObjectInput           input = null;
         String                snapshotPath;
