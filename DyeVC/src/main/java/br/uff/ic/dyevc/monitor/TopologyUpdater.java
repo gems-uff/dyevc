@@ -64,7 +64,6 @@ import java.util.TreeMap;
 public class TopologyUpdater {
     private final TopologyDAO             topologyDAO;
     private final CommitDAO               commitDAO;
-    private Topology                      topology;
     private final MonitoredRepositories   monitoredRepositories;
     private RepositoryConverter           converter;
     private MonitoredRepository           repositoryToUpdate;
@@ -108,7 +107,7 @@ public class TopologyUpdater {
         this.converter          = new RepositoryConverter(repositoryToUpdate);
 
         MessageManager.getInstance().addMessage("Updating topology for repository <" + repositoryToUpdate.getId()
-                + "> with id <" + repositoryToUpdate.getName() + ">");
+                + "> with id <" + repositoryToUpdate.getName() + ">. Check console for details.");
 
         updateRepositoryTopology();
 
@@ -131,7 +130,9 @@ public class TopologyUpdater {
 
         // TODO implement lock mechanism
         try {
-            topology = topologyDAO.readTopologyForSystem(systemName);
+            LoggerFactory.getLogger(TopologyUpdater.class).info("{}:{}({}) -> Started updating repository.",
+                                    systemName, repositoryToUpdate.getName(), repositoryToUpdate.getId());
+            Topology       topology             = topologyDAO.readTopologyForSystem(systemName);
 
             RepositoryInfo localRepositoryInfo  = converter.toRepositoryInfo();
             RepositoryInfo remoteRepositoryInfo = topology.getRepositoryInfo(systemName, localRepositoryInfo.getId());
@@ -144,8 +145,14 @@ public class TopologyUpdater {
             boolean changedLocally = remoteRepositoryInfo == null;
             if (!changedLocally) {
                 // localRepositoryInfo already exists in the topology, then gets the list of hosts that monitor it
+                LoggerFactory.getLogger(TopologyUpdater.class).info(
+                    "{}:{}({}) -> Repository already exists in topology.", systemName, repositoryToUpdate.getName(),
+                    repositoryToUpdate.getId());
                 localRepositoryInfo.setMonitoredBy(remoteRepositoryInfo.getMonitoredBy());
             } else {
+                LoggerFactory.getLogger(TopologyUpdater.class).info(
+                    "{}:{}({}) -> Repository does not exist in topology.", systemName, repositoryToUpdate.getName(),
+                    repositoryToUpdate.getId());
                 localRepositoryInfo.addMonitoredBy(SystemUtils.getLocalHostname());
             }
 
@@ -156,8 +163,20 @@ public class TopologyUpdater {
 
                 if (repositoryToUpdate.isMarkedForDeletion()) {
                     changedLocally |= monitoredBy.remove(hostname);
+
+                    if (changedLocally) {
+                        LoggerFactory.getLogger(TopologyUpdater.class).info(
+                            "{}:{}({}) -> Repository is marked for deletion and will be removed from the monitoredBy list.",
+                            systemName, repositoryToUpdate.getName(), repositoryToUpdate.getId());
+                    }
                 } else {
                     changedLocally |= monitoredBy.add(hostname);
+
+                    if (changedLocally) {
+                        LoggerFactory.getLogger(TopologyUpdater.class).info(
+                            "{}:{}({}) -> Repository is marked for deletion and will be removed from the monitoredBy list.",
+                            systemName, repositoryToUpdate.getName(), repositoryToUpdate.getId());
+                    }
                 }
             }
 
@@ -168,7 +187,20 @@ public class TopologyUpdater {
                 Collection<String> removedPullsFrom = CollectionUtils.subtract(remoteRepositoryInfo.getPullsFrom(),
                                                           localRepositoryInfo.getPullsFrom());
                 changedLocally |= !insertedPullsFrom.isEmpty();
+
+                if (changedLocally) {
+                    LoggerFactory.getLogger(TopologyUpdater.class).info(
+                        "{}:{}({}) -> pullsFrom list has new members and will be updated.", systemName,
+                        repositoryToUpdate.getName(), repositoryToUpdate.getId());
+                }
+
                 changedLocally |= !removedPullsFrom.isEmpty();
+
+                if (changedLocally) {
+                    LoggerFactory.getLogger(TopologyUpdater.class).info(
+                        "{}:{}({}) -> pullsFrom list has deleted members and will be updated.", systemName,
+                        repositoryToUpdate.getName(), repositoryToUpdate.getId());
+                }
             }
 
             if (!changedLocally) {
@@ -178,15 +210,30 @@ public class TopologyUpdater {
                 Collection<String> removedPushesTo = CollectionUtils.subtract(remoteRepositoryInfo.getPushesTo(),
                                                          localRepositoryInfo.getPushesTo());
                 changedLocally |= !insertedPushesTo.isEmpty();
+
+                if (changedLocally) {
+                    LoggerFactory.getLogger(TopologyUpdater.class).info(
+                        "{}:{}({}) -> puhesTo list has new members and will be updated.", systemName,
+                        repositoryToUpdate.getName(), repositoryToUpdate.getId());
+                }
+
                 changedLocally |= !removedPushesTo.isEmpty();
+
+                if (changedLocally) {
+                    LoggerFactory.getLogger(TopologyUpdater.class).info(
+                        "{}:{}({}) -> puhesTo list has deleted members and will be updated.", systemName,
+                        repositoryToUpdate.getName(), repositoryToUpdate.getId());
+                }
             }
 
             if (changedLocally) {
                 Date lastChanged = topologyDAO.upsertRepository(converter.toRepositoryInfo());
                 topologyDAO.upsertRepositories(converter.getRelatedNewList());
                 repositoryToUpdate.setLastChanged(lastChanged);
-                topology = topologyDAO.readTopologyForSystem(repositoryToUpdate.getSystemName());
             }
+
+            LoggerFactory.getLogger(TopologyUpdater.class).info("{}:{}({}) -> Finished updating repository.",
+                                    systemName, repositoryToUpdate.getName(), repositoryToUpdate.getId());
         } catch (DyeVCException dex) {
             MessageManager.getInstance().addMessage("Error updating repository<" + repositoryToUpdate.getName()
                     + "> with id<" + repositoryToUpdate.getId() + ">\n\t" + dex.getMessage());
@@ -208,20 +255,36 @@ public class TopologyUpdater {
 
         try {
             // TODO implement lock mechanism
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> Started updating commits.\n\tWill now retrieve previous snapshot.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId());
             // Retrieves previous snapshot from disk
             ArrayList<CommitInfo> previousSnapshot = retrieveSnapshot();
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> previousSnapshots: {}.\n\tWill now retrieve current snapshot.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                (previousSnapshot == null) ? "not found" : previousSnapshot.size() + " commit(s)");
 
             // Retrieves current snapshot from repository
             tools = GitCommitTools.getInstance(repositoryToUpdate, true);
             ArrayList<CommitInfo> currentSnapshot = (ArrayList)tools.getCommitInfos();
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> currentSnapshot: {} commits.\n\tWill now identify new commits.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                currentSnapshot.size());
 
-            // Identifies new local commits since previous snapshot
+            // Identifies new local commit(s) since previous snapshot
             ArrayList<CommitInfo> newCommits;
             if (previousSnapshot == null) {
                 newCommits = new ArrayList<CommitInfo>(currentSnapshot);
             } else {
                 newCommits = (ArrayList)CollectionUtils.subtract(currentSnapshot, previousSnapshot);
             }
+
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> newCommits: {} commits.\n\tWill now identify commits not found in known repositories.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                newCommits.size());
 
             // Identifies commits that are potentially not synchronized in the database, before inserting new commits
             boolean         dbIsEmpty = checkIfDbIsEmpty();
@@ -232,8 +295,18 @@ public class TopologyUpdater {
                 commitsNotFoundInSomeReps = getCommitsNotFoundInSomeReps();
             }
 
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> commitsNotFoundInSomeReps: {} commits.\n\tWill now identify which of newCommits should be inserted.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                commitsNotFoundInSomeReps.size());
+
             // Insert commits into the database
             ArrayList<CommitInfo> commitsToInsert = getCommitsToInsert(newCommits, dbIsEmpty);
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> commitsToInsert: {} commits.\n\t Will now insert them into the database.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                commitsToInsert.size());
+
             if (!commitsToInsert.isEmpty()) {
                 insertCommits(commitsToInsert);
             }
@@ -245,6 +318,11 @@ public class TopologyUpdater {
             } else {
                 commitsToDelete = (ArrayList<CommitInfo>)CollectionUtils.subtract(previousSnapshot, currentSnapshot);
             }
+
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> commitsToDelete: {} commits.\n\tWill now delete them from the database.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                commitsToDelete.size());
 
             // delete commits from database
             if (!commitsToDelete.isEmpty()) {
@@ -262,6 +340,11 @@ public class TopologyUpdater {
                 nowTrackedCommits = new ArrayList<CommitInfo>();
             }
 
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> nowTrackedCommits: {} commits. Will now update them into the database.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                nowTrackedCommits.size());
+
             if (!nowTrackedCommits.isEmpty()) {
                 updateNowTrackedCommits(nowTrackedCommits);
             }
@@ -269,13 +352,26 @@ public class TopologyUpdater {
             // update commits that were not deleted
             ArrayList<CommitInfo> commitsToUpdate = (ArrayList)CollectionUtils.subtract(commitsNotFoundInSomeReps,
                                                         commitsToDelete);
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> commitsToUpdate: {} commits.\n\t Will now check which of them should be updated.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                commitsToUpdate.size());
 
             if (!commitsToUpdate.isEmpty()) {
                 updateCommits(commitsToUpdate);
             }
 
             // removes orphaned commits (those that remained with an empty foundIn list.
+            LoggerFactory.getLogger(TopologyUpdater.class).info("{}:{}({}) -> Checking orphaned commits.",
+                                    repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(),
+                                    repositoryToUpdate.getId());
             commitDAO.deleteOrphanedCommits(repositoryToUpdate.getSystemName());
+            LoggerFactory.getLogger(TopologyUpdater.class).info("{}:{}({}) -> Orphaned commits checked.",
+                                    repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(),
+                                    repositoryToUpdate.getId());
+            LoggerFactory.getLogger(TopologyUpdater.class).info("{}:{}({} -> Finished updating commits.)",
+                                    repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(),
+                                    repositoryToUpdate.getId());
         } catch (DyeVCException dex) {
             MessageManager.getInstance().addMessage("Error updating commits from repository <"
                     + repositoryToUpdate.getName() + "> with id<" + repositoryToUpdate.getId() + ">\n\t"
@@ -396,6 +492,9 @@ public class TopologyUpdater {
                            + "snapshot.ser";
             output = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(snapshotPath)));
             output.writeObject(commitInfos);
+            LoggerFactory.getLogger(TopologyUpdater.class).info("{}:{}({}) -> Current snapshot saved.",
+                                    repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(),
+                                    repositoryToUpdate.getId());
         } catch (IOException ex) {
             throw new MonitorException(ex);
         } finally {
@@ -567,7 +666,12 @@ public class TopologyUpdater {
         }
 
         for (String repId : commitsToUpdateByRepository.keySet()) {
-            commitDAO.updateCommitsWithNewRepository(commitsToUpdateByRepository.get(repId), repId);
+            List<CommitInfo> cis = commitsToUpdateByRepository.get(repId);
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> updating {} commits to include repository {} in the foundIn list.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                cis.size(), repId);
+            commitDAO.updateCommitsWithNewRepository(cis, repId);
         }
 
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommits -> Exit.");

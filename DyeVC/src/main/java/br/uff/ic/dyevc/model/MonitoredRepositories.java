@@ -11,6 +11,7 @@ import br.uff.ic.dyevc.utils.StringUtils;
 //~--- JDK imports ------------------------------------------------------------
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -22,10 +23,12 @@ import javax.swing.table.AbstractTableModel;
  * @author Cristiano
  */
 public final class MonitoredRepositories extends AbstractTableModel {
-    private static final long                serialVersionUID      = -7567721142354738718L;
-    private static List<MonitoredRepository> monitoredRepositories = new ArrayList<MonitoredRepository>();
-    private static List<MonitoredRepository> markedForDeletion     = new ArrayList<MonitoredRepository>();
-    private static MonitoredRepositories     instance              = null;
+    private static final long                      serialVersionUID      = -7567721142354738718L;
+    private static final List<MonitoredRepository> monitoredRepositories =
+        Collections.synchronizedList(new ArrayList<MonitoredRepository>());
+    private static final List<MonitoredRepository> markedForDeletion =
+        Collections.synchronizedList(new ArrayList<MonitoredRepository>());
+    private static MonitoredRepositories instance = null;
 
     /** Field description */
     public static final String MONITORED_PROJECTS = "monitoredProjects";

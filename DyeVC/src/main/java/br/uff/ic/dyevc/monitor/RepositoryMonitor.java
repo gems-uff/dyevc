@@ -4,7 +4,6 @@ package br.uff.ic.dyevc.monitor;
 
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
-import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.gui.main.MainWindow;
@@ -12,8 +11,6 @@ import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
-import br.uff.ic.dyevc.model.topology.Topology;
-import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.tools.vcs.git.GitTools;
 import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
@@ -33,8 +30,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * This class continuously monitors the specified repositories, according to the
- * specified refresh rate.
+ * This class continuously monitors the specified repositories, according to the specified refresh rate.
  *
  * @author Cristiano
  */
@@ -44,79 +40,87 @@ public class RepositoryMonitor extends Thread {
     private final MainWindow                container;
     private final List<MonitoredRepository> queue = Collections.synchronizedList(new ArrayList<MonitoredRepository>());
     private MonitoredRepository             repositoryToMonitor;
-    private Topology                        topology;
     private final String                    currentApplicationVersion;
+    private final TopologyUpdater           updater;
 
     /**
-     * Associates the specified window container and continuously monitors the
-     * specified list of repositories.
+     * Associates the specified window container and continuously monitors the specified list of repositories.
      *
-     * @param container the container for this monitor. It will be used to send
-     * messages during monitoring.
+     * @param container the container for this monitor. It will be used to send messages during monitoring.
      */
     public RepositoryMonitor(MainWindow container) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
         settings                  = PreferencesUtils.loadPreferences();
         currentApplicationVersion = ApplicationVersionUtils.getAppVersion();
         this.container            = container;
+        this.updater              = new TopologyUpdater();
         this.start();
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Exit.");
     }
 
     /**
-     * Runs the monitor. After running, monitor sleeps for the time specified by
-     * the refresh interval application property.
+     * Runs the monitor. After running, monitor sleeps for the time specified by the refresh interval application
+     * property.
      */
     @Override
     public void run() {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Repository monitor is running.");
         int sleepTime = settings.getRefreshInterval() * 1000;
+        try {
+            checkWorkingFolder();
+        } catch (DyeVCException ex) {
+            return;
+        }
+
         while (true) {
             try {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
-                checkWorkingFolder();
-                statusList = new ArrayList<RepositoryStatus>();
-                updateCachedTopology();
-                TopologyUpdater updater = new TopologyUpdater();
 
-                LoggerFactory.getLogger(RepositoryMonitor.class).debug("Found {} repositories to monitor.",
-                                        MonitoredRepositories.getMonitoredProjects().size());
+                if (!queue.isEmpty()) {
+                    // Process pending repositories recently added to configuration
+                    while (!queue.isEmpty()) {
+                        repositoryToMonitor = queue.remove(0);
+                        MessageManager.getInstance().addMessage("Monitoring new repository <"
+                                + repositoryToMonitor.getId() + "> with id <" + repositoryToMonitor.getName()
+                                + ">. Check console for details.");
+                        checkRepository(repositoryToMonitor);
 
-                int count = 0;
-                for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
-                    MessageManager.getInstance().addMessage("Checking repository " + ++count + " of "
-                            + MonitoredRepositories.getMonitoredProjects().size() + ": <" + monitoredRepository.getId()
-                            + "> with id <" + monitoredRepository.getName() + ">");
-                    checkRepository(monitoredRepository);
+                        if (!repositoryToMonitor.getRepStatus().isInvalid()) {
+                            updater.update(repositoryToMonitor);
+                        }
 
-                    if (!monitoredRepository.getRepStatus().isInvalid()) {
-                        updater.update(monitoredRepository);
+                        repositoryToMonitor = null;
                     }
-                }
+                } else {
+                    // Normal processing
+                    LoggerFactory.getLogger(RepositoryMonitor.class).info("Found {} repositories to monitor.",
+                                            MonitoredRepositories.getMonitoredProjects().size());
+                    statusList = new ArrayList<RepositoryStatus>();
+                    int count = 0;
+                    for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
+                        MessageManager.getInstance().addMessage("Checking repository " + ++count + " of "
+                                + MonitoredRepositories.getMonitoredProjects().size() + ": <"
+                                + monitoredRepository.getId() + "> with id <" + monitoredRepository.getName()
+                                + ">. Check console for details.");
+                        checkRepository(monitoredRepository);
 
-                while (!queue.isEmpty()) {
-                    repositoryToMonitor = queue.remove(0);
-                    LoggerFactory.getLogger(RepositoryMonitor.class).debug(
-                        "Manual monitoring requested for repository <{}> with id <{}>.", repositoryToMonitor.getId(),
-                        repositoryToMonitor.getName());
-                    checkRepository(repositoryToMonitor);
-
-                    if (!repositoryToMonitor.getRepStatus().isInvalid()) {
-                        updater.update(repositoryToMonitor);
+                        if (!monitoredRepository.getRepStatus().isInvalid()) {
+                            updater.update(monitoredRepository);
+                        }
                     }
 
-                    repositoryToMonitor = null;
-                }
+                    MessageManager.getInstance().addMessage(
+                        "Finished checking monitored repositories. Now verifying deleted repositories.");
+                    updater.verifyDeletedRepositories();
 
-                MessageManager.getInstance().addMessage(
-                    "Finished checking monitored repositories. Now verifying deleted repositories.");
-                updater.verifyDeletedRepositories();
+                    MessageManager.getInstance().addMessage(
+                        "Finished checking deleted repositories. Now persisting new information.");
+                    PreferencesUtils.persistRepositories();
 
-                PreferencesUtils.persistRepositories();
-
-                if (!(currentApplicationVersion.equals(settings.getLastApplicationVersionUsed()))) {
-                    settings.setLastApplicationVersionUsed(currentApplicationVersion);
-                    PreferencesUtils.storePreferences(settings);
+                    if (!(currentApplicationVersion.equals(settings.getLastApplicationVersionUsed()))) {
+                        settings.setLastApplicationVersionUsed(currentApplicationVersion);
+                        PreferencesUtils.storePreferences(settings);
+                    }
                 }
 
                 container.notifyMessages(statusList);
@@ -149,12 +153,11 @@ public class RepositoryMonitor extends Thread {
             }
         }
 
-
     }
 
     /**
-     * Checks if a given repository is behind and/or ahead its tracking remotes,
-     * populating a status list according to the results.
+     * Checks if a given repository is behind and/or ahead its tracking remotes, populating a status list according to
+     * the results.
      *
      * @param monitoredRepository the repository to be checked
      */
@@ -245,9 +248,8 @@ public class RepositoryMonitor extends Thread {
     }
 
     /**
-     * Verifies whether the working folder exists or not. If false, creates it,
-     * otherwise, looks for orphaned folders related to projects not monitored
-     * anymore.
+     * Verifies whether the working folder exists or not. If false, creates it, otherwise, looks for orphaned folders
+     * related to projects not monitored anymore.
      *
      * @throws DyeVCException
      */
@@ -268,7 +270,7 @@ public class RepositoryMonitor extends Thread {
                     + workingFolder.getAbsolutePath());
 
                 throw new DyeVCException("Temp folder located at " + workingFolder.getAbsolutePath()
-                                         + " is not writable.");
+                                         + " is not writable. Cannot run monitor.");
             }
         } else {
             workingFolder.mkdir();
@@ -280,8 +282,7 @@ public class RepositoryMonitor extends Thread {
     }
 
     /**
-     * Deletes folders with clones related to projects that are not monitored
-     * anymore.
+     * Deletes folders with clones related to projects that are not monitored anymore.
      *
      * @param pointer to the working folder
      */
@@ -300,8 +301,7 @@ public class RepositoryMonitor extends Thread {
     }
 
     /**
-     * Creates a working clone for the repository and copies the source
-     * configuration to the clone
+     * Creates a working clone for the repository and copies the source configuration to the clone
      *
      * @param pathTemp the path where the clone will be created
      * @param source the source to be cloned
@@ -336,8 +336,7 @@ public class RepositoryMonitor extends Thread {
      * Removes pathToDelete from the specified parent folder.
      *
      * @param parentFolder Folder within path to delete resides.
-     * @param pathToDelete path to be deleted. Can be the name of a file or
-     * folder
+     * @param pathToDelete path to be deleted. Can be the name of a file or folder
      */
     private void deleteDirectory(File parentFolder, String pathToDelete) {
         try {
@@ -351,29 +350,10 @@ public class RepositoryMonitor extends Thread {
 
     /**
      * Adds a repository to the queue to be monitored as soon as the current run finishes
+     *
      * @param repos the repositoryToMonitor to add
      */
-    public void addRepositoryToMonitor(MonitoredRepository repos) {
+    public synchronized void addRepositoryToMonitor(MonitoredRepository repos) {
         queue.add(repos);
-    }
-
-    /**
-     * Gets the topology from the database and updates the cached topology object. If an error occurs while accessing
-     * the database, the value of cached topology object is not changed.
-     */
-    private void updateCachedTopology() {
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("getTopology -> Entry.");
-        TopologyDAO dao = new TopologyDAO();
-        try {
-            Topology updated = dao.readTopology();
-            this.topology = (updated != null) ? updated : this.topology;
-        } catch (ServiceException ex) {
-            LoggerFactory.getLogger(RepositoryMonitor.class).error("Error getting topology from database.", ex);
-            MessageManager.getInstance().addMessage("It was not possible to read topology from the database."
-                    + "\n\tTopology information may be inaccurate until next monitor run."
-                    + "\n\tOpen console window to see error details.");
-        }
-
-        LoggerFactory.getLogger(RepositoryMonitor.class).trace("getTopology -> Exit.");
     }
 }
