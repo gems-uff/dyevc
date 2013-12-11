@@ -236,10 +236,10 @@ public class TopologyUpdater {
                                     systemName, repositoryToUpdate.getName(), repositoryToUpdate.getId());
         } catch (DyeVCException dex) {
             MessageManager.getInstance().addMessage("Error updating repository<" + repositoryToUpdate.getName()
-                    + "> with id<" + repositoryToUpdate.getId() + ">\n\t" + dex.getMessage());
+                    + "> with id<" + repositoryToUpdate.getId() + "> " + dex.getMessage());
         } catch (RuntimeException re) {
             MessageManager.getInstance().addMessage("Error updating repository<" + repositoryToUpdate.getName()
-                    + "> with id<" + repositoryToUpdate.getId() + ">\n\t" + re.getMessage());
+                    + "> with id<" + repositoryToUpdate.getId() + "> " + re.getMessage());
             LoggerFactory.getLogger(TopologyUpdater.class).error("Error during topology update.", re);
         }
 
@@ -256,12 +256,12 @@ public class TopologyUpdater {
         try {
             // TODO implement lock mechanism
             LoggerFactory.getLogger(TopologyUpdater.class).info(
-                "{}:{}({}) -> Started updating commits.\n\tWill now retrieve previous snapshot.",
+                "{}:{}({}) -> Started updating commits. Will now retrieve previous snapshot.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId());
             // Retrieves previous snapshot from disk
             ArrayList<CommitInfo> previousSnapshot = retrieveSnapshot();
             LoggerFactory.getLogger(TopologyUpdater.class).info(
-                "{}:{}({}) -> previousSnapshots: {}.\n\tWill now retrieve current snapshot.",
+                "{}:{}({}) -> previousSnapshots: {}. Will now retrieve current snapshot.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
                 (previousSnapshot == null) ? "not found" : previousSnapshot.size() + " commit(s)");
 
@@ -269,7 +269,7 @@ public class TopologyUpdater {
             tools = GitCommitTools.getInstance(repositoryToUpdate, true);
             ArrayList<CommitInfo> currentSnapshot = (ArrayList)tools.getCommitInfos();
             LoggerFactory.getLogger(TopologyUpdater.class).info(
-                "{}:{}({}) -> currentSnapshot: {} commits.\n\tWill now identify new commits.",
+                "{}:{}({}) -> currentSnapshot: {} commits. Will now identify new commits.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
                 currentSnapshot.size());
 
@@ -282,7 +282,7 @@ public class TopologyUpdater {
             }
 
             LoggerFactory.getLogger(TopologyUpdater.class).info(
-                "{}:{}({}) -> newCommits: {} commits.\n\tWill now identify commits not found in known repositories.",
+                "{}:{}({}) -> newCommits: {} commits. Will now identify commits not found in known repositories.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
                 newCommits.size());
 
@@ -296,14 +296,14 @@ public class TopologyUpdater {
             }
 
             LoggerFactory.getLogger(TopologyUpdater.class).info(
-                "{}:{}({}) -> commitsNotFoundInSomeReps: {} commits.\n\tWill now identify which of newCommits should be inserted.",
+                "{}:{}({}) -> commitsNotFoundInSomeReps: {} commits. Will now identify which of newCommits should be inserted.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
                 commitsNotFoundInSomeReps.size());
 
             // Insert commits into the database
             ArrayList<CommitInfo> commitsToInsert = getCommitsToInsert(newCommits, dbIsEmpty);
             LoggerFactory.getLogger(TopologyUpdater.class).info(
-                "{}:{}({}) -> commitsToInsert: {} commits.\n\t Will now insert them into the database.",
+                "{}:{}({}) -> commitsToInsert: {} commits. Will now insert them into the database.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
                 commitsToInsert.size());
 
@@ -320,7 +320,7 @@ public class TopologyUpdater {
             }
 
             LoggerFactory.getLogger(TopologyUpdater.class).info(
-                "{}:{}({}) -> commitsToDelete: {} commits.\n\tWill now delete them from the database.",
+                "{}:{}({}) -> commitsToDelete: {} commits. Will now delete them from the database.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
                 commitsToDelete.size());
 
@@ -352,10 +352,15 @@ public class TopologyUpdater {
             // update commits that were not deleted and exist locally
             ArrayList<CommitInfo> commitsNotFoundInSomeRepsWithoutDeletions =
                 (ArrayList)CollectionUtils.subtract(commitsNotFoundInSomeReps, commitsToDelete);
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> commitsNotFoundInSomeRepsWithoutDeletions: {} commits. Will now remove deleted commits.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
+                commitsNotFoundInSomeRepsWithoutDeletions.size());
+
             ArrayList<CommitInfo> commitsToUpdate =
                 (ArrayList)CollectionUtils.intersection(commitsNotFoundInSomeRepsWithoutDeletions, currentSnapshot);
             LoggerFactory.getLogger(TopologyUpdater.class).info(
-                "{}:{}({}) -> commitsToUpdate: {} commits.\n\t Will now check which of them should be updated.",
+                "{}:{}({}) -> commitsToUpdate: {} commits. Will now check which of them are new in related repositories.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
                 commitsToUpdate.size());
 
@@ -376,11 +381,11 @@ public class TopologyUpdater {
                                     repositoryToUpdate.getId());
         } catch (DyeVCException dex) {
             MessageManager.getInstance().addMessage("Error updating commits from repository <"
-                    + repositoryToUpdate.getName() + "> with id<" + repositoryToUpdate.getId() + ">\n\t"
+                    + repositoryToUpdate.getName() + "> with id<" + repositoryToUpdate.getId() + "> "
                     + dex.getMessage());
         } catch (RuntimeException re) {
             MessageManager.getInstance().addMessage("Error updating commits from repository <"
-                    + repositoryToUpdate.getName() + "> with id<" + repositoryToUpdate.getId() + ">\n\t"
+                    + repositoryToUpdate.getName() + "> with id<" + repositoryToUpdate.getId() + "> "
                     + re.getMessage());
             LoggerFactory.getLogger(TopologyUpdater.class).error("Error during topology update.", re);
         }
@@ -571,9 +576,14 @@ public class TopologyUpdater {
 
         if (newCommits != null) {
             if (!dbIsEmpty) {
+                // Create filter to return only hash and commitDate
+                CommitFilter returnFieldsFilter = new CommitFilter();
+                returnFieldsFilter.setHash("1");
+                returnFieldsFilter.setCommitDate(new Date(1));
                 // Check db only if it is not empty, otherwise all commits in newCommits have to be inserted.
                 Set<CommitInfo> newCommitsInDatabase = commitDAO.getCommitsByHashes(newCommits,
-                                                           converter.toRepositoryInfo().getSystemName());
+                                                           converter.toRepositoryInfo().getSystemName(),
+                                                           returnFieldsFilter);
                 commitsToInsert = (ArrayList<CommitInfo>)CollectionUtils.subtract(newCommits, newCommitsInDatabase);
             }
         } else {
@@ -667,13 +677,29 @@ public class TopologyUpdater {
             }
         }
 
-        for (String repId : commitsToUpdateByRepository.keySet()) {
-            List<CommitInfo> cis = commitsToUpdateByRepository.get(repId);
+        if (commitsToUpdateByRepository.isEmpty()) {
             LoggerFactory.getLogger(TopologyUpdater.class).info(
-                "{}:{}({}) -> updating {} commits to include repository {} in the foundIn list.",
+                "{}:{}({}) -> No changes detected in where commits exist. There will not be updates.",
+                repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId());
+        }
+
+        for (String repId : commitsToUpdateByRepository.keySet()) {
+            List<CommitInfo>      cis             = commitsToUpdateByRepository.get(repId);
+            ArrayList<CommitInfo> notToUpdateList = (ArrayList)CollectionUtils.subtract(commitsToUpdate, cis);
+            LoggerFactory.getLogger(TopologyUpdater.class).info(
+                "{}:{}({}) -> {} commits must be updated to include repository {} and {} should not.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
-                cis.size(), repId);
-            commitDAO.updateCommitsWithNewRepository(cis, repId);
+                cis.size(), repId, notToUpdateList.size());
+
+            if (notToUpdateList.size() < CommitDAO.BULK_READ_UPDATE_COMMITS_SIZE) {
+                // The size of notToUpdateList is smaller than amount of hashes we can send in one call.
+                // Thus, update all commits but those in notToUpdateList.
+                commitDAO.updateCommitsWithNewRepository(repositoryToUpdate.getSystemName(), notToUpdateList, repId,
+                        false);
+            } else {
+                // Update all commits in cis list
+                commitDAO.updateCommitsWithNewRepository(repositoryToUpdate.getSystemName(), cis, repId, true);
+            }
         }
 
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommits -> Exit.");

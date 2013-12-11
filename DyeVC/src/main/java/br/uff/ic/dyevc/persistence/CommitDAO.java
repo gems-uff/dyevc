@@ -37,7 +37,7 @@ public class CommitDAO {
      * Number of elements to send in bulk commit update or read by hashes. More than this will make command too long and
      * REST API will reject it;
      */
-    private static final int BULK_READ_UPDATE_COMMITS_SIZE = 80;
+    public static final int BULK_READ_UPDATE_COMMITS_SIZE = 80;
 
     /**
      * Limit of commits to be returned in queries
@@ -77,17 +77,34 @@ public class CommitDAO {
     }
 
     /**
-     * Retrieves a list of commits that match the filter criteria
+     * Retrieves a list of commits that match the filter criteria, with all fields filled.
      *
      * @param commitFilter Filter to be applied
      * @return List of commits that match the specified filter
      * @throws ServiceException
      */
     public Set<CommitInfo> getCommitsByQuery(CommitFilter commitFilter) throws ServiceException {
+        return getCommitsByQuery(commitFilter, null);
+    }
+
+    /**
+     * Retrieves a list of commits that match the filter criteria, filling only fields specified in returnFieldsFilter
+     *
+     * @param commitFilter Filter to be applied
+     * @return List of commits that match the specified filter
+     * @throws ServiceException
+     */
+    public Set<CommitInfo> getCommitsByQuery(CommitFilter commitFilter, CommitFilter returnFieldsFilter)
+            throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByQuery -> Entry");
         MongoLabServiceParms parms = new MongoLabServiceParms();
         parms.setQuery(commitFilter);
         parms.setLimit(COMMIT_LIMIT);
+
+        if (returnFieldsFilter != null) {
+            parms.setReturnFields(returnFieldsFilter);
+        }
+
         Set<CommitInfo> result = MongoLabProvider.getCommits(parms);
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByQuery -> Exit");
 
@@ -95,7 +112,7 @@ public class CommitDAO {
     }
 
     /**
-     * Retrieves the list of specified commits that already exist in the database.
+     * Retrieves the list of specified commits that already exist in the database. All commit fields are returned.
      *
      * @param cis List of commits which hashes to be queried. Hashes that do not have corresponding commits in the
      * database are discarded.
@@ -104,6 +121,22 @@ public class CommitDAO {
      * @throws ServiceException
      */
     public Set<CommitInfo> getCommitsByHashes(List<CommitInfo> cis, String systemName) throws ServiceException {
+        return getCommitsByHashes(cis, systemName, null);
+    }
+
+    /**
+     * Retrieves the list of specified commits that already exist in the database, filling only the specified fields in
+     * returnFieldsFilter.
+     *
+     * @param cis List of commits which hashes to be queried. Hashes that do not have corresponding commits in the
+     * database are discarded.
+     * @param systemName System name where commits will be searched.
+     * @param returnFieldsFilter filter with fields to be returned. If null, return all fields
+     * @return List of commits that have the specified hashes.
+     * @throws ServiceException
+     */
+    public Set<CommitInfo> getCommitsByHashes(List<CommitInfo> cis, String systemName, CommitFilter returnFieldsFilter)
+            throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByHashes -> Entry");
 
         if (cis == null) {
@@ -140,7 +173,7 @@ public class CommitDAO {
                         j))).append("}");
                 filter.setCustomQuery(queryStart + queryMiddle.toString() + queryEnd);
 
-                result.addAll(getCommitsByQuery(filter));
+                result.addAll(getCommitsByQuery(filter, returnFieldsFilter));
 
                 i = j;
                 j = i + BULK_READ_UPDATE_COMMITS_SIZE;
@@ -155,7 +188,7 @@ public class CommitDAO {
                         size))).append("}");
                 filter.setCustomQuery(queryStart + queryMiddle.toString() + queryEnd);
 
-                result.addAll(getCommitsByQuery(filter));
+                result.addAll(getCommitsByQuery(filter, returnFieldsFilter));
             }
         } else {
             // too many hashes to get, then get all commits at once to avoid multiple roundtrip queries to database
@@ -324,16 +357,20 @@ public class CommitDAO {
     /**
      * Updates a list of commits, including the specified repositoryId in foundIn list
      *
+     * @param systemName System name where commits will be updated.
      * @param commits List that contain the hashes to be updated
      * @param repositoryId The repository Id to be included in foundIn list
+     * @param inclusive If true, commits has a list of commits that SHOULD be updated.<br>
+     * If false, commits has a list of commits that SHOULD NOT be updated.
      * @exception DyeVCException
      */
-    public void updateCommitsWithNewRepository(List<CommitInfo> commits, String repositoryId) throws DyeVCException {
+    public void updateCommitsWithNewRepository(String systemName, List<CommitInfo> commits, String repositoryId,
+            boolean inclusive)
+            throws DyeVCException {
         LoggerFactory.getLogger(CommitDAO.class).trace("updateCommitsWithNewRepository -> Entry");
-        int    i          = 0;
-        int    j          = i + BULK_READ_UPDATE_COMMITS_SIZE;
-        int    size       = commits.size();
-        String systemName = commits.get(0).getSystemName();
+        int i    = 0;
+        int j    = i + BULK_READ_UPDATE_COMMITS_SIZE;
+        int size = commits.size();
 
         // Create filter for the list of commits to be updated
         MongoLabServiceParms parms = new MongoLabServiceParms();
@@ -345,9 +382,9 @@ public class CommitDAO {
         String updateCmd = "{\"$addToSet\" : { \"foundIn\" : \"" + repositoryId + "\" }}";
         while (j <= size) {
             LoggerFactory.getLogger(CommitDAO.class).info(
-                "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, j, size,
-                systemName);
-            updateParms(systemName, i, j, commits, parms);
+                "Updating commits from {} to {} from a total of {} commits for system <{}> to include repository {}.",
+                i, j, size, systemName, repositoryId);
+            updateParms(systemName, i, j, commits, inclusive, parms);
 
             // Calls Mongo Lab to update commits
             MongoLabProvider.updateCommits(parms, updateCmd);
@@ -355,11 +392,18 @@ public class CommitDAO {
             j = i + BULK_READ_UPDATE_COMMITS_SIZE;
         }
 
-        if (i < size) {
-            LoggerFactory.getLogger(CommitDAO.class).info(
-                "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, size, size,
-                systemName);
-            updateParms(systemName, i, size, commits, parms);
+        if (i < size | size == 0) {
+            if (inclusive) {
+                LoggerFactory.getLogger(CommitDAO.class).info(
+                    "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, size, size,
+                    systemName);
+            } else {
+                LoggerFactory.getLogger(CommitDAO.class).info(
+                    "Updating all commits except {} commits for system <{}> to include repository {}.", size,
+                    systemName, repositoryId);
+            }
+
+            updateParms(systemName, i, size, commits, inclusive, parms);
 
             // Calls Mongo Lab to update commits
             MongoLabProvider.updateCommits(parms, updateCmd);
@@ -422,18 +466,29 @@ public class CommitDAO {
      * @param begin The beginning index to get hashes from <code>commits</code> (inclusive)
      * @param end The ending index to get hashes from <code>commits</code> (exclusive)
      * @param commits The list of commits to get hashes from
+     * @param inclusive If true, commits has a list of commits that WILL be included.<br>
+     * If false, commits has a list of commits that WILL NOT be updated.
      * @param parms The parms to be updated
      * @throws ServiceException
      */
-    private void updateParms(String systemName, int begin, int end, List<CommitInfo> commits,
+    private void updateParms(String systemName, int begin, int end, List<CommitInfo> commits, boolean inclusive,
                              MongoLabServiceParms parms)
             throws ServiceException {
 
+        String hashes = "[]";
         // serializes hashes to json array
-        String hashes = JsonSerializerUtils.serializeHashes(commits.subList(begin, end));
+        if (!commits.isEmpty()) {
+            hashes = JsonSerializerUtils.serializeHashes(commits.subList(begin, end));
+        }
 
         // Sets the list of hashes to be updated
-        StringBuilder query = new StringBuilder("{\"systemName\":\"" + systemName + "\",\"_id\":{\"$in\": ");
+        StringBuilder query = new StringBuilder("{\"systemName\":\"").append(systemName);
+        if (inclusive) {
+            query.append("\",\"_id\":{\"$in\": ");
+        } else {
+            query.append("\",\"_id\":{\"$nin\": ");
+        }
+
         query.append(hashes).append("}}");
         parms.setQuery(query.toString());
     }
@@ -493,7 +548,7 @@ public class CommitDAO {
             LoggerFactory.getLogger(CommitDAO.class).info(
                 "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, j, size,
                 systemName);
-            updateParms(systemName, i, j, commits, parms);
+            updateParms(systemName, i, j, commits, true, parms);
 
             // Calls Mongo Lab to update commits
             MongoLabProvider.updateCommits(parms, updateCmd);
@@ -505,7 +560,7 @@ public class CommitDAO {
             LoggerFactory.getLogger(CommitDAO.class).info(
                 "Updating commits from {} to {} from a total of {} commits for the system <{}>.", i, size, size,
                 systemName);
-            updateParms(systemName, i, size, commits, parms);
+            updateParms(systemName, i, size, commits, true, parms);
 
             // Calls Mongo Lab to update commits
             MongoLabProvider.updateCommits(parms, updateCmd);

@@ -170,12 +170,11 @@ public class GitConnectorTest {
         GitConnector sapos = null;
         try {
             sapos = new GitConnector("/F:/mybackups/Educacao/Mestrado-UFF/Git/dyevc", "dyevc");
-            CommitInfo commit = new CommitInfo("zzz", "rep1376735192420");
-            commit.setSystemName("dyevc");
-            List<CommitInfo> list = new ArrayList<CommitInfo>();
+            CommitInfo       commit = new CommitInfo("zzz", "rep1376735192420");
+            List<CommitInfo> list   = new ArrayList<CommitInfo>();
             list.add(commit);
             CommitDAO dao = new CommitDAO();
-            dao.updateCommitsWithNewRepository(list, "xxx");
+            dao.updateCommitsWithNewRepository("dyevc", list, "xxx", true);
         } catch (DyeVCException ex) {
             Logger.getLogger(GitConnectorTest.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
