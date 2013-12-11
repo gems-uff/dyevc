@@ -64,13 +64,13 @@ public interface IConstants {
     public static final Color TOPOLOGY_COLOR_I_HAVE_PUSH_DONT = Color.GREEN;
 
     /** Color used to identify a commit that I don't have bot someone I pull from has. */
-    public static final Color TOPOLOGY_COLOR_I_DONT_PULL_HAS = Color.RED;
+    public static final Color TOPOLOGY_COLOR_I_DONT_PULL_HAS = Color.YELLOW;
 
     /** Color used to identify a commit located in a repository not related to the one being analyzed. */
-    public static final Color TOPOLOGY_COLOR_NON_RELATED_HAS = Color.LIGHT_GRAY;
+    public static final Color TOPOLOGY_COLOR_NON_RELATED_HAS = Color.RED;
 
     /** Color used to identify a commit that does not belong to a tracked branch and thus cannot be sent to other repositories. */
-    public static final Color TOPOLOGY_COLOR_NOT_TRACKED = Color.YELLOW;
+    public static final Color TOPOLOGY_COLOR_NOT_TRACKED = Color.LIGHT_GRAY;
 
     /** Default size for single vertices in graphs. */
     public static final int GRAPH_VERTEX_SINGLE_SIZE = 40;
