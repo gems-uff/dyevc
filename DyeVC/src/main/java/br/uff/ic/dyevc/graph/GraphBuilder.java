@@ -84,7 +84,7 @@ public class GraphBuilder {
             Topology     top    = dao.readTopologyForSystem(systemName);
 
             CommitFilter filter = new CommitFilter();
-            filter.setSystemName("dyevc");
+            filter.setSystemName(systemName);
             Set<CommitInfo> allSystemCommits = new CommitDAO().getCommitsByQuery(filter);
 
             for (RepositoryInfo cloneInfo : top.getClonesForSystem(systemName)) {
