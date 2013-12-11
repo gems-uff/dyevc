@@ -317,7 +317,7 @@ public class TopologyWindow extends javax.swing.JFrame {
         Transformer<Object, String> edgeLabel = new TopologyEdgeLabelTransformer();
         vv.getRenderContext().setEdgeLabelTransformer(edgeLabel);
         EdgeLabelRenderer edgeLabelRenderer = vv.getRenderContext().getEdgeLabelRenderer();
-        edgeLabelRenderer.setRotateEdgeLabels(false);
+        edgeLabelRenderer.setRotateEdgeLabels(true);
 
         // EdgeDrawPaint
         TopologyEdgePaintTransformer ept = new TopologyEdgePaintTransformer(vv.getPickedEdgeState());

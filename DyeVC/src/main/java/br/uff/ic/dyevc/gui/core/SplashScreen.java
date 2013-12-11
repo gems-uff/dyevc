@@ -1,10 +1,14 @@
 package br.uff.ic.dyevc.gui.core;
 
+//~--- JDK imports ------------------------------------------------------------
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.EventQueue;
 import java.awt.Font;
 
+import javax.swing.border.BevelBorder;
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -12,7 +16,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.SwingConstants;
-import javax.swing.border.BevelBorder;
 
 /**
  * Splash screen used in long operations.
@@ -21,19 +24,16 @@ import javax.swing.border.BevelBorder;
  */
 @SuppressWarnings("serial")
 public class SplashScreen extends JDialog {
-
-    private JLabel statusLabel;
-    private JLabel memoryLabel;
+    private JLabel              statusLabel;
+    private JLabel              memoryLabel;
     private static SplashScreen instance;
 
     /**
      * Construct a modal splash screen
-     * 
-     * @param owner frame that owns this splash screen
+     *
      */
     private SplashScreen(JFrame owner) {
-        super(owner, true);
-        this.setLocationRelativeTo(owner);
+        super(owner);
         this.init();
     }
 
@@ -54,6 +54,7 @@ public class SplashScreen extends JDialog {
         if (instance == null) {
             instance = new SplashScreen();
         }
+
         return instance;
     }
 
@@ -67,6 +68,7 @@ public class SplashScreen extends JDialog {
         if (instance == null) {
             instance = new SplashScreen(owner);
         }
+
         return instance;
     }
 
@@ -121,17 +123,5 @@ public class SplashScreen extends JDialog {
         this.setLocationRelativeTo(null);
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         super.setVisible(visible);
-    }
-    
-    public static void main(String[] args) {
-        JFrame frame = new JFrame();
-        frame.setTitle("Status");
-        frame.setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        frame.setLocation(400, 400);
-        SplashScreen splash = SplashScreen.getInstance(frame);
-        frame.setVisible(true);
-        splash.setStatus("Teste");
-        splash.setVisible(true);  
-        
     }
 }
