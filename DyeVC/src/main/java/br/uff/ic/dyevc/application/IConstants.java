@@ -80,4 +80,7 @@ public interface IConstants {
 
     /** The line separator used, according to the platform where the system is running. */
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
+    /** Name of snapshot file */
+    public static final String SNAPSHOT_FILE_NAME = "snapshot.ser";
 }

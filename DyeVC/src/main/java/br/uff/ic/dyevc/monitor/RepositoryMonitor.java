@@ -38,10 +38,13 @@ public class RepositoryMonitor extends Thread {
     private final ApplicationSettingsBean   settings;
     private List<RepositoryStatus>          statusList;
     private final MainWindow                container;
-    private final List<MonitoredRepository> queue = Collections.synchronizedList(new ArrayList<MonitoredRepository>());
-    private MonitoredRepository             repositoryToMonitor;
-    private final String                    currentApplicationVersion;
-    private final TopologyUpdater           updater;
+    private final List<MonitoredRepository> monitorQueue =
+        Collections.synchronizedList(new ArrayList<MonitoredRepository>());
+    private final List<MonitoredRepository> cleanAndMonitorQueue =
+        Collections.synchronizedList(new ArrayList<MonitoredRepository>());
+    private MonitoredRepository   repositoryToMonitor;
+    private final String          currentApplicationVersion;
+    private final TopologyUpdater updater;
 
     /**
      * Associates the specified window container and continuously monitors the specified list of repositories.
@@ -76,17 +79,26 @@ public class RepositoryMonitor extends Thread {
             try {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
 
-                if (!queue.isEmpty()) {
+                if (!monitorQueue.isEmpty() ||!cleanAndMonitorQueue.isEmpty()) {
                     // Process pending repositories recently added to configuration
-                    while (!queue.isEmpty()) {
-                        repositoryToMonitor = queue.remove(0);
+                    while (true) {
+                        boolean discardTopologyCache = false;
+                        if (!monitorQueue.isEmpty()) {
+                            repositoryToMonitor = monitorQueue.remove(0);
+                        } else if (!cleanAndMonitorQueue.isEmpty()) {
+                            repositoryToMonitor  = cleanAndMonitorQueue.remove(0);
+                            discardTopologyCache = true;
+                        } else {
+                            break;
+                        }
+
                         MessageManager.getInstance().addMessage("Monitoring new repository <"
                                 + repositoryToMonitor.getId() + "> with id <" + repositoryToMonitor.getName()
                                 + ">. Check console for details.");
                         checkRepository(repositoryToMonitor);
 
                         if (!repositoryToMonitor.getRepStatus().isInvalid()) {
-                            updater.update(repositoryToMonitor);
+                            updater.update(repositoryToMonitor, discardTopologyCache);
                         }
 
                         repositoryToMonitor = null;
@@ -354,6 +366,15 @@ public class RepositoryMonitor extends Thread {
      * @param repos the repositoryToMonitor to add
      */
     public synchronized void addRepositoryToMonitor(MonitoredRepository repos) {
-        queue.add(repos);
+        monitorQueue.add(repos);
+    }
+
+    /**
+     * Adds a repository to the forcedQueue to be monitored as soon as the current run finishes, discarding its cache
+     *
+     * @param repos the repositoryToMonitor to add
+     */
+    public synchronized void addRepositoryToCleanAndMonitor(MonitoredRepository repos) {
+        cleanAndMonitorQueue.add(repos);
     }
 }

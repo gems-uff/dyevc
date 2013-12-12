@@ -548,6 +548,19 @@ public class MainWindow extends javax.swing.JFrame {
         }
     }
 
+    private void mntClearCacheAndCheckProjectActionPerformed(ActionEvent evt) {
+        MonitoredRepository rep = getSelectedRepository();
+        repositoryMonitor.addRepositoryToCleanAndMonitor(rep);
+
+        if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
+            repositoryMonitor.interrupt();
+        } else {
+            JOptionPane.showMessageDialog(repoTable,
+                                          "Monitor is busy now. Repository was added to the clean and monitor queue.",
+                                          "Information", JOptionPane.OK_OPTION);
+        }
+    }
+
     /**
      * Closes resources and exit from DyeVC
      */
@@ -588,6 +601,16 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jPopupRepoTable.add(mntCheckProject);
+
+        JMenuItem mntCleanAndCheckProject = new javax.swing.JMenuItem();
+        mntCleanAndCheckProject.setText("Clear Cache and Check Project");
+        mntCleanAndCheckProject.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mntClearCacheAndCheckProjectActionPerformed(evt);
+            }
+        });
+        jPopupRepoTable.add(mntCleanAndCheckProject);
 
         JMenuItem mntEditProject = new javax.swing.JMenuItem();
         mntEditProject.setText("View Project Configuration");

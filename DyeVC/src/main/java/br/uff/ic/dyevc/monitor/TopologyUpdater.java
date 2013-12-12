@@ -70,6 +70,7 @@ public class TopologyUpdater {
     private GitCommitTools                tools;
     private final ApplicationSettingsBean settings;
     private static final String           currentApplicationVersion;
+    private boolean                       discardCache;
 
     static {
         currentApplicationVersion = ApplicationVersionUtils.getAppVersion();
@@ -88,11 +89,22 @@ public class TopologyUpdater {
     }
 
     /**
-     * Updates the topology.
+     * Updates the topology, without discarding the cache.
      *
      * @param repositoryToUpdate the repository to be updated
      */
     public void update(MonitoredRepository repositoryToUpdate) {
+        update(repositoryToUpdate, false);
+    }
+
+    /**
+     * Updates the topology.
+     *
+     * @param repositoryToUpdate the repository to be updated
+     * @param discardCache If true, discards existing snapshot, if any, and works as if it is the first time the
+     * repository is monitored.
+     */
+    public void update(MonitoredRepository repositoryToUpdate, boolean discardCache) {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Topology updater is running.");
 
         if (!repositoryToUpdate.hasSystemName()) {
@@ -105,9 +117,17 @@ public class TopologyUpdater {
 
         this.repositoryToUpdate = repositoryToUpdate;
         this.converter          = new RepositoryConverter(repositoryToUpdate);
+        this.discardCache       = discardCache;
 
-        MessageManager.getInstance().addMessage("Updating topology for repository <" + repositoryToUpdate.getId()
-                + "> with id <" + repositoryToUpdate.getName() + ">. Check console for details.");
+        StringBuilder message = new StringBuilder("Updating topology ");
+        if (discardCache) {
+            message.append("and cleaning snapshot ");
+        }
+
+        message.append("for repository <").append(repositoryToUpdate.getId()).append("> with id <").append(
+            repositoryToUpdate.getName()).append(">. Check console for details.");
+
+        MessageManager.getInstance().addMessage(message.toString());
 
         updateRepositoryTopology();
 
@@ -453,12 +473,20 @@ public class TopologyUpdater {
 //          return null;
 //      }
 
+        if (discardCache) {
+            LoggerFactory.getLogger(TopologyUpdater.class).info("{}:{}({}) -> Snapshot was requested to be discarded.",
+                                    repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(),
+                                    repositoryToUpdate.getId());
+
+            return null;
+        }
+
         ObjectInput           input = null;
         String                snapshotPath;
         ArrayList<CommitInfo> recoveredCommits = null;
         try {
             snapshotPath = repositoryToUpdate.getWorkingCloneConnection().getPath() + IConstants.DIR_SEPARATOR
-                           + "snapshot.ser";
+                           + IConstants.SNAPSHOT_FILE_NAME;
             input = new ObjectInputStream(new BufferedInputStream(new FileInputStream(snapshotPath)));
 
             // deserialize the List
@@ -496,7 +524,7 @@ public class TopologyUpdater {
         String       snapshotPath;
         try {
             snapshotPath = repositoryToUpdate.getWorkingCloneConnection().getPath() + IConstants.DIR_SEPARATOR
-                           + "snapshot.ser";
+                           + IConstants.SNAPSHOT_FILE_NAME;
             output = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(snapshotPath)));
             output.writeObject(commitInfos);
             LoggerFactory.getLogger(TopologyUpdater.class).info("{}:{}({}) -> Current snapshot saved.",
