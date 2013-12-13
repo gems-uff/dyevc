@@ -49,4 +49,16 @@ public class BranchRevisions {
         this.head = head;
     }
     
+    public boolean haveLineRevisionByHeadId(String headId){
+        boolean have = false;
+        for (LineRevisions line : lines) {
+            if(line.getHead().getId().equals(headId)){
+                have = true;
+                break;
+            }
+        }
+        
+        return have;
+    }
+    
 }
