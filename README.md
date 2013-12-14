@@ -16,7 +16,8 @@ This is one the several research projects conducted by the **Software Maintenanc
 
 #Download
 
-DyeVC does not need to be formally installed. As it uses [Java Web Start technology](http://docs.oracle.com/javase/6/docs/technotes/guides/javaws/), all you have to do is point your browser to [this link](http://www.ic.uff.br/~ccesario/DyeVC/DyeVC.jnlp) and the application will automatically download and execute, creating a shortcut in your computer to ease future access.
+DyeVC does not need to be formally installed. As it uses [Java Web Start technology](http://docs.oracle.com/javase/6/docs/technotes/guides/javaws/), all you have to do is point your browser to [this link](http://www.ic.uff.br/~ccesario/DyeVC/DyeVC.jnlp) or click the button below and the application will automatically download and execute, creating a shortcut in your computer to ease future access.
+[![Launch DyeVC](DyeVC/src/main/resources/LaunchDyeVCButton.png "Launch DyeVC")](http://www.ic.uff.br/~ccesario/DyeVC/DyeVC.jnlp)
 
 #Papers
 
