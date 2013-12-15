@@ -10,16 +10,14 @@ import br.uff.ic.dyevc.gui.core.AboutDialog;
 import br.uff.ic.dyevc.gui.core.LogTextArea;
 import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.gui.core.RepositoryConfigWindow;
-import br.uff.ic.dyevc.gui.core.SettingsWindow;
-import br.uff.ic.dyevc.gui.core.StdOutErrWindow;
 import br.uff.ic.dyevc.gui.graph.CommitHistoryWindow;
 import br.uff.ic.dyevc.gui.graph.TopologyWindow;
+import br.uff.ic.dyevc.gui.utils.GUIManager;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
-import br.uff.ic.dyevc.monitor.TopologyUpdater;
 import br.uff.ic.dyevc.utils.ImageUtils;
 import br.uff.ic.dyevc.utils.LimitLinesDocumentListener;
 import br.uff.ic.dyevc.utils.TableColumnAdjuster;
@@ -76,15 +74,12 @@ public class MainWindow extends javax.swing.JFrame {
     public MainWindow() {
         initComponents();
         addListeners();
-        minimizeToTray();
-        startMonitors();
         addEasternEgg();
+        minimizeToTray();
     }
 
     // <editor-fold defaultstate="collapsed" desc="private variables">
     private javax.swing.JDialog                         dlgAbout;
-    private javax.swing.JFrame                          frameSettings;
-    private StdOutErrWindow                             stdOutWindow;
     private javax.swing.JPanel                          pnlMain;
     private javax.swing.JScrollPane                     jScrollPane1;
     private javax.swing.JScrollPane                     jScrollPaneMessages;
@@ -99,8 +94,6 @@ public class MainWindow extends javax.swing.JFrame {
     private JPopupMenu                 jPopupTextAreaMessages;
     private PopupMenu                  trayPopup;
     private TrayIcon                   trayIcon;
-    private RepositoryMonitor          repositoryMonitor;
-    private TopologyUpdater            topologyUpdater;
     private int                        lastMessagesCount = 0;
     private LimitLinesDocumentListener documentListener;
 
@@ -119,10 +112,7 @@ public class MainWindow extends javax.swing.JFrame {
         java.awt.Dimension dialogSize = getSize();
         setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
 
-        stdOutWindow          = new StdOutErrWindow();
-
         dlgAbout              = new AboutDialog(this, rootPaneCheckingEnabled);
-        frameSettings         = new SettingsWindow();
         monitoredRepositories = MonitoredRepositories.getInstance();
 
         pnlMain               = new javax.swing.JPanel();
@@ -368,7 +358,7 @@ public class MainWindow extends javax.swing.JFrame {
         mntSettings.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mntSettingsActionPerformed(evt);
+                GUIManager.getInstance().showSettingsWindow();
             }
         });
         mnuFile.add(mntSettings);
@@ -410,7 +400,7 @@ public class MainWindow extends javax.swing.JFrame {
         mntConsole.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mntConsoleActionPerformed(evt);
+                GUIManager.getInstance().showConsoleWindow();
             }
         });
         mnuView.add(mntConsole);
@@ -445,7 +435,7 @@ public class MainWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="main menu events">
     private void mntAddProjectActionPerformed(java.awt.event.ActionEvent evt) {
         try {
-            new RepositoryConfigWindow(monitoredRepositories, null, repositoryMonitor).setVisible(true);
+            new RepositoryConfigWindow(null).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -458,8 +448,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntEditProjectActionPerformed(ActionEvent evt) {
         try {
-            new RepositoryConfigWindow(monitoredRepositories, getSelectedRepository(),
-                                       repositoryMonitor).setVisible(true);
+            new RepositoryConfigWindow(getSelectedRepository()).setVisible(true);
         } catch (DyeVCException ex) {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
@@ -528,8 +517,8 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     private void mntCheckAllNowActionPerformed(ActionEvent evt) {
-        if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
-            repositoryMonitor.interrupt();
+        if (RepositoryMonitor.getInstance().getState().equals(Thread.State.TIMED_WAITING)) {
+            RepositoryMonitor.getInstance().interrupt();
         } else {
             JOptionPane.showMessageDialog(repoTable, "Monitor is busy now. Please try again later.", "Information",
                                           JOptionPane.OK_OPTION);
@@ -538,10 +527,10 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntCheckProjectActionPerformed(ActionEvent evt) {
         MonitoredRepository rep = getSelectedRepository();
-        repositoryMonitor.addRepositoryToMonitor(rep);
+        RepositoryMonitor.getInstance().addRepositoryToMonitor(rep);
 
-        if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
-            repositoryMonitor.interrupt();
+        if (RepositoryMonitor.getInstance().getState().equals(Thread.State.TIMED_WAITING)) {
+            RepositoryMonitor.getInstance().interrupt();
         } else {
             JOptionPane.showMessageDialog(repoTable, "Monitor is busy now. Repository was added to the monitor queue.",
                                           "Information", JOptionPane.OK_OPTION);
@@ -550,10 +539,10 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void mntClearCacheAndCheckProjectActionPerformed(ActionEvent evt) {
         MonitoredRepository rep = getSelectedRepository();
-        repositoryMonitor.addRepositoryToCleanAndMonitor(rep);
+        RepositoryMonitor.getInstance().addRepositoryToCleanAndMonitor(rep);
 
-        if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
-            repositoryMonitor.interrupt();
+        if (RepositoryMonitor.getInstance().getState().equals(Thread.State.TIMED_WAITING)) {
+            RepositoryMonitor.getInstance().interrupt();
         } else {
             JOptionPane.showMessageDialog(repoTable,
                                           "Monitor is busy now. Repository was added to the clean and monitor queue.",
@@ -573,18 +562,10 @@ public class MainWindow extends javax.swing.JFrame {
         dlgAbout.setVisible(true);
     }
 
-    private void mntConsoleActionPerformed(java.awt.event.ActionEvent evt) {
-        stdOutWindow.setVisible(true);
-    }
-
     private void mntshowMainWindowActionPerformed() {
         setVisible(true);
         setState(NORMAL);
         SystemTray.getSystemTray().remove(trayIcon);
-    }
-
-    private void mntSettingsActionPerformed(java.awt.event.ActionEvent evt) {
-        frameSettings.setVisible(true);
     }
 
     // </editor-fold>
@@ -716,14 +697,6 @@ public class MainWindow extends javax.swing.JFrame {
         int selectedRow = repoTable.getSelectedRow();
 
         return (MonitoredRepository)repoTable.getValueAt(selectedRow, 0);
-    }
-
-    /**
-     * Starts the repository monitor.
-     */
-    private void startMonitors() {
-        repositoryMonitor = new RepositoryMonitor(this);
-        topologyUpdater   = new TopologyUpdater();
     }
 
     /**

@@ -14,7 +14,7 @@ import br.uff.ic.dyevc.model.RepositoryStatus;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.tools.vcs.git.GitTools;
 import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
-import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 
 import org.apache.commons.io.FileUtils;
 
@@ -37,28 +37,42 @@ import java.util.List;
 public class RepositoryMonitor extends Thread {
     private final ApplicationSettingsBean   settings;
     private List<RepositoryStatus>          statusList;
-    private final MainWindow                container;
+    private MainWindow                      container;
     private final List<MonitoredRepository> monitorQueue =
         Collections.synchronizedList(new ArrayList<MonitoredRepository>());
     private final List<MonitoredRepository> cleanAndMonitorQueue =
         Collections.synchronizedList(new ArrayList<MonitoredRepository>());
-    private MonitoredRepository   repositoryToMonitor;
-    private final String          currentApplicationVersion;
-    private final TopologyUpdater updater;
+    private MonitoredRepository      repositoryToMonitor;
+    private final String             currentApplicationVersion;
+    private final TopologyUpdater    updater;
+    private static RepositoryMonitor instance;
 
     /**
      * Associates the specified window container and continuously monitors the specified list of repositories.
      *
-     * @param container the container for this monitor. It will be used to send messages during monitoring.
      */
-    public RepositoryMonitor(MainWindow container) {
+    private RepositoryMonitor() {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
-        settings                  = PreferencesUtils.loadPreferences();
+        settings                  = PreferencesManager.getInstance().loadPreferences();
         currentApplicationVersion = ApplicationVersionUtils.getAppVersion();
-        this.container            = container;
         this.updater              = new TopologyUpdater();
-        this.start();
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Exit.");
+    }
+
+    /**
+     * Provides the singleton instance
+     * @return the singleton instance.
+     */
+    public synchronized static RepositoryMonitor getInstance() {
+        if (instance == null) {
+            instance = new RepositoryMonitor();
+        }
+
+        return instance;
+    }
+
+    public void setContainer(MainWindow container) {
+        this.container = container;
     }
 
     /**
@@ -127,11 +141,11 @@ public class RepositoryMonitor extends Thread {
 
                     MessageManager.getInstance().addMessage(
                         "Finished checking deleted repositories. Now persisting new information.");
-                    PreferencesUtils.persistRepositories();
+                    PreferencesManager.getInstance().persistRepositories();
 
                     if (!(currentApplicationVersion.equals(settings.getLastApplicationVersionUsed()))) {
                         settings.setLastApplicationVersionUsed(currentApplicationVersion);
-                        PreferencesUtils.storePreferences(settings);
+                        PreferencesManager.getInstance().storePreferences(settings);
                     }
                 }
 

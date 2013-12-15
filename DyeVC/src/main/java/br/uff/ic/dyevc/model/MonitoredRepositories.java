@@ -5,7 +5,7 @@ package br.uff.ic.dyevc.model;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
 import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
-import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 import br.uff.ic.dyevc.utils.StringUtils;
 
 //~--- JDK imports ------------------------------------------------------------
@@ -36,7 +36,7 @@ public final class MonitoredRepositories extends AbstractTableModel {
     public static synchronized MonitoredRepositories getInstance() {
         if (instance == null) {
             instance = new MonitoredRepositories();
-            PreferencesUtils.loadMonitoredRepositories();
+            PreferencesManager.getInstance().loadMonitoredRepositories();
         }
 
         return instance;
@@ -99,7 +99,15 @@ public final class MonitoredRepositories extends AbstractTableModel {
      * @param repository the instance to be added
      */
     public synchronized void addMonitoredRepository(MonitoredRepository repository) {
-        int index = monitoredRepositories.indexOf(repository);
+        int index = -1;
+        for (MonitoredRepository rep : monitoredRepositories) {
+            if (rep.getId().equals(repository.getId())) {
+                index = monitoredRepositories.indexOf(rep);
+
+                break;
+            }
+        }
+
         if (index >= 0) {
             monitoredRepositories.set(index, repository);
             fireTableRowsUpdated(index, index);
@@ -140,14 +148,14 @@ public final class MonitoredRepositories extends AbstractTableModel {
                 monitoredRepositories.remove(repository);
                 repository.setMarkedForDeletion(true);
                 markedForDeletion.add(repository);
-                PreferencesUtils.persistRepositories();
+                PreferencesManager.getInstance().persistRepositories();
                 fireTableRowsDeleted(index, index);
 
                 throw rre;
             }
 
             rv = monitoredRepositories.remove(repository);
-            PreferencesUtils.persistRepositories();
+            PreferencesManager.getInstance().persistRepositories();
             fireTableRowsDeleted(index, index);
         }
 
@@ -162,6 +170,8 @@ public final class MonitoredRepositories extends AbstractTableModel {
      * @param repository the repository to be removed
      *
      * @return true, if the instance existed and false otherwise
+     * @throws br.uff.ic.dyevc.exception.RepositoryReferencedException
+     * @throws br.uff.ic.dyevc.exception.ServiceException
      */
     public synchronized boolean removeMarkedForDeletion(MonitoredRepository repository)
             throws RepositoryReferencedException, ServiceException {
@@ -177,7 +187,7 @@ public final class MonitoredRepositories extends AbstractTableModel {
             }
 
             rv = markedForDeletion.remove(repository);
-            PreferencesUtils.persistRepositories();
+            PreferencesManager.getInstance().persistRepositories();
             fireTableRowsDeleted(index, index);
         }
 

@@ -5,7 +5,6 @@ package br.uff.ic.dyevc.gui.core;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.EventQueue;
 import java.awt.Font;
 
 import javax.swing.border.BevelBorder;
@@ -24,52 +23,26 @@ import javax.swing.SwingConstants;
  */
 @SuppressWarnings("serial")
 public class SplashScreen extends JDialog {
-    private JLabel              statusLabel;
-    private JLabel              memoryLabel;
-    private static SplashScreen instance;
+    private JLabel statusLabel;
+    private JLabel memoryLabel;
 
     /**
      * Construct a modal splash screen
      *
+     * @param owner The owner of this splash screen.
      */
-    private SplashScreen(JFrame owner) {
+    public SplashScreen(JFrame owner) {
         super(owner);
+        this.setLocationRelativeTo(owner);
         this.init();
     }
 
     /**
      * Construct a non-modal splash screen
      */
-    private SplashScreen() {
+    public SplashScreen() {
         super();
         this.init();
-    }
-
-    /**
-     * Gets a non-modal instance of splash screen
-     *
-     * @return the single instance of SplashScreen
-     */
-    public static synchronized SplashScreen getInstance() {
-        if (instance == null) {
-            instance = new SplashScreen();
-        }
-
-        return instance;
-    }
-
-    /**
-     * Gets a modal instance of splash screen
-     *
-     * @param owner frame that owns this splash screen
-     * @return the single instance of SplashScreen
-     */
-    public static synchronized SplashScreen getInstance(JFrame owner) {
-        if (instance == null) {
-            instance = new SplashScreen(owner);
-        }
-
-        return instance;
     }
 
     /**
@@ -101,6 +74,7 @@ public class SplashScreen extends JDialog {
 
     /**
      * Write a new status message
+     * @param message Message to be shown in splash screen
      */
     public void setStatus(String message) {
         statusLabel.setText(message);
@@ -116,6 +90,7 @@ public class SplashScreen extends JDialog {
     }
 
     /**
+     * @param visible Controls whether the splash will be visible or not.
      * @see java.awt.Component#setVisible(boolean)
      */
     @Override

@@ -23,7 +23,7 @@ import java.util.prefs.Preferences;
  *
  * @author Cristiano
  */
-public final class PreferencesUtils {
+public final class PreferencesManager {
     /**
      * Name of node to store general settings.
      */
@@ -39,21 +39,42 @@ public final class PreferencesUtils {
      */
     private static final int DEFAULT_CHECK_INTERVAL = 600;
 
+
+    /**
+     * Singleton persistence manager
+     */
+    private static PreferencesManager instance;
+
+    /**
+     * Creates a persistence manager loading the persisted elements
+     */
+    private PreferencesManager() {
+        pref = Preferences.userNodeForPackage(DyeVC.class);
+    }
+
+    /**
+     * Provides the singleton instance
+     * @return the singleton instance.
+     */
+    public synchronized static PreferencesManager getInstance() {
+        if (instance == null) {
+            instance = new PreferencesManager();
+        }
+
+        return instance;
+    }
+
     /**
      * Object the points to a preferences instance.
      */
-    private static final Preferences pref;
+    private final Preferences pref;
 
     /**
      * Bean containing application general preferences.
      */
-    private static ApplicationSettingsBean settingsBean;
+    private ApplicationSettingsBean settingsBean;
 
-    static {
-        pref = Preferences.userNodeForPackage(DyeVC.class);
-    }
-
-    private static MonitoredRepository saveRepository(MonitoredRepository repositoryBean, Preferences nodeToStore) {
+    private MonitoredRepository saveRepository(MonitoredRepository repositoryBean, Preferences nodeToStore) {
         nodeToStore.node(repositoryBean.getId()).put("systemName", repositoryBean.getSystemName());
         nodeToStore.node(repositoryBean.getId()).put("name", repositoryBean.getName());
         nodeToStore.node(repositoryBean.getId()).put("cloneaddress", repositoryBean.getCloneAddress());
@@ -67,16 +88,11 @@ public final class PreferencesUtils {
     }
 
     /**
-     * Constructs an object of this type.
-     */
-    private PreferencesUtils() {}
-
-    /**
      * Stores general preferences using java Preferences API.
      *
      * @param bean the bean to be stored.
      */
-    public static void storePreferences(ApplicationSettingsBean bean) {
+    public void storePreferences(ApplicationSettingsBean bean) {
         Preferences nodeToStore = pref.node(NODE_GENERAL_SETTINGS);
         nodeToStore.putInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL, bean.getRefreshInterval());
         nodeToStore.put(ApplicationSettingsBean.PROP_LAST_USED_PATH, bean.getLastUsedPath());
@@ -93,7 +109,7 @@ public final class PreferencesUtils {
      *
      * @return the bean containing loaded general preferences.
      */
-    public static ApplicationSettingsBean loadPreferences() {
+    public ApplicationSettingsBean loadPreferences() {
         if (settingsBean == null) {
             Preferences             nodeToLoad = pref.node(NODE_GENERAL_SETTINGS);
             ApplicationSettingsBean bean       = new ApplicationSettingsBean();
@@ -114,14 +130,15 @@ public final class PreferencesUtils {
      *
      * @see MonitoredRepositories
      */
-    public static void persistRepositories() {
+    public void persistRepositories() {
         try {
             if (pref.nodeExists(NODE_MONITORED_REPOSITORIES)) {
                 pref.node(NODE_MONITORED_REPOSITORIES).removeNode();
                 pref.flush();
             }
         } catch (BackingStoreException ex) {
-            LoggerFactory.getLogger(PreferencesUtils.class).error("Error saving repository to preferences store.", ex);
+            LoggerFactory.getLogger(PreferencesManager.class).error("Error saving repository to preferences store.",
+                                    ex);
             MessageManager.getInstance().addMessage("Error saving repository to preferences store.");
         }
 
@@ -144,7 +161,7 @@ public final class PreferencesUtils {
      *
      * @return a list of monitored repositories configuration
      */
-    public static MonitoredRepositories loadMonitoredRepositories() {
+    public MonitoredRepositories loadMonitoredRepositories() {
         MonitoredRepositories monBean = MonitoredRepositories.getInstance();
         try {
             if (pref.nodeExists(NODE_MONITORED_REPOSITORIES)) {
@@ -166,7 +183,7 @@ public final class PreferencesUtils {
                 }
             }
         } catch (BackingStoreException ex) {
-            LoggerFactory.getLogger(PreferencesUtils.class).error(
+            LoggerFactory.getLogger(PreferencesManager.class).error(
                 "Error reading repository info from preferences store.", ex);
             MessageManager.getInstance().addMessage("Error loading repository info from preferences store.");
         }

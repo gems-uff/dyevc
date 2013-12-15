@@ -6,7 +6,7 @@ import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
-import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 import br.uff.ic.dyevc.utils.StringUtils;
 
 //~--- JDK imports ------------------------------------------------------------
@@ -119,7 +119,7 @@ public class MonitoredRepository implements Serializable {
      * @return the path to working clone
      */
     public String getWorkingCloneAddress() {
-        ApplicationSettingsBean settings = PreferencesUtils.loadPreferences();
+        ApplicationSettingsBean settings = PreferencesManager.getInstance().loadPreferences();
         String                  pathTemp = settings.getWorkingPath() + IConstants.DIR_SEPARATOR + getId();
 
         return pathTemp;

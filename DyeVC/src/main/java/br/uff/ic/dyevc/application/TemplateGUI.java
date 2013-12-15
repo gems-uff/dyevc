@@ -4,7 +4,7 @@
  */
 package br.uff.ic.dyevc.application;
 
-import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class TemplateGUI extends javax.swing.JFrame {
     private void initComponents() {
         bindingGroup = new org.jdesktop.beansbinding.BindingGroup();
 
-        applicationSettingsBean1 = PreferencesUtils.loadPreferences();
+        applicationSettingsBean1 = br.uff.ic.dyevc.utils.PreferencesManager.getInstance().loadPreferences();
         AboutDialog = new javax.swing.JDialog();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -70,7 +70,6 @@ public class TemplateGUI extends javax.swing.JFrame {
         jPanel7 = new javax.swing.JPanel();
         saveRepository = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
-        repositoryBean1 = new br.uff.ic.dyevc.model.MonitoredRepository("");
         jPopupMenu1 = new javax.swing.JPopupMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -253,12 +252,6 @@ public class TemplateGUI extends javax.swing.JFrame {
         jLabel4.setText("Repository Name:");
 
         jLabel5.setText("Clone Address:");
-
-        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, repositoryBean1, org.jdesktop.beansbinding.ELProperty.create("${name}"), repositoryNameTxt, org.jdesktop.beansbinding.BeanProperty.create("text"));
-        bindingGroup.addBinding(binding);
-
-        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, repositoryBean1, org.jdesktop.beansbinding.ELProperty.create("${cloneAddress}"), cloneAddresTxt, org.jdesktop.beansbinding.BeanProperty.create("text"));
-        bindingGroup.addBinding(binding);
 
         cloneAddressExploreButton.setText("Explore");
 
@@ -507,7 +500,7 @@ public class TemplateGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_cancelButtonActionPerformed
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
-        PreferencesUtils.storePreferences(applicationSettingsBean1);
+        PreferencesManager.getInstance().storePreferences(applicationSettingsBean1);
         settingsWindow.dispose();
     }//GEN-LAST:event_saveButtonActionPerformed
 
@@ -597,7 +590,6 @@ public class TemplateGUI extends javax.swing.JFrame {
     private javax.swing.JPasswordField passwordTxt;
     private javax.swing.JTextField refreshRate;
     private javax.swing.JList repoList;
-    private br.uff.ic.dyevc.model.MonitoredRepository repositoryBean1;
     private javax.swing.JTextField repositoryNameTxt;
     private javax.swing.JButton saveButton;
     private javax.swing.JButton saveRepository;

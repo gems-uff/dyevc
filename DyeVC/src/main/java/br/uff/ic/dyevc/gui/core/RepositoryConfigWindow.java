@@ -5,6 +5,7 @@ package br.uff.ic.dyevc.gui.core;
 import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.ServiceException;
+import br.uff.ic.dyevc.gui.utils.GUIManager;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.topology.RepositoryFilter;
@@ -13,7 +14,7 @@ import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.monitor.RepositoryMonitor;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
-import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 import br.uff.ic.dyevc.utils.RepositoryConverter;
 import br.uff.ic.dyevc.utils.StringUtils;
 import br.uff.ic.dyevc.utils.SystemUtils;
@@ -43,27 +44,15 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     private static final long       serialVersionUID = -5327813882224088396L;
     private ApplicationSettingsBean settings;
     private Topology                topology;
-    private RepositoryMonitor       repositoryMonitor;
     private RepositoryConverter     converter;
+    private final GUIManager        guiManager;
 
     /**
      * Creates new form RepositoryConfigWindow
-     * @param monBean The list of monitored repositories. It must not be null.
      * @param repository The repository to be configured. If null, will create a new one.
-     * @param monitor The repository monitor to be called after creating a new repository.
      */
-    public RepositoryConfigWindow(MonitoredRepositories monBean, MonitoredRepository repository,
-                                  RepositoryMonitor monitor)
-            throws DyeVCException {
-        if (monBean == null) {
-            LoggerFactory.getLogger(RepositoryConfigWindow.class).error(
-                "Received a null list of monitored repositories");
-
-            throw new DyeVCException("Received a null list of monitored repositories");
-        }
-
-        monitoredRepositoriesBean = monBean;
-        repositoryMonitor         = monitor;
+    public RepositoryConfigWindow(MonitoredRepository repository) throws DyeVCException {
+        this.guiManager = GUIManager.getInstance();
 
         if (repository != null) {
             create         = false;
@@ -86,7 +75,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="initComponents">
     @SuppressWarnings("unchecked")
     private void initComponents() {
-        settings = PreferencesUtils.loadPreferences();
+        settings = PreferencesManager.getInstance().loadPreferences();
 
         try {
             topology = new TopologyDAO().readTopology();
@@ -207,13 +196,13 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         }
 
         monitoredRepositoriesBean.addMonitoredRepository(repositoryBean);
-        PreferencesUtils.persistRepositories();
-        PreferencesUtils.storePreferences(settings);
+        PreferencesManager.getInstance().persistRepositories();
+        PreferencesManager.getInstance().storePreferences(settings);
 
-        repositoryMonitor.addRepositoryToMonitor(repositoryBean);
+        RepositoryMonitor.getInstance().addRepositoryToMonitor(repositoryBean);
 
-        if (repositoryMonitor.getState().equals(Thread.State.TIMED_WAITING)) {
-            repositoryMonitor.interrupt();
+        if (RepositoryMonitor.getInstance().getState().equals(Thread.State.TIMED_WAITING)) {
+            RepositoryMonitor.getInstance().interrupt();
         } else {
             JOptionPane
                 .showMessageDialog(

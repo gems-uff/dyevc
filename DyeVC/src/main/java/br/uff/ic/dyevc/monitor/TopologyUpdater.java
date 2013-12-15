@@ -20,7 +20,7 @@ import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
-import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 import br.uff.ic.dyevc.utils.RepositoryConverter;
 import br.uff.ic.dyevc.utils.SystemUtils;
 
@@ -84,7 +84,7 @@ public class TopologyUpdater {
         topologyDAO           = new TopologyDAO();
         commitDAO             = new CommitDAO();
         monitoredRepositories = MonitoredRepositories.getInstance();
-        settings              = PreferencesUtils.loadPreferences();
+        settings              = PreferencesManager.getInstance().loadPreferences();
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Constructor -> Exit.");
     }
 

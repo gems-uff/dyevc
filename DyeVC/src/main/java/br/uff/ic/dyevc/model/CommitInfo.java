@@ -449,11 +449,8 @@ public class CommitInfo implements Comparable<CommitInfo>, Serializable {
         }
 
         final CommitInfo other = (CommitInfo)obj;
-        if ((this.hash == null) ? (other.hash != null) : !this.hash.equals(other.hash)) {
-            return false;
-        }
 
-        return true;
+        return !((this.hash == null) ? (other.hash != null) : !this.hash.equals(other.hash));
     }
 
     /**

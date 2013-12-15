@@ -4,7 +4,7 @@
   <NonVisualComponents>
     <Component class="br.uff.ic.dyevc.beans.ApplicationSettingsBean" name="applicationSettingsBean1">
       <AuxValues>
-        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="PreferencesUtils.loadPreferences()"/>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="br.uff.ic.dyevc.utils.PreferencesManager.getInstance().loadPreferences()"/>
       </AuxValues>
     </Component>
     <Container class="javax.swing.JDialog" name="AboutDialog">
@@ -358,18 +358,8 @@
               </Properties>
             </Component>
             <Component class="javax.swing.JTextField" name="repositoryNameTxt">
-              <BindingProperties>
-                <BindingProperty name="text" source="repositoryBean1" sourcePath="${name}" target="repositoryNameTxt" targetPath="text" updateStrategy="0" immediately="false">
-                  <BindingParameter name="javax.swing.binding.ParameterKeys.TEXT_CHANGE_STRATEGY" value="javax.swing.binding.TextChangeStrategy.ON_TYPE"/>
-                </BindingProperty>
-              </BindingProperties>
             </Component>
             <Component class="javax.swing.JTextField" name="cloneAddresTxt">
-              <BindingProperties>
-                <BindingProperty name="text" source="repositoryBean1" sourcePath="${cloneAddress}" target="cloneAddresTxt" targetPath="text" updateStrategy="0" immediately="false">
-                  <BindingParameter name="javax.swing.binding.ParameterKeys.TEXT_CHANGE_STRATEGY" value="javax.swing.binding.TextChangeStrategy.ON_TYPE"/>
-                </BindingProperty>
-              </BindingProperties>
             </Component>
             <Component class="javax.swing.JButton" name="cloneAddressExploreButton">
               <Properties>
@@ -498,11 +488,6 @@
         </Container>
       </SubComponents>
     </Container>
-    <Component class="br.uff.ic.dyevc.model.MonitoredRepository" name="repositoryBean1">
-      <AuxValues>
-        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new br.uff.ic.dyevc.model.MonitoredRepository(&quot;&quot;)"/>
-      </AuxValues>
-    </Component>
     <Container class="javax.swing.JPopupMenu" name="jPopupMenu1">
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout">

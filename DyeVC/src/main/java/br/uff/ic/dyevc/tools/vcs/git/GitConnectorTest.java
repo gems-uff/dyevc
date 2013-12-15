@@ -11,7 +11,7 @@ import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.utils.DateUtil;
-import br.uff.ic.dyevc.utils.PreferencesUtils;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 
 import org.apache.commons.collections15.CollectionUtils;
 import org.apache.commons.collections15.Predicate;
@@ -70,7 +70,7 @@ public class GitConnectorTest {
         ObjectInput  input          = null;
         String       objectFilePath = null;
         try {
-            MonitoredRepositories reps        = PreferencesUtils.loadMonitoredRepositories();
+            MonitoredRepositories reps        = PreferencesManager.getInstance().loadMonitoredRepositories();
             MonitoredRepository   rep         = MonitoredRepositories.getMonitoredProjectById("rep1376735192420");
             GitCommitTools        tools       = GitCommitTools.getInstance(rep, false);
             List<CommitInfo>      commitInfos = tools.getCommitInfos();
