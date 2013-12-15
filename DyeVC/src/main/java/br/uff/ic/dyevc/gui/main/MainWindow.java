@@ -6,7 +6,6 @@ import br.uff.ic.dyevc.application.branchhistory.controller.BranchesHistoryContr
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
-import br.uff.ic.dyevc.gui.core.AboutDialog;
 import br.uff.ic.dyevc.gui.core.LogTextArea;
 import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.gui.core.RepositoryConfigWindow;
@@ -112,7 +111,6 @@ public class MainWindow extends javax.swing.JFrame {
         java.awt.Dimension dialogSize = getSize();
         setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
 
-        dlgAbout              = new AboutDialog(this, rootPaneCheckingEnabled);
         monitoredRepositories = MonitoredRepositories.getInstance();
 
         pnlMain               = new javax.swing.JPanel();
@@ -559,7 +557,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     private void mntAboutActionPerformed(java.awt.event.ActionEvent evt) {
-        dlgAbout.setVisible(true);
+        GUIManager.getInstance().showAboutDialog();
     }
 
     private void mntshowMainWindowActionPerformed() {

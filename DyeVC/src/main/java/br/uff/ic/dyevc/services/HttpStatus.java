@@ -59,8 +59,6 @@ public class HttpStatus {
      * @param statusCode the numeric status code
      * @return the reason phrase associated with the given status code
      * or null if the status code is not recognized.
-     *
-     * TODO: getStatusText should be called getReasonPhrase to match RFC
      */
     public static String getStatusText(int statusCode) {
 
