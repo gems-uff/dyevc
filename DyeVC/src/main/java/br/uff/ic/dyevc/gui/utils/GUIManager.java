@@ -6,6 +6,7 @@ import br.uff.ic.dyevc.gui.core.SettingsWindow;
 import br.uff.ic.dyevc.gui.core.SplashScreen;
 import br.uff.ic.dyevc.gui.core.StdOutErrWindow;
 import br.uff.ic.dyevc.gui.main.MainWindow;
+import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
 
 //~--- JDK imports ------------------------------------------------------------
 
@@ -149,7 +150,8 @@ public class GUIManager {
             aboutPanel.add(memoryPanel, BorderLayout.NORTH);
 
             aboutPanel.setPreferredSize(new Dimension(400, 300));
-            JOptionPane.showMessageDialog(mainWindow, aboutPanel, "About", JOptionPane.INFORMATION_MESSAGE);
+            String title = "About DyeVC (version " + ApplicationVersionUtils.getAppVersion() + ")";
+            JOptionPane.showMessageDialog(mainWindow, aboutPanel, title, JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException e) {
             showErrorDialog(e);
         } catch (HeadlessException e) {

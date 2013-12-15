@@ -30,7 +30,7 @@ public class ApplicationVersionUtils {
     }
 
     private static String getVersionFromManifest() {
-        String out       = "DyeVC: Version not Identified!";
+        String out       = "not available";
 
         Class  clazz     = ApplicationVersionUtils.class;
         String className = clazz.getSimpleName() + ".class";
