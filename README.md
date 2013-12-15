@@ -6,7 +6,7 @@ DyeVC is a non-obtrusive application. It lies on the system tray bar, where aler
 
 This project was proposed by professor **Leonardo Murta** and first version was implemented by his M. S. student **Cristiano Cesario**, as part of his dissertation project in the Software Engineering postgraduate course at Universidade Federal Fluminense.
 
-This is one the several research projects conducted by the **Software Maintenance and Evolution Group - GEMS** (Acronym taken from the Portuguese group name: Grupo de Evolução e Manutenção de Sofware). For more information regarding this and other research projects conducted by the group, refer to the [GEMS website](http://gems.ic.uff.br/).
+This is one the several research projects conducted by the **Software Maintenance and Evolution Group - GEMS** (Acronym taken from the Portuguese group name: Grupo de EvoluÃ§Ã£o e ManutenÃ§Ã£o de Sofware). For more information regarding this and other research projects conducted by the group, refer to the [GEMS website](http://gems.ic.uff.br/).
 
 #Team
 
@@ -40,20 +40,8 @@ DyeVC does not need to be formally installed. As it uses [Java Web Start technol
 
 Copyright (c) 2013 Universidade Federal Fluminense (UFF)  
   
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:  
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:  
   
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.  
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.  
   
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
