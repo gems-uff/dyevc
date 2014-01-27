@@ -15,7 +15,6 @@ import java.util.List;
 public class VersionedProject extends VersionedItem{
     private int type;
     private String name;
-    private String relativePath;
     
     private List<VersionedItem> versionedItems;
     
@@ -42,10 +41,7 @@ public class VersionedProject extends VersionedItem{
         return name;
     }
 
-    @Override
-    public String getRelativePath() {
-        return relativePath;
-    }
+
 
     @Override
     public int getType() {

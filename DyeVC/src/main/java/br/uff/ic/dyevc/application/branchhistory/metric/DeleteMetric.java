@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
@@ -23,36 +24,31 @@ import org.eclipse.jgit.api.Git;
  *
  * @author wallace
  */
-public class DeleteMetric implements Metric{
-    private String TEMP_BRANCHES_HISTORY_PATH = System.getProperty("user.home") + "/.dyevc/TEMP_BRANCHES_HISTORY/";
+public class DeleteMetric extends Metric {
 
     @Override
-    public double getValue(Revision revision, VersionedItem versionedItem, VersionedProject versionedProject, ProjectRevisions projectRevisions) {
+    int getNumberOfRevisions() {
+        return 2;
+    }
+    
+    @Override
+    public String getName() {
+        return "Delete Metric";
+    }
+
+    @Override
+    String calculate(Revision revision, VersionedItem versionedItem, String[] auxiliarPaths) {
         double deletion = 0;
 
         try {
-            if (revision.getPrev().size() == 0) {
-                
-            } else {
+            if (!revision.getPrev().isEmpty()) {
+
                 Revision prevRevision = revision.getPrev().get(0);
 
 
-                File file = new File(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + revision.getId());
-                FileUtils.deleteDirectory(file);
-                createDirectory(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + revision.getId());
-                FileUtils.copyDirectory(new File(versionedProject.getRelativePath()), new File(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + revision.getId()));
-
-                file = new File(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + prevRevision.getId());
-                FileUtils.deleteDirectory(file);
-                createDirectory(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + prevRevision.getId());
-                FileUtils.copyDirectory(new File(versionedProject.getRelativePath()), new File(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + prevRevision.getId()));
 
 
-
-
-
-
-                GitConnector gitConnector = new GitConnector(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + revision.getId(), versionedProject.getName());
+                GitConnector gitConnector = new GitConnector(auxiliarPaths[0] + versionedItem.getVersionedProject().getRelativePath(), versionedItem.getVersionedProject().getName());
 
                 //FileUtils.deleteDirectory(new File(TEMP_BRANCHES_HISTORY_PATH+versionedProject.getName()+"_"+revision.getId()));
 
@@ -67,7 +63,7 @@ public class DeleteMetric implements Metric{
                 checkoutCommand.call();
 
 
-                gitConnector = new GitConnector(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + prevRevision.getId(), versionedProject.getName());
+                gitConnector = new GitConnector(auxiliarPaths[1] + versionedItem.getVersionedProject().getRelativePath(), versionedItem.getVersionedProject().getName());
 
                 git = new Git(gitConnector.getRepository());
                 checkoutCommand = null;//git.checkout();
@@ -79,30 +75,25 @@ public class DeleteMetric implements Metric{
 
 
 
-                File dirAtual = new File(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + revision.getId());
-                File dirAnterior = new File(TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + prevRevision.getId());
+                File dirAtual = new File(auxiliarPaths[0]);
 
-                List<String> l = getNumberOfFiles(dirAtual);
+                List<String> l = getNumberOfFiles(dirAtual, auxiliarPaths[0]);
                 double totalDeletion = 0;
                 for (String f : l) {
-                    String pathAntigo = TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + prevRevision.getId() + f.substring((TEMP_BRANCHES_HISTORY_PATH + versionedProject.getName() + "_" + revision.getId()).length());
+                    String pathAntigo = auxiliarPaths[1] + f;
                     File fileAntigo = new File(pathAntigo);
                     double partialDeletion = 0;
                     if (fileAntigo.exists()) {
-                        String a = readFile(f);
+                        String a = readFile(auxiliarPaths[0] + f);
                         String b = readFile(pathAntigo);
-                        int lcs = lcs(a,b);
+                        int lcs = llcs(a, b);
                         partialDeletion = b.length() - lcs;
-                        
+
                     }
                     totalDeletion = totalDeletion + partialDeletion;
+                    System.gc();
                 }
 
-                
-
-                FileUtils.deleteDirectory(dirAtual);
-                FileUtils.deleteDirectory(dirAnterior);
-                
                 deletion = totalDeletion;
             }
 
@@ -110,7 +101,7 @@ public class DeleteMetric implements Metric{
             System.out.println("ERRO CALCULAR: " + e.getMessage());
         }
 
-        return deletion;
+        return String.valueOf(deletion);
     }
 
     private String readFile(String file) throws IOException {
@@ -127,20 +118,13 @@ public class DeleteMetric implements Metric{
         return stringBuilder.toString();
     }
 
-    private void createDirectory(String name) {
-        File file = new File(name);
-        if (!file.exists()) {
-            file.mkdirs();
-        }
-    }
-
-    public List<String> getNumberOfFiles(File file) {
+    public List<String> getNumberOfFiles(File file, String absolutePath) {
         if (file.getName().startsWith(".")) {
             return null;
         }
         if (file.isFile()) {
             List l = new LinkedList<String>();
-            l.add(file.getAbsolutePath());
+            l.add(file.getAbsolutePath().substring(absolutePath.length()));
             return l;
         } else {
             File files[] = file.listFiles();
@@ -148,7 +132,7 @@ public class DeleteMetric implements Metric{
 
             for (int i = 0; i < files.length; i++) {
                 File file1 = files[i];
-                List<String> l2 = getNumberOfFiles(file1);
+                List<String> l2 = getNumberOfFiles(file1, absolutePath);
                 if (l2 != null) {
                     for (String f : l2) {
                         l.add(f);
@@ -173,13 +157,14 @@ public class DeleteMetric implements Metric{
                     lengths[i + 1][j + 1] =
                             Math.max(lengths[i + 1][j], lengths[i][j + 1]);
                 }
+
             }
         }
 
+
         // read the substring out from the matrix
         StringBuffer sb = new StringBuffer();
-        for (int x = a.length(), y = b.length();
-                x != 0 && y != 0;) {
+        for (int x = a.length(), y = b.length(); x != 0 && y != 0;) {
             if (lengths[x][y] == lengths[x - 1][y]) {
                 x--;
             } else if (lengths[x][y] == lengths[x][y - 1]) {
@@ -192,6 +177,98 @@ public class DeleteMetric implements Metric{
             }
         }
 
+        for (int i = 0; i < sb.reverse().toString().length(); i++) {
+            System.out.print(sb.reverse().toString().charAt(i));
+        }
         return sb.reverse().toString().length();
+
+    }
+
+    private int llcs(String a, String b) {
+        int max = 0;
+        int n = a.length();
+        int blength = b.length();
+        if (blength > n) {
+            String aux = a;
+            a = b;
+            b = aux;
+            int x = n;
+            n = blength;
+            blength = x;
+        }
+
+        //step 1
+        List<Integer> matchLists[] = new List[n];
+        HashMap<Character, List<Integer>> hashValues = new HashMap<Character, List<Integer>>();
+        for (int i = 0; i < n; i++) {
+
+            Character c = a.charAt(i);
+            List<Integer> matchList = hashValues.get(c);
+            if (matchList == null) {
+                matchList = new LinkedList<Integer>();
+                for (int j = 0; j < blength; j++) {
+                    if (c == b.charAt(j)) {
+                        matchList.add(j);
+                    }
+                }
+                hashValues.put(c, matchList);
+            }
+            matchLists[i] = matchList;
+
+        }
+        //step 2
+        int thresh[] = new int[n + 1];
+        thresh[0] = 0;
+        for (int i = 1; i <= n; i++) {
+            thresh[i] = n + 1;
+        }
+        //System.out.println("thresh[1]: "+thresh[1]+"    -    thresh[2]"+thresh[2]+"    -    thresh[3]"+thresh[3]);
+
+        int temp;
+        int k;
+        //step 3
+        for (int i = 1; i <= n; i++) {
+            temp = 0;
+            k = 0;
+            List<Integer> matchList = matchLists[i - 1];
+
+            for (Integer j : matchList) {
+                j++;
+                if (j > temp) {
+                    do {
+                        k = k + 1;
+                    } while (j > thresh[k]);
+                    temp = thresh[k];
+                    thresh[k] = j;
+                    //System.out.println("K: "+k);
+                }
+            }
+
+        }
+        max = 0;
+        for (int i = 0; i <= n; i++) {
+            if (thresh[i] != (n + 1)) {
+                max = i;
+                //System.out.println("Pos: "+i);
+            }
+        }
+
+
+        return max;
+    }
+
+    public static String lcsR(String a, String b) {
+        int aLen = a.length();
+        int bLen = b.length();
+        if (aLen == 0 || bLen == 0) {
+            return "";
+        } else if (a.charAt(aLen - 1) == b.charAt(bLen - 1)) {
+            return lcsR(a.substring(0, aLen - 1), b.substring(0, bLen - 1))
+                    + a.charAt(aLen - 1);
+        } else {
+            String x = lcsR(a, b.substring(0, bLen - 1));
+            String y = lcsR(a.substring(0, aLen - 1), b);
+            return (x.length() > y.length()) ? x : y;
+        }
     }
 }

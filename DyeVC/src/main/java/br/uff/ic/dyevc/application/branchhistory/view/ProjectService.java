@@ -18,6 +18,7 @@ import br.uff.ic.dyevc.application.branchhistory.model.VersionedItemsBucket;
 import br.uff.ic.dyevc.application.branchhistory.model.VersionedProject;
 import br.uff.ic.dyevc.application.branchhistory.model.constant.Constant;
 import br.uff.ic.dyevc.model.CommitRelationship;
+import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 
@@ -36,6 +37,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import org.eclipse.jgit.api.ResetCommand;
 
 /**
  *
@@ -53,31 +55,21 @@ public class ProjectService {
      * @return
      * @throws Exception
      */
-    public ProjectRevisions getProject(String path, String projectName) throws Exception {
+    public ProjectRevisions getProjectRevisions(MonitoredRepository monitoredRepository) throws Exception {
         RevisionsBucket revisionsBucket = new RevisionsBucket();
 
-        File file = new File(BRANCHES_HISTORY_PATH + projectName);
+        File file = new File(BRANCHES_HISTORY_PATH + monitoredRepository.getName());
         FileUtils.deleteDirectory(file);
 
 
 
-        createDirectory(projectName);
+        createDirectory(monitoredRepository.getName());
 
-        FileUtils.copyDirectory(new File(path), new File(BRANCHES_HISTORY_PATH + projectName));
-
-        // GitConnector gitConnector = new GitConnector(path,projectName);
-
-        // Git git = new Git(gitConnector.getRepository());
-
-        // List<Ref> branchRefList = git.branchList().call();
+        FileUtils.copyDirectory(new File(monitoredRepository.getCloneAddress()), new File(BRANCHES_HISTORY_PATH + monitoredRepository.getName()));
 
 
-
-
-        // gitConnector = gitConnector.cloneRepository(path, BRANCHES_HISTORY_PATH+projectName,projectName);
-
-        GitConnector gitConnector = new GitConnector(BRANCHES_HISTORY_PATH + projectName, projectName);
-        GitCommitTools gitCommitHistory = GitCommitTools.getInstance(gitConnector);
+        GitConnector gitConnector = new GitConnector(BRANCHES_HISTORY_PATH + monitoredRepository.getName(), monitoredRepository.getName());
+        GitCommitTools gitCommitHistory = GitCommitTools.getInstance(monitoredRepository);
 
         Git git = new Git(gitConnector.getRepository());
 
@@ -85,13 +77,13 @@ public class ProjectService {
 
         List<BranchRevisions> branches = new LinkedList<BranchRevisions>();
 
-        ProjectRevisions project = new ProjectRevisions(projectName);
-        System.out.println("BRANCHES: " + branchRefList.size());
+        ProjectRevisions project = new ProjectRevisions(monitoredRepository.getName());
+        //System.out.println("BRANCHES: " + branchRefList.size());
 
         for (Ref branchRef : branchRefList) {
             Revision rev = revisionsBucket.getRevisionById(branchRef.getObjectId().getName());
             if (rev == null) {
-                rev = new Revision(branchRef.getObjectId().getName());
+                rev = new Revision(branchRef.getObjectId().getName(), project);
                 revisionsBucket.addRevision(rev);
             }
 
@@ -101,41 +93,35 @@ public class ProjectService {
 
         Collection<CommitRelationship> commitRelationships = gitCommitHistory.getCommitRelationships();
         Iterator<CommitRelationship> commitRelationshipIt = commitRelationships.iterator();
-        HashMap<String, String> hash = new HashMap<String, String>();
 
+        //adicionando as relações de revisão pai e filho
         while (commitRelationshipIt.hasNext()) {
             CommitRelationship commitRelationship = commitRelationshipIt.next();
             String child = commitRelationship.getChild().getHash();
             String parent = commitRelationship.getParent().getHash();
             Revision revisionChild = revisionsBucket.getRevisionById(child);
             if (revisionChild == null) {
-                revisionChild = new Revision(child);
+                revisionChild = new Revision(child, project);
                 revisionsBucket.addRevision(revisionChild);
             }
 
             Revision revisionParent = revisionsBucket.getRevisionById(parent);
             if (revisionParent == null) {
-                revisionParent = new Revision(parent);
+                revisionParent = new Revision(parent, project);
                 revisionsBucket.addRevision(revisionParent);
             }
 
             revisionChild.addPrev(revisionParent);
             revisionParent.addNext(revisionChild);
 
-//          if(hash.containsKey(commitRelationship.getChild().getHash())){
-//              //System.out.println("REPETIDO: "+commitRelationship.getChild().getHash());
-//              hash.put(commitRelationship.getChild().getHash(), hash.get(commitRelationship.getChild().getHash())+"="+commitRelationship.getParent().getHash());
-//          }else{
-//              hash.put(commitRelationship.getChild().getHash(), commitRelationship.getParent().getHash());
-//          }
 
-            System.out.println(commitRelationship.getChild().getHash() + "  --> "
-                    + commitRelationship.getParent().getHash());
+            /*System.out.println(commitRelationship.getChild().getHash() + "  --> "
+                    + commitRelationship.getParent().getHash());*/
         }
 
         for (BranchRevisions branch : branches) {
 
-            setHistoryOfBranch(branch, revisionsBucket);
+            setHistoryOfBranch(branch);
         }
 
         project.setBranchesRevisions(branches);
@@ -143,8 +129,8 @@ public class ProjectService {
         Iterator<Revision> it = revisionsBucket.getRevisionCollection().iterator();
         while (it.hasNext()) {
             Revision rev = it.next();
-            if (rev.getPrev().size() == 0) {
-                project.setRoot(rev);
+            if (rev.getPrev().isEmpty()) {
+                project.addRoot(rev);
 
                 break;
             }
@@ -161,54 +147,67 @@ public class ProjectService {
      * @param projectRevisions
      * @return
      */
+    //returns the versioned project
     public VersionedProject getVersionedProject(ProjectRevisions projectRevisions) {
         VersionedProject versionedProject = new VersionedProject(projectRevisions.getName(),
-                BRANCHES_HISTORY_PATH + projectRevisions.getName());
+                projectRevisions.getName() + "/");
 
         VersionedItemsBucket versionedItemsBucket = new VersionedItemsBucket();
         versionedItemsBucket.addVersionedItem(versionedProject);
 
-        try {
-            GitConnector gitConnector = new GitConnector(projectRevisions.getName(),
-                    projectRevisions.getName());
-            Git git = new Git(gitConnector.getRepository());
-            CheckoutCommand checkoutCommand = null;    // git.checkout();
+        RevisionsBucket revisionsBucket = projectRevisions.getRevisionsBucket();
 
-            RevisionsBucket revisionsBucket = projectRevisions.getRevisionsBucket();
-
-            Collection<Revision> collection = revisionsBucket.getRevisionCollection();
-            Iterator<Revision> it = collection.iterator();
-            while (it.hasNext()) {
+        Collection<Revision> collection = revisionsBucket.getRevisionCollection();
+        //int numberOfRevisions = collection.size();
+        //int i = 0;
+        Iterator<Revision> it = collection.iterator();
+        while (it.hasNext()) {
+            try {
+                GitConnector gitConnector = new GitConnector(BRANCHES_HISTORY_PATH + versionedProject.getRelativePath(),
+                        projectRevisions.getName());
+                Git git = new Git(gitConnector.getRepository());
+                CheckoutCommand checkoutCommand = null;    // git.checkout();
                 Revision revision = it.next();
+                ResetCommand resetCommand = git.reset();
+                resetCommand.setMode(ResetCommand.ResetType.HARD);
+                resetCommand.call();
                 checkoutCommand = git.checkout();
                 checkoutCommand.setName(revision.getId());
 
                 checkoutCommand.call();
 
-                File file = new File(versionedProject.getRelativePath());
-                getVersionedItems(versionedItemsBucket, file, revision, versionedProject);
-
-
+                File file = new File(BRANCHES_HISTORY_PATH + versionedProject.getRelativePath());
+                getVersionedItems(versionedItemsBucket, file, revision, versionedProject, versionedProject);
+                //i++;
+                //System.out.println("PORCENTAGEM DE ITEMS VERSIONADOS CALCULADOS: "+((((double) i)/numberOfRevisions)*100)+" %");
+                            
+            } catch (Exception e) {
+                System.out.println("Erro ProjectService.getVersionedProject: " + e.getMessage());
             }
-        } catch (Exception e) {
+
         }
 
 
         return versionedProject;
     }
 
-    private void setHistoryOfBranch(BranchRevisions branch, RevisionsBucket revisionsBucket) {
+    private void setHistoryOfBranch(BranchRevisions branch) {
+        //pega todos os pais do head
         List<Revision> parents = branch.getHead().getPrev();
+        //cria uma linha de revisões
         LineRevisions line = new LineRevisions(branch.getHead());
-        while (parents.size() != 0) {
+        while (!parents.isEmpty()) {
 
+            //adiciona o primeiro pai do head
             line.addRevision(parents.get(0));
 
+            //para cada um dos outros pais do cabeça cria outras linhas
             for (int i = 1; i < parents.size(); i++) {
 
                 Revision revision = parents.get(i);
-                if(!branch.haveLineRevisionByHeadId(revision.getId()))
-                {
+                //verifica se há alguma outra linha com essa head
+                if (!branch.haveLineRevisionByHeadId(revision.getId())) {
+                    //se não houver cria-se uma linha com esta head
                     LineRevisions newLine = new LineRevisions(revision);
                     getParents(branch, newLine);
                 }
@@ -221,21 +220,20 @@ public class ProjectService {
 
         branch.addLineRevisions(line);
 
-        System.out.println("TERMINOU LINHAS: " + branch.getLinesRevisions().size());
+        //System.out.println("TERMINOU LINHAS: " + branch.getLinesRevisions().size());
 
 
     }
 
     private void getParents(BranchRevisions branch, LineRevisions line) {
         List<Revision> parents = line.getHead().getPrev();
-        while (parents.size() != 0) {
+        while (!parents.isEmpty()) {
 
             line.addRevision(parents.get(0));
 
             for (int i = 1; i < parents.size(); i++) {
                 Revision revision = parents.get(i);
-                if(!branch.haveLineRevisionByHeadId(revision.getId()))
-                {
+                if (!branch.haveLineRevisionByHeadId(revision.getId())) {
                     LineRevisions newLine = new LineRevisions(revision);
                     getParents(branch, newLine);
                 }
@@ -255,13 +253,13 @@ public class ProjectService {
         }
     }
 
-    private void getVersionedItems(VersionedItemsBucket versionedItemsBucket, File file, Revision revision, VersionedItem antVersionedItem) {
+    private void getVersionedItems(VersionedItemsBucket versionedItemsBucket, File file, Revision revision, VersionedProject versionedProject, VersionedItem antVersionedItem) {
         if (!file.getName().startsWith(".")) {
 
             if (file.isFile()) {
-                VersionedItem versionedItem = versionedItemsBucket.getVersionedItemByPath(file.getAbsolutePath());
+                VersionedItem versionedItem = versionedItemsBucket.getVersionedItemByRelativePath(file.getAbsolutePath().substring(BRANCHES_HISTORY_PATH.length()));
                 if (versionedItem == null) {
-                    versionedItem = new VersionedFile(file.getName(), file.getAbsolutePath());
+                    versionedItem = new VersionedFile(file.getName(), file.getAbsolutePath().substring(BRANCHES_HISTORY_PATH.length()), versionedProject);
                     versionedItemsBucket.addVersionedItem(versionedItem);
                     if (antVersionedItem.getType() == Constant.PROJECT) {
                         ((VersionedProject) antVersionedItem).addVersionedItem(versionedItem);
@@ -273,13 +271,13 @@ public class ProjectService {
                 versionedItem.addRevison(revision);
             } else {
                 File files[] = file.listFiles();
-                VersionedItem versionedItem = versionedItemsBucket.getVersionedItemByPath(file.getAbsolutePath());
+                VersionedItem versionedItem = versionedItemsBucket.getVersionedItemByRelativePath(file.getAbsolutePath().substring(BRANCHES_HISTORY_PATH.length()));
                 if (versionedItem == null) {
-                    versionedItem = new VersionedDirectory(file.getName(), file.getAbsolutePath());
+                    versionedItem = new VersionedDirectory(file.getName(), file.getAbsolutePath().substring(BRANCHES_HISTORY_PATH.length()), versionedProject);
                     versionedItemsBucket.addVersionedItem(versionedItem);
-                    if(antVersionedItem.getType() == Constant.PROJECT){
+                    if (antVersionedItem.getType() == Constant.PROJECT) {
                         ((VersionedProject) antVersionedItem).addVersionedItem(versionedItem);
-                    }else if(antVersionedItem.getType() == Constant.DIRECTORY){
+                    } else if (antVersionedItem.getType() == Constant.DIRECTORY) {
                         ((VersionedDirectory) antVersionedItem).addVersionedItem(versionedItem);
                     }
                 }
@@ -288,26 +286,11 @@ public class ProjectService {
 
                 for (int i = 0; i < files.length; i++) {
                     File file1 = files[i];
-                    getVersionedItems(versionedItemsBucket, file1, revision, versionedItem);
+                    getVersionedItems(versionedItemsBucket, file1, revision, versionedProject, versionedItem);
                 }
             }
         }
     }
 
-    /**
-     * Method description
-     *
-     * @param args
-     */
-    public static void main(String args[]) {
-        try {
-            ProjectService projectService = new ProjectService();
-            ProjectRevisions pr = projectService.getProject("/home/wallace/projetos/teste/projeto",
-                    "projeto");
-            System.out.println("branches: " + pr.getBranchesRevisions().size());
-            System.out.println("TERMINOU");
-        } catch (Exception e) {
-            System.out.println("ERRO: " + e.getMessage());
-        }
-    }
+
 }
