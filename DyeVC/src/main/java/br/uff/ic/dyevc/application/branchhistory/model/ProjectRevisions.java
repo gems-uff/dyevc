@@ -4,6 +4,7 @@
  */
 package br.uff.ic.dyevc.application.branchhistory.model;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -16,10 +17,11 @@ public class ProjectRevisions {
     
     private RevisionsBucket revisionsBucket;
     
-    private Revision root;
+    private List<Revision> roots;
     
     public ProjectRevisions(String name){
         this.name = name;
+        roots = new LinkedList<Revision>();
     }
 
     /**
@@ -72,14 +74,14 @@ public class ProjectRevisions {
     /**
      * @return the root
      */
-    public Revision getRoot() {
-        return root;
+    public List<Revision> getRoots() {
+        return roots;
     }
 
     /**
      * @param root the root to set
      */
-    public void setRoot(Revision root) {
-        this.root = root;
+    public void addRoot(Revision root) {
+        roots.add(root);
     }
 }

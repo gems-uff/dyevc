@@ -33,7 +33,7 @@ public class BranchesHistoryController implements ActionListener, WindowListener
     private BranchesHistoryWindow branchesHistoryWindow;
     private List<MetricCasing> metricCasingList;
     private ProjectValues projectValues;
-    ProjectRevisions project;
+    ProjectRevisions projectRevisions;
     VersionedProject versionedProject;
     CreateProjectValuesService createProjectValuesService;
     
@@ -45,8 +45,8 @@ public class BranchesHistoryController implements ActionListener, WindowListener
         System.out.println("CLONE ADRESS: "+monitoredRepository.getCloneAddress());
         System.out.println("WORKING CLONE ADRESS: "+monitoredRepository.getWorkingCloneAddress());
         try{
-            project = projectService.getProject(monitoredRepository.getCloneAddress() , monitoredRepository.getName());
-            versionedProject = projectService.getVersionedProject(project);
+            projectRevisions = projectService.getProjectRevisions(monitoredRepository);
+            versionedProject = projectService.getVersionedProject(projectRevisions);
         }catch(Exception e){
             
         }
@@ -54,7 +54,7 @@ public class BranchesHistoryController implements ActionListener, WindowListener
         createProjectValuesService = new CreateProjectValuesService();
         
         Metric metric = metricCasingList.get(0).getMetric();
-        projectValues = createProjectValuesService.getProjectValues(project, versionedProject,metric);
+        projectValues = createProjectValuesService.getProjectValues(projectRevisions, versionedProject,metric);
         
         String metricItems[];
         String branchesItems[];
@@ -63,9 +63,9 @@ public class BranchesHistoryController implements ActionListener, WindowListener
             metricItems[i] = metricCasingList.get(i).getName();
         }
         
-        branchesItems = new String[project.getBranchesRevisions().size()];
+        branchesItems = new String[projectRevisions.getBranchesRevisions().size()];
         for (int i = 0; i < branchesItems.length; i++) {
-            branchesItems[i] = project.getBranchesRevisions().get(i).getName();
+            branchesItems[i] = projectRevisions.getBranchesRevisions().get(i).getName();
         }
         
         branchesHistoryWindow = new BranchesHistoryWindow(this, this, metricItems, branchesItems, projectValues);
@@ -85,11 +85,11 @@ public class BranchesHistoryController implements ActionListener, WindowListener
         } else if(e.getActionCommand().equals(BranchesHistoryWindow.ACTION_BRANCH_COMBOBOX)){
             branchesHistoryWindow.updateChartByComboBox(projectValues);
         } else if(e.getActionCommand().equals(BranchesHistoryWindow.ACTION_GRAPH_BUTTON)){
-            new CommitHistoryWindow(project).setVisible(true);
+            new CommitHistoryWindow(projectRevisions).setVisible(true);
         } else if(e.getActionCommand().equals(BranchesHistoryWindow.ACTION_REFRESH_BUTTON)){
             
             Metric metric = metricCasingList.get(branchesHistoryWindow.getSelectedIndexMetric()).getMetric();
-            projectValues = createProjectValuesService.getProjectValues(project, versionedProject,metric);
+            projectValues = createProjectValuesService.getProjectValues(projectRevisions, versionedProject,metric);
            
             
             branchesHistoryWindow.updateValues(projectValues);

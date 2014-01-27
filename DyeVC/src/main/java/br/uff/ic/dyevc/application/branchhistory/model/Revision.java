@@ -17,10 +17,13 @@ public class Revision {
     private List<Revision> next;
     private List<Revision> prev;
     
-    public Revision(String id){
+    private ProjectRevisions projectRevisions;
+    
+    public Revision(String id, ProjectRevisions projectRevisions){
         this.id = id;
         next = new LinkedList<Revision>();
         prev = new LinkedList<Revision>();
+        this.projectRevisions = projectRevisions;
     }
     
     public String getId(){
@@ -53,5 +56,12 @@ public class Revision {
      */
     public void addPrev(Revision revision) {
         this.prev.add(revision);
+    }
+
+    /**
+     * @return the projectRevisions
+     */
+    public ProjectRevisions getProjectRevisions() {
+        return projectRevisions;
     }
 }

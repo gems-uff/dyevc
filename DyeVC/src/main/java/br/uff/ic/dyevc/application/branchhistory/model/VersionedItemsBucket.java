@@ -33,7 +33,7 @@ public class VersionedItemsBucket {
         }
     }
     
-    public VersionedItem getVersionedItemByPath(String path){
+    public VersionedItem getVersionedItemByRelativePath(String path){
         return hash.get(path);
     }
     

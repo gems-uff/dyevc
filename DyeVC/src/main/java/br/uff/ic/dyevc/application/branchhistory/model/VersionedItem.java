@@ -13,10 +13,20 @@ import java.util.List;
  */
 public abstract class VersionedItem {
     
+    private String BRANCHES_HISTORY_PATH = System.getProperty("user.home") + "/.dyevc/BRANCHES_HISTORY/";
+    
     private List<Revision> revisions;
+    private VersionedProject versionedProject;
+    String relativePath;
+    
+    VersionedItem(VersionedProject versionedProject){
+        revisions = new LinkedList<Revision>();
+        versionedProject = versionedProject;
+    }
     
     VersionedItem(){
         revisions = new LinkedList<Revision>();
+        versionedProject = (VersionedProject) this;
     }
     
     public List<Revision> getRevisions(){
@@ -42,6 +52,20 @@ public abstract class VersionedItem {
     }
     
     abstract public String getName();
-    abstract public String getRelativePath();
     abstract public int getType();
+
+    /**
+     * @return the versionedProject
+     */
+    public VersionedProject getVersionedProject() {
+        return versionedProject;
+    }
+    
+    public String getRelativePath() {
+        return relativePath;
+    }
+    
+    public String getAbsolutePath(){
+        return BRANCHES_HISTORY_PATH+relativePath;
+    }
 }

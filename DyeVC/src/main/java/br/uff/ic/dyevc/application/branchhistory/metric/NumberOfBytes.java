@@ -12,64 +12,58 @@ import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.CheckoutCommand;
+import org.eclipse.jgit.api.CleanCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ResetCommand;
 
 
 /**
  *
  * @author wallace
  */
-public class NumberOfBytes implements Metric{
+public class NumberOfBytes extends Metric{
     
-    private String TEMP_BRANCHES_HISTORY_PATH = System.getProperty("user.home")+"/.dyevc/TEMP_BRANCHES_HISTORY/";
+    @Override
+    int getNumberOfRevisions() {
+        return 1;
+    }
+    
+    @Override
+    public String getName() {
+        return "Number Of Bytes";
+    }
 
     @Override
-    public double getValue(Revision revision, VersionedItem versionedItem, VersionedProject versionedProject, ProjectRevisions projectRevisions) {
-        
+    String calculate(Revision revision, VersionedItem versionedItem, String[] auxiliarPaths) {
         long numberOfcharacters = 0;
         
         try{
-            File file = new File(TEMP_BRANCHES_HISTORY_PATH+versionedProject.getName()+"_"+revision.getId());
-            FileUtils.deleteDirectory(file);
-        
-        
-        
-            createDirectory(TEMP_BRANCHES_HISTORY_PATH+versionedProject.getName()+"_"+revision.getId());
-        
-            FileUtils.copyDirectory(new File(versionedProject.getRelativePath()), new File(TEMP_BRANCHES_HISTORY_PATH+versionedProject.getName()+"_"+revision.getId()));
-        
-            GitConnector gitConnector = new GitConnector(TEMP_BRANCHES_HISTORY_PATH+versionedProject.getName()+"_"+revision.getId(), versionedProject.getName());
+           
             
-            //FileUtils.deleteDirectory(new File(TEMP_BRANCHES_HISTORY_PATH+versionedProject.getName()+"_"+revision.getId()));
-        
-            //gitConnector = gitConnector.cloneRepository(versionedProject.getRelativePath(), TEMP_BRANCHES_HISTORY_PATH+versionedProject.getName()+"_"+revision.getId(),versionedProject.getName());
-            
+            GitConnector gitConnector = new GitConnector(auxiliarPaths[0] + versionedItem.getVersionedProject().getRelativePath(), versionedItem.getVersionedProject().getName());
+
+           
             Git git = new Git(gitConnector.getRepository());
             CheckoutCommand checkoutCommand = null;//git.checkout();
-            
+          
             checkoutCommand = git.checkout();
             checkoutCommand.setName(revision.getId());
                             
             checkoutCommand.call();
             
-            File dir = new File(TEMP_BRANCHES_HISTORY_PATH+versionedProject.getName()+"_"+revision.getId());
+            File dir = new File(auxiliarPaths[0] + versionedItem.getVersionedProject().getRelativePath());
             numberOfcharacters = getNumberOfCharacters(dir);
             
-            FileUtils.deleteDirectory(dir);
             
         }catch(Exception e){
             System.out.println("ERRO CALCULAR: "+e.getMessage());
         }
         
-        return numberOfcharacters;
+        return String.valueOf(numberOfcharacters);
     }
     
-    private void createDirectory(String name){
-        File file = new File(name);
-        if(!file.exists()){
-            file.mkdirs();
-        }
-    }
+
+    
     
     public long getNumberOfCharacters(File file){
         if(file.getName().startsWith(".")){
@@ -87,6 +81,8 @@ public class NumberOfBytes implements Metric{
             return size;
         }
     }
+
+
     
     
     

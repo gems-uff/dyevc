@@ -14,10 +14,9 @@ public class VersionedFile extends VersionedItem{
 
     private int type;
     private String name;
-    private String relativePath;
     
-    public VersionedFile(String name, String relativePath){
-        super();
+    public VersionedFile(String name, String relativePath, VersionedProject versionedProject){
+        super(versionedProject);
         this.name = name;    
         this.relativePath = relativePath;
         type = Constant.FILE;
@@ -26,11 +25,6 @@ public class VersionedFile extends VersionedItem{
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public String getRelativePath() {
-        return relativePath;
     }
 
     @Override

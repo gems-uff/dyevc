@@ -230,5 +230,11 @@
             <artifactId>mongo-java-driver</artifactId>
             <version>2.11.3</version>
         </dependency>
+        <dependency>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+            
     </dependencies>
 </project>

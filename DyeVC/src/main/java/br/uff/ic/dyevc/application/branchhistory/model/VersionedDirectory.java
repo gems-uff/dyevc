@@ -15,12 +15,11 @@ import java.util.List;
 public class VersionedDirectory extends VersionedItem{
     private int type;
     private String name;
-    private String relativePath;
     
     private List<VersionedItem> versionedItems;
     
-    public VersionedDirectory(String name, String relativePath){
-        super();
+    public VersionedDirectory(String name, String relativePath, VersionedProject versionedProject){
+        super(versionedProject);
         this.name = name;    
         this.relativePath = relativePath;
         type = Constant.DIRECTORY;
@@ -38,11 +37,6 @@ public class VersionedDirectory extends VersionedItem{
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public String getRelativePath() {
-        return relativePath;
     }
 
     @Override
