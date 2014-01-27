@@ -629,6 +629,7 @@ public class MainWindow extends javax.swing.JFrame {
                 mntShowBranchesHistoryActionPerformed(evt);
             }
         });
+        mntShowBranchesHistory.setEnabled(false);
         jPopupRepoTable.add(mntShowBranchesHistory);
 
         jPopupRepoTable.addSeparator();
