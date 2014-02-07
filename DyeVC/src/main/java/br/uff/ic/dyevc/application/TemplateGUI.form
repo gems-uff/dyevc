@@ -94,6 +94,9 @@
       </SubComponents>
     </Container>
     <Component class="br.uff.ic.dyevc.utils.ApplicationVersionUtils" name="applicationPropertiesBean1">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="br.uff.ic.dyevc.utils.ApplicationVersionUtils.getInstance()"/>
+      </AuxValues>
     </Component>
     <Component class="br.uff.ic.dyevc.model.MonitoredRepositories" name="monitoredRepositoriesBean1">
     </Component>

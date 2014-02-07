@@ -43,7 +43,7 @@ public class TemplateGUI extends javax.swing.JFrame {
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         AboutOK = new javax.swing.JButton();
-        applicationPropertiesBean1 = new br.uff.ic.dyevc.utils.ApplicationVersionUtils();
+        applicationPropertiesBean1 = br.uff.ic.dyevc.utils.ApplicationVersionUtils.getInstance();
         monitoredRepositoriesBean1 = new br.uff.ic.dyevc.model.MonitoredRepositories();
         settingsWindow = new javax.swing.JFrame();
         jPanel3 = new javax.swing.JPanel();

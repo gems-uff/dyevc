@@ -91,6 +91,7 @@ public class CommitDAO {
      * Retrieves a list of commits that match the filter criteria, filling only fields specified in returnFieldsFilter
      *
      * @param commitFilter Filter to be applied
+     * @param returnFieldsFilter Filter that includes fields that must be returned in the response.
      * @return List of commits that match the specified filter
      * @throws ServiceException
      */
@@ -159,7 +160,7 @@ public class CommitDAO {
         String          queryEnd   = "}";
         Set<CommitInfo> result     = new HashSet<CommitInfo>();
 
-        if (size < 3 * BULK_READ_UPDATE_COMMITS_SIZE) {
+        if (size > 3 * BULK_READ_UPDATE_COMMITS_SIZE) {
             int i = 0;
             int j = i + BULK_READ_UPDATE_COMMITS_SIZE;
             // size not too long, get just the specified hashes
@@ -256,6 +257,7 @@ public class CommitDAO {
 
         CommitFilter  filter = new CommitFilter();
         StringBuilder query  = new StringBuilder("{\"systemName\": \"").append(systemName).append("\"");
+
         if (considerAll) {
             query.append(", \"foundIn\": {$nin: ").append(
                 JsonSerializerUtils.serializeWithoutNulls(repositoryIds)).append("}}");
@@ -286,6 +288,7 @@ public class CommitDAO {
     /**
      * <p>
      * Retrieves a list of commits that are not found in any of the specified {@literal repositoryIds}.</p>
+     * <p>Both tracked and non tracked commits are retrieved.</p>
      *
      * @param repositoryIds The id of the repositories to look for commits not found in. At least one repositoryId
      * should be specified.

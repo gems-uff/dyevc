@@ -12,6 +12,7 @@ import java.net.URL;
 
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.StringTokenizer;
 
 /**
  * Reads application version from manifest file.
@@ -19,18 +20,62 @@ import java.util.jar.Manifest;
  * @author Cristiano
  */
 public class ApplicationVersionUtils {
-    private static String appVersion;
+    private static ApplicationVersionUtils instance;
+    private String                         appVersion;
+    private String                         major         = "";
+    private String                         minor         = "";
+    private String                         patch         = "";
+    private static final String            NOT_AVAILABLE = "not available";
 
-    public static String getAppVersion() {
-        if (appVersion == null) {
-            appVersion = getVersionFromManifest();
+    /**
+     * Constructs an instance of ApplicationVersionUtils
+     */
+    private ApplicationVersionUtils() {
+        appVersion = getVersionFromManifest();
+        appVersion = "0.2.14";
+
+        if (!NOT_AVAILABLE.equals(appVersion)) {
+            StringTokenizer tokens = new StringTokenizer(appVersion, ".");
+            if (tokens.hasMoreTokens()) {
+                major = tokens.nextToken();
+            }
+
+            if (tokens.hasMoreTokens()) {
+                minor = tokens.nextToken();
+            }
+
+            if (tokens.hasMoreTokens()) {
+                patch = tokens.nextToken();
+            }
+        }
+    }
+
+    public synchronized static ApplicationVersionUtils getInstance() {
+        if (instance == null) {
+            instance = new ApplicationVersionUtils();
         }
 
+        return instance;
+    }
+
+    public String getAppVersion() {
         return appVersion;
     }
 
-    private static String getVersionFromManifest() {
-        String out       = "not available";
+    public String getMajor() {
+        return major;
+    }
+
+    public String getMinor() {
+        return minor;
+    }
+
+    public String getPatch() {
+        return patch;
+    }
+
+    private String getVersionFromManifest() {
+        String out       = NOT_AVAILABLE;
 
         Class  clazz     = ApplicationVersionUtils.class;
         String className = clazz.getSimpleName() + ".class";

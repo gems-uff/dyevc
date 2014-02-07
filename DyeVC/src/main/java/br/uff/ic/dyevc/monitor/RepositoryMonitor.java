@@ -46,6 +46,7 @@ public class RepositoryMonitor extends Thread {
     private final String             currentApplicationVersion;
     private final TopologyUpdater    updater;
     private static RepositoryMonitor instance;
+    private boolean                  versionChanged;
 
     /**
      * Associates the specified window container and continuously monitors the specified list of repositories.
@@ -54,13 +55,14 @@ public class RepositoryMonitor extends Thread {
     private RepositoryMonitor() {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Entry.");
         settings                  = PreferencesManager.getInstance().loadPreferences();
-        currentApplicationVersion = ApplicationVersionUtils.getAppVersion();
+        currentApplicationVersion = ApplicationVersionUtils.getInstance().getAppVersion();
         this.updater              = new TopologyUpdater();
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Constructor -> Exit.");
     }
 
     /**
      * Provides the singleton instance
+     *
      * @return the singleton instance.
      */
     public synchronized static RepositoryMonitor getInstance() {
@@ -83,6 +85,13 @@ public class RepositoryMonitor extends Thread {
     public void run() {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Repository monitor is running.");
         int sleepTime = settings.getRefreshInterval() * 1000;
+
+        if (!(currentApplicationVersion.equals(settings.getLastApplicationVersionUsed()))) {
+            versionChanged = true;
+            settings.setLastApplicationVersionUsed(currentApplicationVersion);
+            PreferencesManager.getInstance().storePreferences(settings);
+        }
+
         try {
             checkWorkingFolder();
         } catch (DyeVCException ex) {
@@ -112,7 +121,7 @@ public class RepositoryMonitor extends Thread {
                         checkRepository(repositoryToMonitor);
 
                         if (!repositoryToMonitor.getRepStatus().isInvalid()) {
-                            updater.update(repositoryToMonitor, discardTopologyCache);
+                            updater.update(repositoryToMonitor, discardTopologyCache, versionChanged);
                         }
 
                         repositoryToMonitor = null;
@@ -131,7 +140,7 @@ public class RepositoryMonitor extends Thread {
                         checkRepository(monitoredRepository);
 
                         if (!monitoredRepository.getRepStatus().isInvalid()) {
-                            updater.update(monitoredRepository);
+                            updater.update(monitoredRepository, false, versionChanged);
                         }
                     }
 
@@ -142,11 +151,6 @@ public class RepositoryMonitor extends Thread {
                     MessageManager.getInstance().addMessage(
                         "Finished checking deleted repositories. Now persisting new information.");
                     PreferencesManager.getInstance().persistRepositories();
-
-                    if (!(currentApplicationVersion.equals(settings.getLastApplicationVersionUsed()))) {
-                        settings.setLastApplicationVersionUsed(currentApplicationVersion);
-                        PreferencesManager.getInstance().storePreferences(settings);
-                    }
                 }
 
                 container.notifyMessages(statusList);

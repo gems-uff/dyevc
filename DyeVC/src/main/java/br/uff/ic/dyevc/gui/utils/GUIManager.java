@@ -150,7 +150,7 @@ public class GUIManager {
             aboutPanel.add(memoryPanel, BorderLayout.NORTH);
 
             aboutPanel.setPreferredSize(new Dimension(400, 300));
-            String title = "About DyeVC (version " + ApplicationVersionUtils.getAppVersion() + ")";
+            String title = "About DyeVC (version " + ApplicationVersionUtils.getInstance().getAppVersion() + ")";
             JOptionPane.showMessageDialog(mainWindow, aboutPanel, title, JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException e) {
             showErrorDialog(e);

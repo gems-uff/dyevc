@@ -3,7 +3,6 @@ package br.uff.ic.dyevc.monitor;
 //~--- non-JDK imports --------------------------------------------------------
 
 import br.uff.ic.dyevc.application.IConstants;
-import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.MonitorException;
 import br.uff.ic.dyevc.exception.RepositoryReferencedException;
@@ -19,8 +18,6 @@ import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
-import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
-import br.uff.ic.dyevc.utils.PreferencesManager;
 import br.uff.ic.dyevc.utils.RepositoryConverter;
 import br.uff.ic.dyevc.utils.SystemUtils;
 
@@ -62,19 +59,13 @@ import java.util.TreeMap;
  * @author Cristiano
  */
 public class TopologyUpdater {
-    private final TopologyDAO             topologyDAO;
-    private final CommitDAO               commitDAO;
-    private final MonitoredRepositories   monitoredRepositories;
-    private RepositoryConverter           converter;
-    private MonitoredRepository           repositoryToUpdate;
-    private GitCommitTools                tools;
-    private final ApplicationSettingsBean settings;
-    private static final String           currentApplicationVersion;
-    private boolean                       discardCache;
-
-    static {
-        currentApplicationVersion = ApplicationVersionUtils.getAppVersion();
-    }
+    private final TopologyDAO           topologyDAO;
+    private final CommitDAO             commitDAO;
+    private final MonitoredRepositories monitoredRepositories;
+    private RepositoryConverter         converter;
+    private MonitoredRepository         repositoryToUpdate;
+    private GitCommitTools              tools;
+    private boolean                     discardCache;
 
     /**
      * Creates a new object of this type.
@@ -84,17 +75,7 @@ public class TopologyUpdater {
         topologyDAO           = new TopologyDAO();
         commitDAO             = new CommitDAO();
         monitoredRepositories = MonitoredRepositories.getInstance();
-        settings              = PreferencesManager.getInstance().loadPreferences();
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Constructor -> Exit.");
-    }
-
-    /**
-     * Updates the topology, without discarding the cache.
-     *
-     * @param repositoryToUpdate the repository to be updated
-     */
-    public void update(MonitoredRepository repositoryToUpdate) {
-        update(repositoryToUpdate, false);
     }
 
     /**
@@ -102,9 +83,10 @@ public class TopologyUpdater {
      *
      * @param repositoryToUpdate the repository to be updated
      * @param discardCache If true, discards existing snapshot, if any, and works as if it is the first time the
+     * @param versionChanged  If true, indicates that application version has changed.
      * repository is monitored.
      */
-    public void update(MonitoredRepository repositoryToUpdate, boolean discardCache) {
+    public void update(MonitoredRepository repositoryToUpdate, boolean discardCache, boolean versionChanged) {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Topology updater is running.");
 
         if (!repositoryToUpdate.hasSystemName()) {
@@ -293,6 +275,19 @@ public class TopologyUpdater {
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
                 currentSnapshot.size());
 
+            // If user asked to discard cache, remove this repository from the foundIn list in all commits.
+            if (discardCache) {
+                LoggerFactory.getLogger(TopologyUpdater.class).info(
+                    "{}:{}({}) -> The user asked to discard cache. This repository will be removed from all commits "
+                    + "in the topology before going on.", repositoryToUpdate.getSystemName(),
+                        repositoryToUpdate.getName(), repositoryToUpdate.getId());
+                commitDAO.removeRepositoryFromAllCommits(repositoryToUpdate.getSystemName(),
+                        repositoryToUpdate.getId());
+                LoggerFactory.getLogger(TopologyUpdater.class).info(
+                    "{}:{}({}) -> Removed this repository from all commits in the topology. Will now proceed.",
+                    repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId());
+            }
+
             // Identifies new local commit(s) since previous snapshot
             ArrayList<CommitInfo> newCommits;
             if (previousSnapshot == null) {
@@ -385,7 +380,7 @@ public class TopologyUpdater {
                 commitsToUpdate.size());
 
             if (!commitsToUpdate.isEmpty()) {
-                updateCommits(commitsToUpdate);
+                updateCommits(commitsToUpdate, commitsNotFoundInSomeRepsWithoutDeletions);
             }
 
             // removes orphaned commits (those that remained with an empty foundIn list.
@@ -468,10 +463,6 @@ public class TopologyUpdater {
      */
     private ArrayList<CommitInfo> retrieveSnapshot() throws DyeVCException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("retrieveSnapshot -> Entry.");
-
-//      if (!currentApplicationVersion.equals(settings.getLastApplicationVersionUsed())) {
-//          return null;
-//      }
 
         if (discardCache) {
             LoggerFactory.getLogger(TopologyUpdater.class).info("{}:{}({}) -> Snapshot was requested to be discarded.",
@@ -580,6 +571,7 @@ public class TopologyUpdater {
         repositoryIds.addAll(info.getPullsFrom());
         repositoryIds.addAll(info.getPushesTo());
 
+        // Retrieves all tracked commits not found in any repository from repositoryIds
         Set<CommitInfo> commitsNotFound = commitDAO.getCommitsNotFoundInRepositories(repositoryIds,
                                               info.getSystemName(), false);
 
@@ -679,9 +671,12 @@ public class TopologyUpdater {
      * commit. updateableCommits commitsToUpdate the list of commits to be updated
      *
      * @param commitsToUpdate Commits to be updated.
+     * @param commitsNotFoundInSomeRepsWithoutDeletions All commits that are not found in some reps.
      * @throws DyeVCException
      */
-    private void updateCommits(ArrayList<CommitInfo> commitsToUpdate) throws DyeVCException {
+    private void updateCommits(ArrayList<CommitInfo> commitsToUpdate,
+                               ArrayList<CommitInfo> commitsNotFoundInSomeRepsWithoutDeletions)
+            throws DyeVCException {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("updateCommits -> Entry.");
 
         commitsToUpdate = updateWhereExists(commitsToUpdate);
@@ -713,7 +708,8 @@ public class TopologyUpdater {
 
         for (String repId : commitsToUpdateByRepository.keySet()) {
             List<CommitInfo>      cis             = commitsToUpdateByRepository.get(repId);
-            ArrayList<CommitInfo> notToUpdateList = (ArrayList)CollectionUtils.subtract(commitsToUpdate, cis);
+            ArrayList<CommitInfo> notToUpdateList =
+                (ArrayList)CollectionUtils.subtract(commitsNotFoundInSomeRepsWithoutDeletions, cis);
             LoggerFactory.getLogger(TopologyUpdater.class).info(
                 "{}:{}({}) -> {} commits must be updated to include repository {} and {} should not.",
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
