@@ -4,7 +4,6 @@ package br.uff.ic.dyevc.graph.transform.commithistory;
 
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.model.CommitInfo;
-import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 
 import edu.uci.ics.jung.graph.Graph;
 
@@ -15,9 +14,6 @@ import org.apache.commons.collections15.Transformer;
 import java.awt.Paint;
 
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 
 /**
  * Transformer to paint vertices in a commit history graph, according to its presence in local and related repositories.
@@ -25,51 +21,6 @@ import java.util.TreeMap;
  * @author Cristiano
  */
 public class CHTopologyVertexPaintTransformer implements Transformer<Object, Paint> {
-    private final RepositoryInfo info;
-
-    /**
-     * Map of commits not found in any of the repositories that {@link #rep} pushes from.
-     */
-    Map<String, CommitInfo> notInPushListMap;
-
-    /**
-     * Map of commits not found in any of the repositories that {@link #rep} pulls to.
-     */
-    Map<String, CommitInfo> notInPullListMap;
-
-    /**
-     * Map of commits not found locally in {@link #rep}.
-     */
-    Map<String, CommitInfo> notInLocalRepositoryListMap;
-
-    /**
-     * Constructs a transformer.
-     *
-     * @param info RepositoryInfo to use to check related repositories.
-     * @param notInPushList the set of commits that do not exist in any repositories in the push list.
-     * @param notInPullList the set of commits that do not exist in any repositories in the pull list.
-     * @param notInRepList the set of commits that do not exist locally.
-     */
-    public CHTopologyVertexPaintTransformer(RepositoryInfo info, final Set<CommitInfo> notInPushList,
-            final Set<CommitInfo> notInPullList, final Set<CommitInfo> notInRepList) {
-        this.info                   = info;
-        notInPushListMap            = new TreeMap<String, CommitInfo>();
-        notInPullListMap            = new TreeMap<String, CommitInfo>();
-        notInLocalRepositoryListMap = new TreeMap<String, CommitInfo>();
-
-        for (CommitInfo ci : notInPushList) {
-            notInPushListMap.put(ci.getHash(), ci);
-        }
-
-        for (CommitInfo ci : notInPullList) {
-            notInPullListMap.put(ci.getHash(), ci);
-        }
-
-        for (CommitInfo ci : notInRepList) {
-            notInLocalRepositoryListMap.put(ci.getHash(), ci);
-        }
-    }
-
     /**
      * Paints according to its presence in local and related repositories.
      * <p>
@@ -96,52 +47,8 @@ public class CHTopologyVertexPaintTransformer implements Transformer<Object, Pai
 
         if (o instanceof CommitInfo) {
             CommitInfo ci = (CommitInfo)o;
-            if (ci.getType() != IConstants.COMMIT_MASK_NOT_SET) {
-                return getColor(ci.getType());
-            }
 
-            boolean allHave = !(notInLocalRepositoryListMap.containsKey(ci.getHash())
-                                || notInPushListMap.containsKey(ci.getHash()));
-
-            boolean iHavePushDoesnt = !notInLocalRepositoryListMap.containsKey(ci.getHash())
-                                      && notInPushListMap.containsKey(ci.getHash());
-
-            boolean iDontHaveSomePullHas = notInLocalRepositoryListMap.containsKey(ci.getHash())
-                                           &&!notInPullListMap.containsKey(ci.getHash());
-
-            boolean noOneKnownHas = notInLocalRepositoryListMap.containsKey(ci.getHash())
-                                    && notInPushListMap.containsKey(ci.getHash())
-                                    && notInPullListMap.containsKey(ci.getHash());
-
-            if (!ci.isTracked()) {
-                ci.setType(IConstants.COMMIT_MASK_NOT_TRACKED);
-
-                return getColor(ci.getType());
-            }
-
-            if (allHave) {
-                ci.setType(IConstants.COMMIT_MASK_ALL_HAVE);
-
-                return getColor(ci.getType());
-            }
-
-            if (iHavePushDoesnt) {
-                ci.setType(IConstants.COMMIT_MASK_I_HAVE_PUSH_DONT);
-
-                return getColor(ci.getType());
-            }
-
-            if (iDontHaveSomePullHas) {
-                ci.setType(IConstants.COMMIT_MASK_I_DONT_PULL_HAS);
-
-                return getColor(ci.getType());
-            }
-
-            if (noOneKnownHas) {
-                ci.setType(IConstants.COMMIT_MASK_NON_RELATED_HAS);
-
-                return getColor(ci.getType());
-            }
+            return getColor(ci.getType());
         }
 
         return paint;

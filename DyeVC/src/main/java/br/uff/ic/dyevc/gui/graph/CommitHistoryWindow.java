@@ -56,6 +56,7 @@ import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Toolkit;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -81,6 +82,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private DirectedOrderedSparseMultigraph collapsedGraph;
     private VisualizationViewer             vv;
     private RepositoryHistoryLayout         layout;
+    private boolean                         isCollapsed;
     private GraphCollapser                  collapser;
     Filter<CommitInfo, CommitRelationship>  edgeFilter;
     Filter<CommitInfo, CommitRelationship>  nodeFilter;
@@ -89,6 +91,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private JButton                         plus;
     private JButton                         minus;
     private JButton                         collapse;
+    private JButton                         collapseByType;
     private JButton                         expand;
     private JButton                         reset;
     private JButton                         btnHelp;
@@ -164,7 +167,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         mouseModesCombo.addItemListener(graphMouse.getModeListener());
         graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
 
-
         plus = new JButton("+");
         plus.addActionListener(new ActionListener() {
             @Override
@@ -186,6 +188,14 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 collapseActionPerformed(e);
+            }
+        });
+
+        collapseByType = new JButton("Collapse By Type");
+        collapseByType.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                collapseByTypeActionPerformed(e);
             }
         });
 
@@ -241,6 +251,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         collapseControls.add(expand);
         collapseControls.add(reset);
         controls.add(collapseControls);
+        controls.add(collapseByType);
         controls.add(mouseModesCombo);
         controls.add(edgeLineShapeCombo);
         controls.add(btnHelp);
@@ -258,6 +269,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         graph = GraphBuilder.createBasicRepositoryHistoryGraph(tools);
         GraphDomainMapper<Map<String, CommitInfo>> mapper = new GraphDomainMapper(graph, tools.getCommitInfoMap());
         collapsedGraph = graph;
+        isCollapsed    = false;
         Dimension preferredSize = new Dimension(580, 580);
 
         // Choosing layout
@@ -308,22 +320,17 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         ToolTipManager.sharedInstance().setDismissDelay(15000);
 
         // </editor-fold>
-
         // <editor-fold defaultstate="collapsed" desc="vertex fillPaint transformer">
-        Transformer<Object, Paint> vertexPaint = new CHTopologyVertexPaintTransformer(info,
-                                                     tools.getCommitsNotInPushList(), tools.getCommitsNotInPullList(),
-                                                     tools.getCommitsNotFoundLocally());
+        Transformer<Object, Paint> vertexPaint = new CHTopologyVertexPaintTransformer();
         vv.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
 
         // </editor-fold>
-
         // <editor-fold defaultstate="collapsed" desc="vertex label transformer">
         Transformer<Object, String> vertexLabel = new CHVertexLabelTransformer();
         vv.getRenderContext().setVertexLabelTransformer(vertexLabel);
         vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
 
         // </editor-fold>
-
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.CubicCurve());
         vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeTransformer());
     }
@@ -334,6 +341,10 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private void collapseActionPerformed(ActionEvent evt) {
         Collection picked = new HashSet(vv.getPickedVertexState().getPicked());
         collapse(picked);
+    }
+
+    private void collapseByTypeActionPerformed(ActionEvent evt) {
+        collapseByType();
     }
 
     private void expandActionPerformed(ActionEvent e) {
@@ -387,6 +398,102 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 //      RemoveFilters();
     }
 
+    private void collapseByType() {
+        layout.setGraph(graph);
+        collapsedGraph = graph;
+        Collection allHave        = new ArrayList();
+        Collection iHavePushDont  = new ArrayList();
+        Collection iDontPullHas   = new ArrayList();
+        Collection nonRelatedHas  = new ArrayList();
+        Collection notTracked     = new ArrayList();
+        Point2D    previousCoords = null;
+        for (Object o : layout.getGraph().getVertices()) {
+            CommitInfo ci = (CommitInfo)o;
+            if (layout.getGraph().getSuccessorCount(o) == 0) {
+                previousCoords = layout.transform(o);
+            }
+
+            switch (ci.getType()) {
+            case IConstants.COMMIT_MASK_ALL_HAVE :
+                if (layout.getGraph().getSuccessorCount(o) != 0) {
+                    allHave.add(o);
+                }
+
+                break;
+
+            case IConstants.COMMIT_MASK_I_HAVE_PUSH_DONT :
+                iHavePushDont.add(o);
+
+                break;
+
+            case IConstants.COMMIT_MASK_I_DONT_PULL_HAS :
+                iDontPullHas.add(o);
+
+                break;
+
+            case IConstants.COMMIT_MASK_NON_RELATED_HAS :
+                nonRelatedHas.add(o);
+
+                break;
+
+            case IConstants.COMMIT_MASK_NOT_TRACKED :
+                notTracked.add(o);
+
+                break;
+            }
+        }
+
+        Point2D newCoords = previousCoords;
+        if (allHave.size() > 0) {
+            newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+                                           previousCoords.getY());
+            doCollapseByType(allHave, newCoords);
+            previousCoords = newCoords;
+        }
+
+        if (iHavePushDont.size() > 0) {
+            newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+                                           previousCoords.getY());
+            doCollapseByType(iHavePushDont, newCoords);
+            previousCoords = newCoords;
+        }
+
+        if (notTracked.size() > 0) {
+            newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+                                           previousCoords.getY() + 2 * RepositoryHistoryLayout.XDISTANCE);
+            doCollapseByType(notTracked, newCoords);
+        }
+
+        if (iDontPullHas.size() > 0) {
+            newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+                                           previousCoords.getY());
+            doCollapseByType(iDontPullHas, newCoords);
+            previousCoords = newCoords;
+        }
+
+        if (nonRelatedHas.size() > 0) {
+            newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+                                           previousCoords.getY());
+            doCollapseByType(nonRelatedHas, newCoords);
+            previousCoords = newCoords;
+        }
+
+        vv.getRenderContext().getParallelEdgeIndexFunction().reset();
+        vv.getPickedVertexState().clear();
+        isCollapsed = true;
+        translateGraph();
+        vv.repaint();
+    }
+
+    private void doCollapseByType(Collection picked, Point2D coords) {
+        Graph inGraph      = layout.getGraph();
+        Graph clusterGraph = collapser.getClusterGraph(inGraph, picked);
+
+        collapsedGraph = ((DirectedOrderedSparseMultigraph)collapser.collapse(inGraph, clusterGraph));
+        layout.setGraph(collapsedGraph);
+        layout.setLocation(clusterGraph, coords);
+    }
+
     private void expand(Collection picked) {
         for (Object v : picked) {
             if (v instanceof Graph) {
@@ -400,7 +507,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
 //          RemoveFilters();
 //          Filter();
-
             vv.getPickedVertexState().clear();
             vv.repaint();
         }
@@ -409,7 +515,9 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private void resetGraph() {
         layout.setGraph(graph);
         collapsedGraph = graph;
+        isCollapsed    = false;
         layout.initialize();
+        translateGraph();
         vv.repaint();
     }
 
@@ -428,7 +536,10 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * runs the graph with a demo repository
      */
     public static void main(String[] args) {
-        MonitoredRepository rep = new MonitoredRepository("rep1376735192420");
+        MonitoredRepository rep = new MonitoredRepository("rep1391645758732");
+        rep.setCloneAddress("F:\\mybackups\\Educacao\\Mestrado-UFF\\Git\\saposTeste");
+        rep.setName("saposTeste");
+        rep.setSystemName("sapos");
 
 //      rep.setId("rep1364318989748");
         new CommitHistoryWindow(rep).setVisible(true);
@@ -440,13 +551,19 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private void translateGraph() {
         MutableTransformer modelTransformer =
             vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT);
-
+        float dx;
+        float dy;
         int   lastXPosition = graph.getVertexCount() * (int)RepositoryHistoryLayout.XDISTANCE;
         int   showPosition  = lastXPosition - vv.getPreferredSize().width;
         Point graphEnd      = new Point(layout.getWidth() - vv.getPreferredSize().width, 0);
         Point graphStart    = new Point(0, 0);
-        float dx            = (float)(graphStart.getX() - graphEnd.getX());
-        float dy            = (float)(graphStart.getY() - graphEnd.getY());
+        if (isCollapsed) {
+            dx = (float)(showPosition);
+            dy = (float)(graphEnd.getY() - graphStart.getY());
+        } else {
+            dx = (float)(graphStart.getX() - graphEnd.getX());
+            dy = (float)(graphStart.getY() - graphEnd.getY());
+        }
 
         modelTransformer.translate(dx, dy);
     }

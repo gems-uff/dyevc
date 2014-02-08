@@ -2,6 +2,7 @@ package br.uff.ic.dyevc.graph;
 
 //~--- non-JDK imports --------------------------------------------------------
 
+import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.gui.core.MessageManager;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 //~--- JDK imports ------------------------------------------------------------
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -35,6 +37,10 @@ import java.util.Set;
  * @author Cristiano
  */
 public class GraphBuilder {
+    static Set<CommitInfo> notInPushList;
+    static Set<CommitInfo> notInPullList;
+    static Set<CommitInfo> notInRepList;
+
     /**
      * Creates a dag representing the commit history for the specified repository
      *
@@ -48,8 +54,14 @@ public class GraphBuilder {
         LoggerFactory.getLogger(GraphBuilder.class).trace("createBasicRepositoryHistoryGraph -> Entry");
         final DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship> graph =
             new DirectedOrderedSparseMultigraph<CommitInfo, CommitRelationship>();
+
+        notInPushList = tools.getCommitsNotInPushList();
+        notInPullList = tools.getCommitsNotInPullList();
+        notInRepList  = tools.getCommitsNotFoundLocally();
+
         try {
             for (CommitInfo commitInfo : tools.getCommitInfos()) {
+                adjustCommitType(commitInfo);
                 graph.addVertex(commitInfo);
             }
 
@@ -113,5 +125,38 @@ public class GraphBuilder {
         LoggerFactory.getLogger(GraphBuilder.class).trace("createTopologyGraph -> Exit");
 
         return graph;
+    }
+
+    private static void adjustCommitType(CommitInfo ci) {
+        boolean allHave              = !(notInRepList.contains(ci)) || notInPushList.contains(ci);
+
+        boolean iHavePushDoesnt      = !notInRepList.contains(ci) && notInPushList.contains(ci);
+
+        boolean iDontHaveSomePullHas = notInRepList.contains(ci) &&!notInPullList.contains(ci);
+
+        boolean noOneKnownHas        = notInRepList.contains(ci) && notInPushList.contains(ci)
+                                       && notInPullList.contains(ci);
+
+        if (!ci.isTracked()) {
+            ci.setType(IConstants.COMMIT_MASK_NOT_TRACKED);
+
+            return;
+        }
+
+        if (allHave) {
+            ci.setType(IConstants.COMMIT_MASK_ALL_HAVE);
+        }
+
+        if (iHavePushDoesnt) {
+            ci.setType(IConstants.COMMIT_MASK_I_HAVE_PUSH_DONT);
+        }
+
+        if (iDontHaveSomePullHas) {
+            ci.setType(IConstants.COMMIT_MASK_I_DONT_PULL_HAS);
+        }
+
+        if (noOneKnownHas) {
+            ci.setType(IConstants.COMMIT_MASK_NON_RELATED_HAS);
+        }
     }
 }

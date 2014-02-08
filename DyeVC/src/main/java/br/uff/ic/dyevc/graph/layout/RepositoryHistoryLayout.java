@@ -39,9 +39,11 @@ import javax.swing.JOptionPane;
 public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implements IterativeContext {
     private V firstCommit = null;
 
-    /** Field description */
-    public static final double  XDISTANCE = 70.0;
-    private static final double YDISTANCE = 70.0;
+    /** X distance between two nodes */
+    public static final double XDISTANCE = 70.0;
+
+    /** Y distance between two branches */
+    public static final double  YDISTANCE = 70.0;
     private static final double EPSILON   = 0.000001D;
 
     /**
