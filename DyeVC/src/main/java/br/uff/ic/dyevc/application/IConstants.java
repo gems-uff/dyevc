@@ -57,6 +57,27 @@ public interface IConstants {
     /** Color used to identify a node that holds collapsed nodes. */
     public static final Color COLOR_COLLAPSED = Color.MAGENTA;
 
+    /** Mask used to identify a commit for which type has not yet been determined. */
+    public static final byte COMMIT_MASK_NOT_SET = 0;
+
+    /** Mask used to identify a commit that all related repositories have. */
+    public static final byte COMMIT_MASK_ALL_HAVE = 1 << 1;
+
+    /** Mask used to identify a commit that I have but no repositories I push to have. */
+    public static final byte COMMIT_MASK_I_HAVE_PUSH_DONT = 1 << 2;
+
+    /** Mask used to identify a commit that I don't have bot someone I pull from has. */
+    public static final byte COMMIT_MASK_I_DONT_PULL_HAS = 1 << 3;
+
+    /** Mask used to identify a commit located in a repository not related to the one being analyzed. */
+    public static final byte COMMIT_MASK_NON_RELATED_HAS = 1 << 4;
+
+    /** Mask used to identify a commit that does not belong to a tracked branch and thus cannot be sent to other repositories. */
+    public static final byte COMMIT_MASK_NOT_TRACKED = 1 << 5;
+
+    /** Mask used to identify a collapsed node. */
+    public static final byte COMMIT_MASK_COLLAPSED = 1 << 6;
+
     /** Color used to identify a commit that all related repositories have. */
     public static final Color TOPOLOGY_COLOR_ALL_HAVE = Color.WHITE;
 

@@ -14,6 +14,7 @@ import org.apache.commons.collections15.Transformer;
 
 import java.awt.Paint;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -71,10 +72,18 @@ public class CHTopologyVertexPaintTransformer implements Transformer<Object, Pai
 
     /**
      * Paints according to its presence in local and related repositories.
-     * <p>If vertex exists in all related repositories, it is painted in white.
-     * <p>If vertex exists locally but do not exists in any push list, it is painted in red.
-     * <p>If vertex exists in any pull list but not locally, it is painted in green.
-     * <p>Finally, if vertex exists in a node not related to the local one, it is painted gray.
+     * <p>
+     * If vertex exists in all related repositories, it is painted in white.</p>
+     * <p>
+     * If vertex exists locally but do not exists in any push list, it is painted in red.</p>
+     * <p>
+     * If vertex exists in any pull list but not locally, it is painted in green.</p>
+     * <p>
+     * Finally, if vertex exists in a node not related to the local one, it is painted gray.</p>
+     * <p>
+     * For collapsed nodes, color is chosen according to the contained nodes, following same rule
+     * (mixed collapsed nodes are painted in magenta.</p>
+     *
      * @param o the Object to be transformed. It can be either a Graph with collapsed nodes or a CommitInfo
      * @return the color to be used to paint the vertex
      */
@@ -82,13 +91,17 @@ public class CHTopologyVertexPaintTransformer implements Transformer<Object, Pai
     public Paint transform(Object o) {
         Paint paint = IConstants.COLOR_COLLAPSED;
         if (o instanceof Graph) {
-            return paint;
+            return getColor(getType((Graph)o));
         }
 
         if (o instanceof CommitInfo) {
-            CommitInfo ci      = (CommitInfo)o;
-            boolean    allHave = !(notInLocalRepositoryListMap.containsKey(ci.getHash())
-                                   || notInPushListMap.containsKey(ci.getHash()));
+            CommitInfo ci = (CommitInfo)o;
+            if (ci.getType() != IConstants.COMMIT_MASK_NOT_SET) {
+                return getColor(ci.getType());
+            }
+
+            boolean allHave = !(notInLocalRepositoryListMap.containsKey(ci.getHash())
+                                || notInPushListMap.containsKey(ci.getHash()));
 
             boolean iHavePushDoesnt = !notInLocalRepositoryListMap.containsKey(ci.getHash())
                                       && notInPushListMap.containsKey(ci.getHash());
@@ -101,26 +114,112 @@ public class CHTopologyVertexPaintTransformer implements Transformer<Object, Pai
                                     && notInPullListMap.containsKey(ci.getHash());
 
             if (!ci.isTracked()) {
-                return IConstants.TOPOLOGY_COLOR_NOT_TRACKED;
+                ci.setType(IConstants.COMMIT_MASK_NOT_TRACKED);
+
+                return getColor(ci.getType());
             }
 
             if (allHave) {
-                return IConstants.TOPOLOGY_COLOR_ALL_HAVE;
+                ci.setType(IConstants.COMMIT_MASK_ALL_HAVE);
+
+                return getColor(ci.getType());
             }
 
             if (iHavePushDoesnt) {
-                return IConstants.TOPOLOGY_COLOR_I_HAVE_PUSH_DONT;
+                ci.setType(IConstants.COMMIT_MASK_I_HAVE_PUSH_DONT);
+
+                return getColor(ci.getType());
             }
 
             if (iDontHaveSomePullHas) {
-                return IConstants.TOPOLOGY_COLOR_I_DONT_PULL_HAS;
+                ci.setType(IConstants.COMMIT_MASK_I_DONT_PULL_HAS);
+
+                return getColor(ci.getType());
             }
 
             if (noOneKnownHas) {
-                return IConstants.TOPOLOGY_COLOR_NON_RELATED_HAS;
+                ci.setType(IConstants.COMMIT_MASK_NON_RELATED_HAS);
+
+                return getColor(ci.getType());
             }
         }
 
         return paint;
+    }
+
+    /**
+     * Return the type of a graph, according to the type of contained commits. If all contained commits are of the
+     * same type, returns that type. If at least one of the contained commits is of a different type, returns a generic
+     * collapsed type. This function is recursive, because a collapsed node may contain other collapsed nodes.
+     * @param g The graph for which the type is desired.
+     * @return The type of the graph.
+     */
+    private byte getType(Graph g) {
+        byte     result = IConstants.COMMIT_MASK_COLLAPSED;
+        Iterator it     = g.getVertices().iterator();
+        Object   first  = it.next();
+        byte     type;
+        if (first instanceof Graph) {
+            type = getType((Graph)first);
+        }
+
+        if (first instanceof CommitInfo) {
+            type = ((CommitInfo)first).getType();
+
+            while (it.hasNext()) {
+                Object next = it.next();
+                byte   typeNext;
+                if (next instanceof CommitInfo) {
+                    typeNext = ((CommitInfo)next).getType();
+                } else {
+                    typeNext = getType((Graph)next);
+                }
+
+                if (typeNext != type) {
+                    return result;
+                }
+            }
+
+            return type;
+        }
+
+        return result;
+    }
+
+    /**
+     * Gets the color according to the mask informed.
+     * @param colorMask the Mask for which a color is desired.
+     * @return The color that matches the specified mask.
+     */
+    private Paint getColor(byte colorMask) {
+        Paint result = IConstants.COLOR_COLLAPSED;
+        switch (colorMask) {
+        case IConstants.COMMIT_MASK_NOT_TRACKED :
+            result = IConstants.TOPOLOGY_COLOR_NOT_TRACKED;
+
+            break;
+
+        case IConstants.COMMIT_MASK_ALL_HAVE :
+            result = IConstants.TOPOLOGY_COLOR_ALL_HAVE;
+
+            break;
+
+        case IConstants.COMMIT_MASK_I_HAVE_PUSH_DONT :
+            result = IConstants.TOPOLOGY_COLOR_I_HAVE_PUSH_DONT;
+
+            break;
+
+        case IConstants.COMMIT_MASK_I_DONT_PULL_HAS :
+            result = IConstants.TOPOLOGY_COLOR_I_DONT_PULL_HAS;
+
+            break;
+
+        case IConstants.COMMIT_MASK_NON_RELATED_HAS :
+            result = IConstants.TOPOLOGY_COLOR_NON_RELATED_HAS;
+
+            break;
+        }
+
+        return result;
     }
 }

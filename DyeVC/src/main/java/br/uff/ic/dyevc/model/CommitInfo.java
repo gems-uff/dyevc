@@ -26,7 +26,7 @@ import java.util.TreeSet;
 @JsonIgnoreProperties(
     value = {
         "repositoryId", "inWalk", "parentsCount", "parentsCountLock", "childrenCount", "childrenCountLock", "changeSet",
-        "visited", "author", "flags", "previousFoundIn"
+        "visited", "author", "flags", "previousFoundIn", "type"
     },
     ignoreUnknown = true
 )
@@ -87,6 +87,15 @@ public class CommitInfo implements Comparable<CommitInfo>, Serializable {
     private Set<String> foundIn;
     private Set<String> previousFoundIn;
     private boolean     tracked;
+    private byte        type;
+
+    public byte getType() {
+        return type;
+    }
+
+    public void setType(byte type) {
+        this.type = type;
+    }
 
     public boolean isTracked() {
         return tracked;
