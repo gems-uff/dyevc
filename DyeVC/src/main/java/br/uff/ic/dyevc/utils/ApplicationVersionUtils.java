@@ -32,7 +32,6 @@ public class ApplicationVersionUtils {
      */
     private ApplicationVersionUtils() {
         appVersion = getVersionFromManifest();
-        appVersion = "0.2.14";
 
         if (!NOT_AVAILABLE.equals(appVersion)) {
             StringTokenizer tokens = new StringTokenizer(appVersion, ".");
