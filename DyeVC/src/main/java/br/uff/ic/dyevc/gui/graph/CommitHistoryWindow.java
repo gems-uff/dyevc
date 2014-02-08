@@ -224,8 +224,10 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         });
 
         Container           content = getContentPane();
+        Container           panel   = new JPanel(new BorderLayout());
+
         GraphZoomScrollPane gzsp    = new GraphZoomScrollPane(vv);
-        content.add(gzsp);
+        panel.add(gzsp);
 
         JPanel controls     = new JPanel();
         JPanel zoomControls = new JPanel(new GridLayout(2, 1));
@@ -242,6 +244,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         controls.add(mouseModesCombo);
         controls.add(edgeLineShapeCombo);
         controls.add(btnHelp);
+        content.add(panel);
         content.add(controls, BorderLayout.SOUTH);
     }    // </editor-fold>
 
@@ -255,11 +258,10 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         graph = GraphBuilder.createBasicRepositoryHistoryGraph(tools);
         GraphDomainMapper<Map<String, CommitInfo>> mapper = new GraphDomainMapper(graph, tools.getCommitInfoMap());
         collapsedGraph = graph;
+        Dimension preferredSize = new Dimension(580, 580);
 
         // Choosing layout
-        layout = new RepositoryHistoryLayout(mapper, rep);
-
-        Dimension                preferredSize      = new Dimension(580, 580);
+        layout = new RepositoryHistoryLayout(mapper, rep, preferredSize);
 
         final VisualizationModel visualizationModel = new DefaultVisualizationModel(layout, preferredSize);
         vv = new VisualizationViewer(visualizationModel, preferredSize);

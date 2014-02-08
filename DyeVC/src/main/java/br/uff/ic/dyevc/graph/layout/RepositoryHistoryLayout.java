@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 //~--- JDK imports ------------------------------------------------------------
 
+import java.awt.Dimension;
 import java.awt.geom.Point2D;
 
 import java.util.ArrayList;
@@ -90,9 +91,11 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      * Creates an instance for the specified graph.
      * @param mapper The {@link #GraphDomainMapper} to be used
      * @param rep The monitored repository to create the layout to
+     * @param size the size of the layout
      */
-    public RepositoryHistoryLayout(GraphDomainMapper<Map<String, CommitInfo>> mapper, MonitoredRepository rep) {
-        super(mapper.getGraph());
+    public RepositoryHistoryLayout(GraphDomainMapper<Map<String, CommitInfo>> mapper, MonitoredRepository rep,
+                                   Dimension size) {
+        super(mapper.getGraph(), size);
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("Constructor -> Entry");
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).debug(
             "Constructor -> Graph has {} nodes to be plotted.", graph.getVertexCount());
