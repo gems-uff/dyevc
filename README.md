@@ -20,9 +20,10 @@ DyeVC does not need to be formally installed. As it uses [Java Web Start technol
 
 [![Launch DyeVC](DyeVC/src/main/resources/LaunchDyeVCButton.png "Launch DyeVC")](http://www.ic.uff.br/~ccesario/DyeVC/DyeVC.jnlp)
 
-#Papers
+#Documentation
 
 * [Article presented at the 1st Brazilian Workshop on Software Visualization, Evolution and Maintenance](http://www.ic.uff.br/~ccesario/DyeVC_VEM2013.pdf)
+* [Wiki](https://github.com/gems-uff/dyevc/wiki)
 
 #Development
 
