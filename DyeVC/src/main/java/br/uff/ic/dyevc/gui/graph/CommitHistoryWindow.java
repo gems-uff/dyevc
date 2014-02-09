@@ -91,9 +91,10 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private JButton                         plus;
     private JButton                         minus;
     private JButton                         collapse;
-    private JButton                         collapseByType;
     private JButton                         expand;
     private JButton                         reset;
+    private JButton                         collapseByType;
+    private JButton                         resetByType;
     private JButton                         btnHelp;
     private final DefaultModalGraphMouse    graphMouse   = new DefaultModalGraphMouse<CommitInfo, CommitRelationship>();
     private final ScalingControl            scaler       = new CrossoverScalingControl();
@@ -191,14 +192,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             }
         });
 
-        collapseByType = new JButton("Collapse By Type");
-        collapseByType.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                collapseByTypeActionPerformed(e);
-            }
-        });
-
         expand = new JButton("Expand");
         expand.addActionListener(new ActionListener() {
             @Override
@@ -212,6 +205,22 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ResetActionPerformed(e);
+            }
+        });
+
+        collapseByType = new JButton("Collapse By Type");
+        collapseByType.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                collapseByTypeActionPerformed(e);
+            }
+        });
+
+        resetByType = new JButton("Reset All Types");
+        resetByType.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                resetAllTypesActionPerformed(e);
             }
         });
 
@@ -251,7 +260,11 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         collapseControls.add(expand);
         collapseControls.add(reset);
         controls.add(collapseControls);
-        controls.add(collapseByType);
+        JPanel collapseControlsByType = new JPanel(new GridLayout(2, 1));
+        collapseControlsByType.setBorder(BorderFactory.createTitledBorder("Collapse By Type"));
+        collapseControlsByType.add(collapseByType);
+        collapseControlsByType.add(resetByType);
+        controls.add(collapseControlsByType);
         controls.add(mouseModesCombo);
         controls.add(edgeLineShapeCombo);
         controls.add(btnHelp);
@@ -320,11 +333,13 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         ToolTipManager.sharedInstance().setDismissDelay(15000);
 
         // </editor-fold>
+
         // <editor-fold defaultstate="collapsed" desc="vertex fillPaint transformer">
         Transformer<Object, Paint> vertexPaint = new CHTopologyVertexPaintTransformer();
         vv.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
 
         // </editor-fold>
+
         // <editor-fold defaultstate="collapsed" desc="vertex label transformer">
         Transformer<Object, String> vertexLabel = new CHVertexLabelTransformer();
         vv.getRenderContext().setVertexLabelTransformer(vertexLabel);
@@ -345,6 +360,10 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
     private void collapseByTypeActionPerformed(ActionEvent evt) {
         collapseByType();
+    }
+
+    private void resetAllTypesActionPerformed(ActionEvent evt) {
+        resetAllTypes();
     }
 
     private void expandActionPerformed(ActionEvent e) {
@@ -512,12 +531,16 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         }
     }
 
+    private void resetAllTypes() {
+        resetGraph();
+        translateGraph();
+    }
+
     private void resetGraph() {
         layout.setGraph(graph);
         collapsedGraph = graph;
         isCollapsed    = false;
         layout.initialize();
-        translateGraph();
         vv.repaint();
     }
 
