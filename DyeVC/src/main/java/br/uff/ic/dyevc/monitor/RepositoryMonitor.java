@@ -16,6 +16,7 @@ import br.uff.ic.dyevc.tools.vcs.git.GitTools;
 import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
 import br.uff.ic.dyevc.utils.PreferencesManager;
 
+import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.FileUtils;
 
 import org.slf4j.LoggerFactory;
@@ -318,8 +319,9 @@ public class RepositoryMonitor extends Thread {
      */
     private void checkOrphanedFolders(File workingFolder) {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("checkOrphanedFolders -> Entry.");
-        String[] tmpFolders = workingFolder.list();
+        String[] tmpFolders = workingFolder.list(FileFilterUtils.directoryFileFilter());
         for (String tmpFolder : tmpFolders) {
+
             if (MonitoredRepositories.getMonitoredProjectById(tmpFolder) == null) {
                 LoggerFactory.getLogger(RepositoryMonitor.class).debug(
                     "Repository with id={} is not being monitored anymore. Temp folder will be deleted.", tmpFolder);
