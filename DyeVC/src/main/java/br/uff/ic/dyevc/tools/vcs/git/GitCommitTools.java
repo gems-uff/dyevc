@@ -370,27 +370,30 @@ public class GitCommitTools {
 
         try {
             // separate tracked branches from local branches
-            Set<String>         nonTrackedBranches = git.getLocalBranches();
-            Set<String>         trackedBranches    = new HashSet<String>();
-            List<TrackedBranch> tb                 = git.getTrackedBranches();
+            Set<String>         nonTrackedBranchesRefs = git.getLocalBranches();
+            Set<String>         trackedBranchesRefs    = new HashSet<String>();
+            Set<String>         remoteBranchesRefs     = git.getRemoteBranches();
+            List<TrackedBranch> trackedBranches        = git.getTrackedBranches();
 
-            for (TrackedBranch tracked : tb) {
+            for (TrackedBranch tracked : trackedBranches) {
                 String ref = IConstants.REFS_HEADS + tracked.getName();
-                if (nonTrackedBranches.contains(ref)) {
-                    nonTrackedBranches.remove(ref);
-                    trackedBranches.add(ref);
+                if (nonTrackedBranchesRefs.contains(ref)) {
+                    nonTrackedBranchesRefs.remove(ref);
+                    trackedBranchesRefs.add(ref);
                 }
             }
 
+            trackedBranchesRefs.addAll(remoteBranchesRefs);
+
             walk = new RevWalk(git.getRepository());
 
-            Iterator<RevCommit> it = git.getLogForHeads(trackedBranches);
+            Iterator<RevCommit> it = git.getLogForHeads(trackedBranchesRefs);
             while (it.hasNext()) {
                 RevCommit commit = it.next();
                 createCommitInfo(commit, true);
             }
 
-            parseLocalCommits(nonTrackedBranches);
+            parseLocalCommits(nonTrackedBranchesRefs);
 
             for (String commitId : commitInfoMap.keySet()) {
                 RevCommit commit = CommitUtils.getCommit(git.getRepository(), commitId);
