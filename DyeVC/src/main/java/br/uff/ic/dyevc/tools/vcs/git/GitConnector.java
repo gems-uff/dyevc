@@ -7,14 +7,11 @@ import br.uff.ic.dyevc.exception.VCSException;
 import br.uff.ic.dyevc.model.BranchStatus;
 import br.uff.ic.dyevc.model.git.TrackedBranch;
 
-import org.apache.commons.collections15.CollectionUtils;
-
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.CommitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.api.MergeResult;
@@ -276,36 +273,10 @@ public class GitConnector {
     public Set<String> getLocalBranches() {
         LoggerFactory.getLogger(GitConnector.class).trace("getLocalBranches -> Entry.");
 
+        // TODO ver se tem a opção --no-merged via jgit
         Set<String> result = new TreeSet<String>();
         try {
-            List<Ref>   branchList = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
-            Set<String> all        = new TreeSet<String>();
-            for (Ref ref : branchList) {
-                all.add(ref.getName());
-            }
-
-            result = new TreeSet(CollectionUtils.subtract(all, getRemoteBranches()));
-        } catch (GitAPIException ex) {
-            LoggerFactory.getLogger(GitConnector.class).error("Error retrieving local branches.", ex);
-        }
-
-        LoggerFactory.getLogger(GitConnector.class).trace("getLocalBranches -> Exit.");
-
-        return result;
-    }
-
-    /**
-     * Returns list of remote branches
-     *
-     * @return
-     */
-    public Set<String> getRemoteBranches() {
-        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteBranches -> Entry.");
-
-        Set<String> result = new TreeSet<String>();
-        try {
-            List<Ref> branchList = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call();
-
+            List<Ref> branchList = git.branchList().call();
             for (Iterator<Ref> it = branchList.iterator(); it.hasNext(); ) {
                 Ref ref = it.next();
                 result.add(ref.getName());
@@ -313,10 +284,10 @@ public class GitConnector {
 
             }
         } catch (GitAPIException ex) {
-            LoggerFactory.getLogger(GitConnector.class).error("Error retrieving remote branches.", ex);
+            LoggerFactory.getLogger(GitConnector.class).error("Error retrieving local branches.", ex);
         }
 
-        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteBranches -> Exit.");
+        LoggerFactory.getLogger(GitConnector.class).trace("getLocalBranches -> Exit.");
 
         return result;
     }
