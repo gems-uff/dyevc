@@ -434,9 +434,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
             switch (ci.getType()) {
             case IConstants.COMMIT_MASK_ALL_HAVE :
-                if (layout.getGraph().getSuccessorCount(o) != 0) {
-                    allHave.add(o);
-                }
+                allHave.add(o);
 
                 break;
 
@@ -509,6 +507,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         Graph clusterGraph = collapser.getClusterGraph(inGraph, picked);
 
         collapsedGraph = ((DirectedOrderedSparseMultigraph)collapser.collapse(inGraph, clusterGraph));
+        layout.setCollapsed(true);
         layout.setGraph(collapsedGraph);
         layout.setLocation(clusterGraph, coords);
     }
@@ -537,6 +536,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     }
 
     private void resetGraph() {
+        layout.setCollapsed(false);
         layout.setGraph(graph);
         collapsedGraph = graph;
         isCollapsed    = false;

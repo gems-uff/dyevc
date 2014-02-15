@@ -37,7 +37,16 @@ import javax.swing.JOptionPane;
  * @param <E> The type of the edges
  */
 public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implements IterativeContext {
-    private V firstCommit = null;
+    private V       firstCommit = null;
+    private boolean collapsed   = false;
+
+    public boolean isCollapsed() {
+        return collapsed;
+    }
+
+    public void setCollapsed(boolean collapsed) {
+        this.collapsed = collapsed;
+    }
 
     /** X distance between two nodes */
     public static final double XDISTANCE = 70.0;
@@ -117,7 +126,11 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     @Override
     public void initialize() {
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("initialize -> Entry");
-        doInit();
+
+        if (!collapsed) {
+            doInit();
+        }
+
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("initialize -> Exit");
     }
 
@@ -563,7 +576,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
      *
      * @return the first commit in the graph;
      */
-    private V getFirstCommit() {
+    public V getFirstCommit() {
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("getFirstCommit -> Entry");
 
         if (firstCommit == null) {
