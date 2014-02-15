@@ -38,6 +38,7 @@ import edu.uci.ics.jung.visualization.util.PredicatedParallelEdgeIndexFunction;
 import edu.uci.ics.jung.visualization.VisualizationModel;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 
+import org.apache.commons.collections15.MapUtils;
 import org.apache.commons.collections15.Predicate;
 import org.apache.commons.collections15.Transformer;
 
@@ -58,9 +59,13 @@ import java.awt.Toolkit;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -420,80 +425,97 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private void collapseByType() {
         layout.setGraph(graph);
         collapsedGraph = graph;
-        Collection allHave        = new ArrayList();
-        Collection iHavePushDont  = new ArrayList();
-        Collection iDontPullHas   = new ArrayList();
-        Collection nonRelatedHas  = new ArrayList();
-        Collection notTracked     = new ArrayList();
-        Point2D    previousCoords = null;
-        for (Object o : layout.getGraph().getVertices()) {
+        HashMap<Byte, LinkedList<CommitInfo>> tempGroups = new HashMap<Byte, LinkedList<CommitInfo>>();
+        tempGroups.put(IConstants.COMMIT_MASK_ALL_HAVE, new LinkedList<CommitInfo>());
+        tempGroups.put(IConstants.COMMIT_MASK_I_HAVE_PUSH_DONT, new LinkedList<CommitInfo>());
+        tempGroups.put(IConstants.COMMIT_MASK_I_DONT_PULL_HAS, new LinkedList<CommitInfo>());
+        tempGroups.put(IConstants.COMMIT_MASK_NON_RELATED_HAS, new LinkedList<CommitInfo>());
+        tempGroups.put(IConstants.COMMIT_MASK_NOT_TRACKED, new LinkedList<CommitInfo>());
+        SortedMap<Double, LinkedList<CommitInfo>> collapsedGroups = new TreeMap<Double, LinkedList<CommitInfo>>();
+
+        Point2D                                   previousCoords  = new Point2D.Double(0d, 0d);
+        byte                                      currentType     = IConstants.COMMIT_MASK_ALL_HAVE;
+
+
+        for (Object o : graph.getVertices()) {
             CommitInfo ci = (CommitInfo)o;
-            if (layout.getGraph().getSuccessorCount(o) == 0) {
-                previousCoords = layout.transform(o);
+
+            if (graph.getSuccessorCount(ci) == 0) {
+                tempGroups.get(IConstants.COMMIT_MASK_ALL_HAVE).add(ci);
+
+                continue;
             }
 
-            switch (ci.getType()) {
-            case IConstants.COMMIT_MASK_ALL_HAVE :
-                allHave.add(o);
+            boolean sametype = true;
+            for (Object child : graph.getPredecessors(ci)) {
+                if (((CommitInfo)child).getType() != currentType) {
+                    sametype = false;
 
-                break;
+                    break;
+                }
+            }
 
-            case IConstants.COMMIT_MASK_I_HAVE_PUSH_DONT :
-                iHavePushDont.add(o);
+            if (!sametype) {
+                LinkedList<CommitInfo> listToClose = tempGroups.remove(currentType);
+                if ((listToClose != null) && (listToClose.size() != 0)) {
+                    Double position = Double.valueOf(layout.transform(listToClose.peek()).getX());
+                    collapsedGroups.put(position, listToClose);
+                }
 
-                break;
-
-            case IConstants.COMMIT_MASK_I_DONT_PULL_HAS :
-                iDontPullHas.add(o);
-
-                break;
-
-            case IConstants.COMMIT_MASK_NON_RELATED_HAS :
-                nonRelatedHas.add(o);
-
-                break;
-
-            case IConstants.COMMIT_MASK_NOT_TRACKED :
-                notTracked.add(o);
-
-                break;
+                tempGroups.put(currentType, new LinkedList<CommitInfo>());
+                currentType = ci.getType();
+            } else {
+                tempGroups.get(currentType).addLast(ci);
             }
         }
 
         Point2D newCoords = previousCoords;
-        if (allHave.size() > 0) {
-            newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
-                                           previousCoords.getY());
-            doCollapseByType(allHave, newCoords);
-            previousCoords = newCoords;
+        for (LinkedList<CommitInfo> resto : tempGroups.values()) {
+            if (resto.size() != 0) {
+                Double position = Double.valueOf(layout.transform(resto.peek()).getX());
+                collapsedGroups.put(position, resto);
+            }
         }
 
-        if (iHavePushDont.size() > 0) {
+        for (Double key : collapsedGroups.keySet()) {
+            doCollapseByType(collapsedGroups.get(key), newCoords);
             newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
                                            previousCoords.getY());
-            doCollapseByType(iHavePushDont, newCoords);
             previousCoords = newCoords;
         }
-
-        if (notTracked.size() > 0) {
-            newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
-                                           previousCoords.getY() + 2 * RepositoryHistoryLayout.XDISTANCE);
-            doCollapseByType(notTracked, newCoords);
-        }
-
-        if (iDontPullHas.size() > 0) {
-            newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
-                                           previousCoords.getY());
-            doCollapseByType(iDontPullHas, newCoords);
-            previousCoords = newCoords;
-        }
-
-        if (nonRelatedHas.size() > 0) {
-            newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
-                                           previousCoords.getY());
-            doCollapseByType(nonRelatedHas, newCoords);
-            previousCoords = newCoords;
-        }
+//      if (allHave.size() > 0) {
+//          newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+//                                         previousCoords.getY());
+//          doCollapseByType(allHave, newCoords);
+//          previousCoords = newCoords;
+//      }
+//
+//      if (iHavePushDont.size() > 0) {
+//          newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+//                                         previousCoords.getY());
+//          doCollapseByType(iHavePushDont, newCoords);
+//          previousCoords = newCoords;
+//      }
+//
+//      if (notTracked.size() > 0) {
+//          newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+//                                         previousCoords.getY() + 2 * RepositoryHistoryLayout.XDISTANCE);
+//          doCollapseByType(notTracked, newCoords);
+//      }
+//
+//      if (iDontPullHas.size() > 0) {
+//          newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+//                                         previousCoords.getY());
+//          doCollapseByType(iDontPullHas, newCoords);
+//          previousCoords = newCoords;
+//      }
+//
+//      if (nonRelatedHas.size() > 0) {
+//          newCoords = new Point2D.Double(previousCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+//                                         previousCoords.getY());
+//          doCollapseByType(nonRelatedHas, newCoords);
+//          previousCoords = newCoords;
+//      }
 
         vv.getRenderContext().getParallelEdgeIndexFunction().reset();
         vv.getPickedVertexState().clear();
@@ -559,12 +581,13 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * runs the graph with a demo repository
      */
     public static void main(String[] args) {
+//      MonitoredRepository rep = new MonitoredRepository("rep1386777018509");
+//      rep.setCloneAddress("F:/mybackups/Educacao/Mestrado-UFF/Git/git");
         MonitoredRepository rep = new MonitoredRepository("rep1391645758732");
         rep.setCloneAddress("F:\\mybackups\\Educacao\\Mestrado-UFF\\Git\\saposTeste");
         rep.setName("saposTeste");
         rep.setSystemName("sapos");
 
-//      rep.setId("rep1364318989748");
         new CommitHistoryWindow(rep).setVisible(true);
     }
 
