@@ -7,6 +7,7 @@ import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.graph.GraphBuilder;
 import br.uff.ic.dyevc.graph.GraphDomainMapper;
 import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
+import br.uff.ic.dyevc.graph.Position;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHTopologyVertexPaintTransformer;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexLabelTransformer;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexTooltipTransformer;
@@ -82,20 +83,20 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private DirectedOrderedSparseMultigraph collapsedGraph;
     private VisualizationViewer             vv;
     private RepositoryHistoryLayout         layout;
-    private boolean                         isCollapsed;
     private GraphCollapser                  collapser;
     Filter<CommitInfo, CommitRelationship>  edgeFilter;
     Filter<CommitInfo, CommitRelationship>  nodeFilter;
     private JComboBox                       edgeLineShapeCombo;
     private JComboBox                       mouseModesCombo;
-    private JButton                         plus;
-    private JButton                         minus;
-    private JButton                         collapse;
-    private JButton                         expand;
-    private JButton                         reset;
-    private JButton                         collapseByType;
-    private JButton                         resetByType;
-    private JButton                         btnHelp;
+    private JButton                         plusButton;
+    private JButton                         minusButton;
+    private JButton                         collapseButton;
+    private JButton                         expandButton;
+    private JButton                         resetButton;
+    private JButton                         collapseByTypeButton;
+    private JButton                         beginButton;
+    private JButton                         endButton;
+    private JButton                         helpButton;
     private final DefaultModalGraphMouse    graphMouse   = new DefaultModalGraphMouse<CommitInfo, CommitRelationship>();
     private final ScalingControl            scaler       = new CrossoverScalingControl();
     private String                          instructions =
@@ -124,7 +125,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             initGraphComponent();
 //          SplashScreen.getInstance().setStatus("Initializing Window components");
             initComponents();
-            translateGraph();
+            translateGraph(Position.END);
 //          SplashScreen.getInstance().setVisible(false);
         } catch (DyeVCException ex) {
 //          splash.dispose();
@@ -168,67 +169,75 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         mouseModesCombo.addItemListener(graphMouse.getModeListener());
         graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
 
-        plus = new JButton("+");
-        plus.addActionListener(new ActionListener() {
+        plusButton = new JButton("+");
+        plusButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 scaler.scale(vv, 1.1f, vv.getCenter());
             }
         });
 
-        minus = new JButton("-");
-        minus.addActionListener(new ActionListener() {
+        minusButton = new JButton("-");
+        minusButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 scaler.scale(vv, 1 / 1.1f, vv.getCenter());
             }
         });
 
-        collapse = new JButton("Collapse");
-        collapse.addActionListener(new ActionListener() {
+        collapseButton = new JButton("Collapse Picked");
+        collapseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 collapseActionPerformed(e);
             }
         });
 
-        expand = new JButton("Expand");
-        expand.addActionListener(new ActionListener() {
+        expandButton = new JButton("Expand Picked");
+        expandButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 expandActionPerformed(e);
             }
         });
 
-        reset = new JButton("Reset");
-        reset.addActionListener(new ActionListener() {
+        resetButton = new JButton("Reset Graph");
+        resetButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ResetActionPerformed(e);
             }
         });
 
-        collapseByType = new JButton("Collapse By Type");
-        collapseByType.addActionListener(new ActionListener() {
+        collapseByTypeButton = new JButton("Collapse By Type");
+        collapseByTypeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 collapseByTypeActionPerformed(e);
             }
         });
 
-        resetByType = new JButton("Reset All Types");
-        resetByType.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                resetAllTypesActionPerformed(e);
-            }
-        });
-
-        btnHelp = new JButton("Help");
-        btnHelp.addActionListener(new ActionListener() {
+        helpButton = new JButton("Help");
+        helpButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 JOptionPane.showMessageDialog(null, instructions, "Help", JOptionPane.PLAIN_MESSAGE);
+            }
+        });
+
+        beginButton = new JButton("Beginning");
+        beginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                translateGraph(Position.START);
+            }
+        });
+
+        endButton = new JButton("End");
+        endButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                translateGraph(Position.END);
             }
         });
 
@@ -251,23 +260,30 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         JPanel controls     = new JPanel();
         JPanel zoomControls = new JPanel(new GridLayout(2, 1));
         zoomControls.setBorder(BorderFactory.createTitledBorder("Zoom"));
-        zoomControls.add(plus);
-        zoomControls.add(minus);
+        zoomControls.add(plusButton);
+        zoomControls.add(minusButton);
         controls.add(zoomControls);
-        JPanel collapseControls = new JPanel(new GridLayout(3, 1));
-        collapseControls.setBorder(BorderFactory.createTitledBorder("Picked"));
-        collapseControls.add(collapse);
-        collapseControls.add(expand);
-        collapseControls.add(reset);
+        JPanel collapseControls = new JPanel(new GridLayout(4, 1));
+        collapseControls.setBorder(BorderFactory.createTitledBorder("Collapsing"));
+        collapseControls.add(collapseButton);
+        collapseControls.add(expandButton);
+        collapseControls.add(collapseByTypeButton);
+        collapseControls.add(resetButton);
         controls.add(collapseControls);
-        JPanel collapseControlsByType = new JPanel(new GridLayout(2, 1));
-        collapseControlsByType.setBorder(BorderFactory.createTitledBorder("Collapse By Type"));
-        collapseControlsByType.add(collapseByType);
-        collapseControlsByType.add(resetByType);
-        controls.add(collapseControlsByType);
-        controls.add(mouseModesCombo);
-        controls.add(edgeLineShapeCombo);
-        controls.add(btnHelp);
+        JPanel moveScreen = new JPanel(new GridLayout(2, 1));
+        moveScreen.setBorder(BorderFactory.createTitledBorder("Move to:"));
+        moveScreen.add(beginButton);
+        moveScreen.add(endButton);
+        controls.add(moveScreen);
+        JPanel mouseMode = new JPanel(new GridLayout(1, 1));
+        mouseMode.setBorder(BorderFactory.createTitledBorder("Mouse Mode"));
+        mouseMode.add(mouseModesCombo);
+        controls.add(mouseMode);
+        JPanel edgeLineType = new JPanel(new GridLayout(1, 1));
+        edgeLineType.setBorder(BorderFactory.createTitledBorder("Edge Line Type"));
+        edgeLineType.add(edgeLineShapeCombo);
+        controls.add(edgeLineType);
+        controls.add(helpButton);
         content.add(panel);
         content.add(controls, BorderLayout.SOUTH);
     }    // </editor-fold>
@@ -282,7 +298,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         graph = GraphBuilder.createBasicRepositoryHistoryGraph(tools);
         GraphDomainMapper<Map<String, CommitInfo>> mapper = new GraphDomainMapper(graph, tools.getCommitInfoMap());
         collapsedGraph = graph;
-        isCollapsed    = false;
         Dimension preferredSize = new Dimension(580, 580);
 
         // Choosing layout
@@ -362,10 +377,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         collapseByType();
     }
 
-    private void resetAllTypesActionPerformed(ActionEvent evt) {
-        resetAllTypes();
-    }
-
     private void expandActionPerformed(ActionEvent e) {
         Collection picked = new HashSet(vv.getPickedVertexState().getPicked());
         expand(picked);
@@ -391,7 +402,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     // </editor-fold>
 
     private void collapse(Collection picked) {
-
 //      AddFilters();
         if (picked.size() > 1) {
             Graph inGraph      = layout.getGraph();
@@ -497,8 +507,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
         vv.getRenderContext().getParallelEdgeIndexFunction().reset();
         vv.getPickedVertexState().clear();
-        isCollapsed = true;
-        translateGraph();
+        translateGraph(Position.START);
         vv.repaint();
     }
 
@@ -530,16 +539,10 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         }
     }
 
-    private void resetAllTypes() {
-        resetGraph();
-        translateGraph();
-    }
-
     private void resetGraph() {
         layout.setCollapsed(false);
         layout.setGraph(graph);
         collapsedGraph = graph;
-        isCollapsed    = false;
         layout.initialize();
         vv.repaint();
     }
@@ -571,21 +574,22 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     /**
      * Translates graph, positioning it at the farthest X position.
      */
-    private void translateGraph() {
+    private void translateGraph(Position position) {
         MutableTransformer modelTransformer =
             vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT);
-        float dx;
-        float dy;
-        int   lastXPosition = graph.getVertexCount() * (int)RepositoryHistoryLayout.XDISTANCE;
-        int   showPosition  = lastXPosition - vv.getPreferredSize().width;
-        Point graphEnd      = new Point(layout.getWidth() - vv.getPreferredSize().width, 0);
-        Point graphStart    = new Point(0, 0);
-        if (isCollapsed) {
-            dx = (float)(showPosition);
-            dy = (float)(graphEnd.getY() - graphStart.getY());
+        double currentX = modelTransformer.getTranslateX();
+        double currentY = modelTransformer.getTranslateY();
+        double dx;
+        double dy;
+        int    showPosition = layout.getWidth() - vv.getPreferredSize().width;
+        Point  graphEnd     = new Point(showPosition, 0);
+        Point  graphStart   = new Point(0, 0);
+        if (position == Position.START) {
+            dx = (graphStart.getX() - currentX);
+            dy = (graphStart.getY() - currentY);
         } else {
-            dx = (float)(graphStart.getX() - graphEnd.getX());
-            dy = (float)(graphStart.getY() - graphEnd.getY());
+            dx = (-currentX - graphEnd.getX());
+            dy = (-currentY - graphEnd.getY());
         }
 
         modelTransformer.translate(dx, dy);
