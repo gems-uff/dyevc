@@ -10,6 +10,7 @@ import br.uff.ic.dyevc.graph.layout.RepositoryHistoryLayout;
 import br.uff.ic.dyevc.graph.Position;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHTopologyVertexPaintTransformer;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexLabelTransformer;
+import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexStrokeTransformer;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexTooltipTransformer;
 import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
 import br.uff.ic.dyevc.model.CommitInfo;
@@ -55,6 +56,7 @@ import java.awt.geom.Point2D;
 import java.awt.GridLayout;
 import java.awt.Paint;
 import java.awt.Point;
+import java.awt.Stroke;
 import java.awt.Toolkit;
 
 import java.util.ArrayList;
@@ -102,6 +104,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private String                          instructions =
         "<html><p>Each vertex in the graph represents a known commit of this system in the topology.</p>"
         + "<p>Each vertex label shows the commit's five initial characters.</p>"
+        + "<p>If commit is head of any local/remote branch, it is painted with a heavier stroke.</p>"
         + "<p>Each vertex is painted according to its existence in this repository and those related to it <br>"
         + "(those which this one pushes to or pulls from): </p>" + "<ul>"
         + "<li>If vertex exists locally and in all related repositories, it is painted in WHITE;</li>"
@@ -343,7 +346,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         });
 
         // <editor-fold defaultstate="collapsed" desc="vertex tooltip transformer">
-        Transformer<Object, String> vertexTooltip = new CHVertexTooltipTransformer(info);
+        Transformer<Object, String> vertexTooltip = new CHVertexTooltipTransformer(info, tools.getHeadsCommitsMap());
         vv.setVertexToolTipTransformer(vertexTooltip);
         ToolTipManager.sharedInstance().setDismissDelay(15000);
 
@@ -355,12 +358,18 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
         // </editor-fold>
 
+        // <editor-fold defaultstate="collapsed" desc="vertex stroke transformer">
+        Transformer<Object, Stroke> vertexStroke = new CHVertexStrokeTransformer(tools.getHeadsCommitsMap());
+        vv.getRenderContext().setVertexStrokeTransformer(vertexStroke);
+
+        // </editor-fold>
+
         // <editor-fold defaultstate="collapsed" desc="vertex label transformer">
         Transformer<Object, String> vertexLabel = new CHVertexLabelTransformer();
         vv.getRenderContext().setVertexLabelTransformer(vertexLabel);
         vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
-
         // </editor-fold>
+
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.CubicCurve());
         vv.getRenderContext().setVertexShapeTransformer(new ClusterVertexShapeTransformer());
     }

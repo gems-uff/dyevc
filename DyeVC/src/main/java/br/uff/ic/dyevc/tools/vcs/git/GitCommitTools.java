@@ -44,6 +44,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -54,6 +56,11 @@ import java.util.TreeMap;
  * @author Cristiano
  */
 public class GitCommitTools {
+    /**
+     * Map of commits associated that are pointed by any branch heads with the pointing branch names.
+     */
+    private Map<String, List<String>> commitsToBranchNamesMap;
+
     /**
      * Map of commits with its properties. Each commit is identified by its id.
      */
@@ -113,10 +120,7 @@ public class GitCommitTools {
      */
     private GitCommitTools(MonitoredRepository rep, boolean includeTopologyData) throws VCSException {
         this(rep.getConnection(), includeTopologyData);
-        this.rep                    = rep;
-        notInPushListSet            = Collections.EMPTY_SET;
-        notInPullListSet            = Collections.EMPTY_SET;
-        notInLocalRepositoryListSet = Collections.EMPTY_SET;
+        this.rep = rep;
     }
 
     /**
@@ -186,6 +190,9 @@ public class GitCommitTools {
      * @throws VCSException
      */
     private void initialize() throws VCSException {
+        notInPushListSet             = Collections.EMPTY_SET;
+        notInPullListSet             = Collections.EMPTY_SET;
+        notInLocalRepositoryListSet  = Collections.EMPTY_SET;
         this.commitInfoMap           = new TreeMap<String, CommitInfo>();
         this.commitInfoTrackedMap    = new TreeMap<String, CommitInfo>();
         this.commitInfoNonTrackedMap = new TreeMap<String, CommitInfo>();
@@ -597,10 +604,36 @@ public class GitCommitTools {
      * @throws DyeVCException
      */
     public CommitInfo getBase(final String... revisions) throws DyeVCException {
-        if (!initialized) {
-            initialize();
+        return new CommonAncestorFinder(commitInfoMap).getCommonAncestor(revisions);
+    }
+
+    /**
+     * Retrieves a map with every commit pointed by a branch head. The key is the commit hash and the value is the list
+     * of branch names that point to it.
+     *
+     * @return base commit or null if none
+     * @throws DyeVCException
+     */
+    public Map<String, List<String>> getHeadsCommitsMap() throws DyeVCException {
+        if (commitsToBranchNamesMap == null) {
+            commitsToBranchNamesMap = new TreeMap<String, List<String>>();
+            Set<String> branches = git.getAllBranches();
+            for (String branch : branches) {
+                try {
+                    String       ref        = git.getRepository().getRef(branch).getObjectId().name();
+                    List<String> branchList = commitsToBranchNamesMap.get(ref);
+                    if (branchList == null) {
+                        branchList = new ArrayList<String>();
+                        commitsToBranchNamesMap.put(ref, branchList);
+                    }
+
+                    branchList.add(branch);
+                } catch (IOException ex) {
+                    LoggerFactory.getLogger(GitCommitTools.class).error("Error resolving a reference to " + branch, ex);
+                }
+            }
         }
 
-        return new CommonAncestorFinder(commitInfoMap).getCommonAncestor(revisions);
+        return commitsToBranchNamesMap;
     }
 }

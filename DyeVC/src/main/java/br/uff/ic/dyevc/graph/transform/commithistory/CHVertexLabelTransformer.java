@@ -8,12 +8,17 @@ import edu.uci.ics.jung.graph.Graph;
 
 import org.apache.commons.collections15.Transformer;
 
+//~--- JDK imports ------------------------------------------------------------
+
+import java.util.List;
+import java.util.Map;
+
 /**
  * Transforms a object from the commit history graph in a string to be used as the label of a vertex.
  *
  * @author Cristiano
  */
-public class CHVertexLabelTransformer implements Transformer<Object, String> {
+public final class CHVertexLabelTransformer implements Transformer<Object, String> {
     /**
      * <p>Returns a string to be used as a label.</p>
      * <p>If the object is a CommitInfo, returns the toString output as its label.</p>

@@ -273,23 +273,43 @@ public class GitConnector {
      *
      * @return
      */
-    public Set<String> getLocalBranches() {
+    public Set<String> getLocalBranches() throws VCSException {
         LoggerFactory.getLogger(GitConnector.class).trace("getLocalBranches -> Entry.");
 
         Set<String> result = new TreeSet<String>();
-        try {
-            List<Ref>   branchList = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
-            Set<String> all        = new TreeSet<String>();
-            for (Ref ref : branchList) {
-                all.add(ref.getName());
-            }
-
-            result = new TreeSet(CollectionUtils.subtract(all, getRemoteBranches()));
-        } catch (GitAPIException ex) {
-            LoggerFactory.getLogger(GitConnector.class).error("Error retrieving local branches.", ex);
-        }
+        Set<String> all    = getAllBranches();
+        result = new TreeSet(CollectionUtils.subtract(all, getRemoteBranches()));
 
         LoggerFactory.getLogger(GitConnector.class).trace("getLocalBranches -> Exit.");
+
+        return result;
+    }
+
+    /**
+     * Returns list of all branches (local and remote)
+     *
+     * @return
+     */
+    public Set<String> getAllBranches() throws VCSException {
+        LoggerFactory.getLogger(GitConnector.class).trace("getAllBranches -> Entry.");
+
+        Set<String> result = new TreeSet<String>();
+        try {
+            List<Ref> branchList = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
+
+            for (Iterator<Ref> it = branchList.iterator(); it.hasNext(); ) {
+                Ref ref = it.next();
+                result.add(ref.getName());
+
+
+            }
+        } catch (GitAPIException ex) {
+            LoggerFactory.getLogger(GitConnector.class).error("Error retrieving all branches.", ex);
+
+            throw new VCSException("Error retrieving all branches.", ex);
+        }
+
+        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteBranches -> Exit.");
 
         return result;
     }
@@ -299,7 +319,7 @@ public class GitConnector {
      *
      * @return
      */
-    public Set<String> getRemoteBranches() {
+    public Set<String> getRemoteBranches() throws VCSException {
         LoggerFactory.getLogger(GitConnector.class).trace("getRemoteBranches -> Entry.");
 
         Set<String> result = new TreeSet<String>();
@@ -309,11 +329,11 @@ public class GitConnector {
             for (Iterator<Ref> it = branchList.iterator(); it.hasNext(); ) {
                 Ref ref = it.next();
                 result.add(ref.getName());
-
-
             }
         } catch (GitAPIException ex) {
             LoggerFactory.getLogger(GitConnector.class).error("Error retrieving remote branches.", ex);
+
+            throw new VCSException("Error retrieving all branches.", ex);
         }
 
         LoggerFactory.getLogger(GitConnector.class).trace("getRemoteBranches -> Exit.");
