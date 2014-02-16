@@ -309,7 +309,7 @@ public class GitConnector {
             throw new VCSException("Error retrieving all branches.", ex);
         }
 
-        LoggerFactory.getLogger(GitConnector.class).trace("getRemoteBranches -> Exit.");
+        LoggerFactory.getLogger(GitConnector.class).trace("getAllBranches -> Exit.");
 
         return result;
     }
@@ -796,6 +796,35 @@ public class GitConnector {
         } catch (Exception ex) {
             LoggerFactory.getLogger(GitConnector.class).error("Error resolving a reference to " + revisionString, ex);
         }
+
+        return result;
+    }
+
+    /**
+     * Returns list of all tags
+     *
+     * @return
+     */
+    public Set<String> getAllTags() throws VCSException {
+        LoggerFactory.getLogger(GitConnector.class).trace("getAllTags -> Entry.");
+
+        Set<String> result = new TreeSet<String>();
+        try {
+            List<Ref> tagList = git.tagList().call();
+
+            for (Iterator<Ref> it = tagList.iterator(); it.hasNext(); ) {
+                Ref ref = it.next();
+                result.add(ref.getName());
+
+
+            }
+        } catch (GitAPIException ex) {
+            LoggerFactory.getLogger(GitConnector.class).error("Error retrieving all tags.", ex);
+
+            throw new VCSException("Error retrieving all tags.", ex);
+        }
+
+        LoggerFactory.getLogger(GitConnector.class).trace("getAllTags -> Exit.");
 
         return result;
     }
