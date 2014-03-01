@@ -38,15 +38,7 @@ import javax.swing.JOptionPane;
  */
 public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implements IterativeContext {
     private V       firstCommit = null;
-    private boolean collapsed   = false;
-
-    public boolean isCollapsed() {
-        return collapsed;
-    }
-
-    public void setCollapsed(boolean collapsed) {
-        this.collapsed = collapsed;
-    }
+    private boolean processed   = false;
 
     /** X distance between two nodes */
     public static final double XDISTANCE = 70.0;
@@ -127,8 +119,9 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
     public void initialize() {
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("initialize -> Entry");
 
-        if (!collapsed) {
+        if (!processed) {
             doInit();
+            processed = true;
         }
 
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("initialize -> Exit");
@@ -284,7 +277,7 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
             } else {
 
                 // Include predecessors in the Set to be processed, taking care of
-                // its type, because collapsed graphs will not be processed here.
+                // its type, because processed graphs will not be processed here.
                 for (V child : graph.getPredecessors(v)) {
                     if (child instanceof CommitInfo) {
                         nodesToProcess.add(child);

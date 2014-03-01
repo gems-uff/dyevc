@@ -79,6 +79,7 @@ import javax.swing.ToolTipManager;
  * @author cristiano
  */
 public class CommitHistoryWindow extends javax.swing.JFrame {
+    // <editor-fold defaultstate="collapsed" desc="variables declaration">
     private static final long               serialVersionUID = 1689885032823010309L;
     private MonitoredRepository             rep;
     private DirectedOrderedSparseMultigraph graph;
@@ -113,6 +114,9 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         + "<li>If vertex exists in a node not related to the local one (can't be pulled from it), it is painted in RED.</li>"
         + "<li>Finally, if vertex does not belong to a tracked branch, it is painted in GRAY;</li>" + "</ul>"
         + "<p>Place the mouse over a vertex to view detailed information regarding it.</p>" + "</html>";
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="constructor">
 
     /**
      * Constructs a CommitHistoryWindow
@@ -153,6 +157,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             dispose();
         }
     }
+    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="initComponents">
     private void initComponents() {
@@ -410,6 +415,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
     // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc="collapsing and expanding">
     private void collapse(Collection picked) {
 //      AddFilters();
         if (picked.size() > 1) {
@@ -436,6 +442,26 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 //      RemoveFilters();
     }
 
+    private void expand(Collection picked) {
+        for (Object v : picked) {
+            if (v instanceof Graph) {
+
+//              AddFilters();
+                collapsedGraph = ((DirectedOrderedSparseMultigraph)collapser.expand(layout.getGraph(), (Graph)v));
+                vv.getRenderContext().getParallelEdgeIndexFunction().reset();
+                layout.setGraph(collapsedGraph);
+
+            }
+
+//          RemoveFilters();
+//          Filter();
+            vv.getPickedVertexState().clear();
+            vv.repaint();
+        }
+    }
+    // </editor-fold>
+
+    // <editor-fold defaultstate="collapsed" desc="collapseByType">
     private void collapseByType() {
         layout.setGraph(graph);
         collapsedGraph = graph;
@@ -525,31 +551,13 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         Graph clusterGraph = collapser.getClusterGraph(inGraph, picked);
 
         collapsedGraph = ((DirectedOrderedSparseMultigraph)collapser.collapse(inGraph, clusterGraph));
-        layout.setCollapsed(true);
         layout.setGraph(collapsedGraph);
         layout.setLocation(clusterGraph, coords);
     }
+    // </editor-fold>
 
-    private void expand(Collection picked) {
-        for (Object v : picked) {
-            if (v instanceof Graph) {
-
-//              AddFilters();
-                collapsedGraph = ((DirectedOrderedSparseMultigraph)collapser.expand(layout.getGraph(), (Graph)v));
-                vv.getRenderContext().getParallelEdgeIndexFunction().reset();
-                layout.setGraph(collapsedGraph);
-
-            }
-
-//          RemoveFilters();
-//          Filter();
-            vv.getPickedVertexState().clear();
-            vv.repaint();
-        }
-    }
-
+    // <editor-fold defaultstate="collapsed" desc="reset">
     private void resetGraph() {
-        layout.setCollapsed(false);
         layout.setGraph(graph);
         collapsedGraph = graph;
         layout.initialize();
@@ -566,6 +574,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         edgeFilter     = null;
         nodeFilter     = null;
     }
+    // </editor-fold>
 
     /**
      * runs the graph with a demo repository
