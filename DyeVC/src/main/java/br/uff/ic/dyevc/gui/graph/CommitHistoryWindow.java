@@ -62,8 +62,10 @@ import java.awt.Toolkit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -461,6 +463,82 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="collapseByType">
+    private void collapseByType2() {
+        layout.setGraph(graph);
+        collapsedGraph = graph;
+        List<List>      groups          = new ArrayList<List>();
+        Map<Byte, List> groupsByTypeMap = new TreeMap<Byte, List>();
+        groupsByTypeMap.put(IConstants.COMMIT_MASK_ALL_HAVE, new ArrayList<List>());
+        groupsByTypeMap.put(IConstants.COMMIT_MASK_I_HAVE_PUSH_DONT, new ArrayList<List>());
+        groupsByTypeMap.put(IConstants.COMMIT_MASK_I_DONT_PULL_HAS, new ArrayList<List>());
+        groupsByTypeMap.put(IConstants.COMMIT_MASK_NON_RELATED_HAS, new ArrayList<List>());
+        groupsByTypeMap.put(IConstants.COMMIT_MASK_NOT_TRACKED, new ArrayList<List>());
+        byte currentType  = IConstants.COMMIT_MASK_ALL_HAVE;
+        List currentGroup = new ArrayList();
+
+        for (Object o : graph.getVertices()) {
+            CommitInfo currentNode      = (CommitInfo)o;
+            boolean    childrenSameType = checkChildrenForSameType(currentNode);
+            if (currentNode.getType() == currentType) {
+                if (childrenSameType) {
+                    currentGroup.add(currentNode);
+                } else {                              // not all children are of same type as currentType
+                    if (!currentGroup.isEmpty()) {    // include currentNode into currentGroup and close the group
+                        groupsByTypeMap.get(currentType).add(currentGroup);
+                        groups.add(currentGroup);
+                        currentGroup = new ArrayList();
+                    }
+
+                    currentGroup.add(currentNode);
+                    groupsByTypeMap.get(currentType).add(currentGroup);
+                    groups.add(currentGroup);
+                    currentGroup = new ArrayList();
+                }
+            } else {                                  // currentNode has a different type from currentType
+                if (!currentGroup.isEmpty()) {        // close currentGroup to create a new one
+                    groupsByTypeMap.get(currentType).add(currentGroup);
+                    groups.add(currentGroup);
+                    currentGroup = new ArrayList();
+                }
+
+                currentType = currentNode.getType();
+                currentGroup.add(currentNode);
+
+                if (!childrenSameType) {
+                    groupsByTypeMap.get(currentType).add(currentGroup);
+                    groups.add(currentGroup);
+                    currentGroup = new ArrayList();
+                }
+            }
+        }
+
+        Point2D currentCoords = new Point2D.Double(0, 0);
+        for (List list : groups) {
+            doCollapseByType(list, currentCoords);
+            currentCoords = new Point2D.Double(currentCoords.getX() + 2 * RepositoryHistoryLayout.XDISTANCE,
+                                               currentCoords.getY());
+        }
+
+        vv.getRenderContext().getParallelEdgeIndexFunction().reset();
+        vv.getPickedVertexState().clear();
+        translateGraph(Position.START);
+        vv.repaint();
+    }
+
+    private boolean checkChildrenForSameType(CommitInfo currentNode) {
+        boolean result = true;
+        for (Object o : graph.getPredecessors(currentNode)) {
+            CommitInfo ci = (CommitInfo)o;
+            if (ci.getType() != currentNode.getType()) {
+                result = false;
+
+                break;
+            }
+        }
+
+        return result;
+    }
+
     private void collapseByType() {
         layout.setGraph(graph);
         collapsedGraph = graph;
