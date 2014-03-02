@@ -127,6 +127,13 @@ public class RepositoryHistoryLayout<V, E> extends AbstractLayout<V, E> implemen
         LoggerFactory.getLogger(RepositoryHistoryLayout.class).trace("initialize -> Exit");
     }
 
+    public void initialize(boolean force) {
+        if (force) {
+            processed = false;
+            initialize();
+        }
+    }
+
     public int getWidth() {
         return graph.getVertexCount() * (int)XDISTANCE;
     }

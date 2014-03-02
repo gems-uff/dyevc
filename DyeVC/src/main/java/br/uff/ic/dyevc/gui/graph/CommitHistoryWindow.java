@@ -354,7 +354,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         Transformer<Object, String> vertexTooltip = new CHVertexTooltipTransformer(info, tools.getHeadsCommitsMap());
         vv.setVertexToolTipTransformer(vertexTooltip);
         ToolTipManager.sharedInstance().setDismissDelay(15000);
-
         // </editor-fold>
 
         // <editor-fold defaultstate="collapsed" desc="vertex fillPaint transformer">
@@ -560,7 +559,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private void resetGraph() {
         layout.setGraph(graph);
         collapsedGraph = graph;
-        layout.initialize();
+        layout.initialize(true);
         vv.repaint();
     }
 
