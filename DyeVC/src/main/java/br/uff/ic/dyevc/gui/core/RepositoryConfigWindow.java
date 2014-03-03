@@ -76,7 +76,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
     @SuppressWarnings("unchecked")
     private void initComponents() {
         settings = PreferencesManager.getInstance().loadPreferences();
-        
+
         try {
             topology = new TopologyDAO().readTopology();
         } catch (ServiceException ex) {
@@ -176,7 +176,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
 
             return;
         }
-        
+
         String systemName = cmbSystemName.getSelectedItem().toString().toLowerCase();
 
         if (!validateCloneName()) {
@@ -194,12 +194,13 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
         if (!validateRelatedSystemName(systemName)) {
             return;
         }
+
         MonitoredRepositories.getInstance().addMonitoredRepository(repositoryBean);
         PreferencesManager.getInstance().persistRepositories();
         PreferencesManager.getInstance().storePreferences(settings);
 
         RepositoryMonitor.getInstance().addRepositoryToMonitor(repositoryBean);
-        
+
         if (RepositoryMonitor.getInstance().getState().equals(Thread.State.TIMED_WAITING)) {
             RepositoryMonitor.getInstance().interrupt();
         } else {
@@ -249,7 +250,7 @@ public class RepositoryConfigWindow extends javax.swing.JFrame {
 
     // </editor-fold>
 
-    private br.uff.ic.dyevc.model.MonitoredRepository   repositoryBean;
+    private br.uff.ic.dyevc.model.MonitoredRepository repositoryBean;
 
     /**
      * If true, bean will be created. Otherwise it will be modified.

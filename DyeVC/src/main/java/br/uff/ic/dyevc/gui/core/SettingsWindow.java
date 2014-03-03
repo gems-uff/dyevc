@@ -32,7 +32,7 @@ public class SettingsWindow extends JDialog {
     @SuppressWarnings("unchecked")
     private void initComponents() {
         setTitle("DyeVC Settings");
-        setSize(new java.awt.Dimension(400, 120));
+        setSize(new java.awt.Dimension(400, 140));
         setResizable(false);
         java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         java.awt.Dimension dialogSize = getSize();
@@ -42,6 +42,9 @@ public class SettingsWindow extends JDialog {
         jPanel3                 = new javax.swing.JPanel();
         jPanel4                 = new javax.swing.JPanel();
         lblRefreshRate          = new javax.swing.JLabel();
+        txtRefreshRate          = new javax.swing.JTextField();
+        lblPerformanceMode      = new javax.swing.JLabel();
+        ckPerformanceMode       = new javax.swing.JCheckBox();
         txtRefreshRate          = new javax.swing.JTextField();
         btnSave                 = new javax.swing.JButton();
         btnCancel               = new javax.swing.JButton();
@@ -55,11 +58,12 @@ public class SettingsWindow extends JDialog {
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(
                 jPanel3Layout.createSequentialGroup().addContainerGap().addGroup(
                     jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(
-                        lblRefreshRate, javax.swing.GroupLayout.Alignment.TRAILING)).addPreferredGap(
+                        lblRefreshRate, javax.swing.GroupLayout.Alignment.TRAILING).addComponent(
+                        lblPerformanceMode, javax.swing.GroupLayout.Alignment.TRAILING)).addPreferredGap(
                             javax.swing.LayoutStyle.ComponentPlacement.RELATED).addGroup(
                             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(
-                                jPanel3Layout.createSequentialGroup()).addComponent(
-                                txtRefreshRate)).addContainerGap()));
+                                jPanel3Layout.createSequentialGroup()).addComponent(txtRefreshRate).addComponent(
+                                ckPerformanceMode)).addContainerGap()));
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(
                 jPanel3Layout.createSequentialGroup().addContainerGap().addPreferredGap(
@@ -67,13 +71,22 @@ public class SettingsWindow extends JDialog {
                     jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE).addComponent(
                         lblRefreshRate).addComponent(
                         txtRefreshRate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
-                        javax.swing.GroupLayout.PREFERRED_SIZE)).addContainerGap(
-                            javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
+                        javax.swing.GroupLayout.PREFERRED_SIZE)).addPreferredGap(
+                            javax.swing.LayoutStyle.ComponentPlacement.RELATED).addGroup(
+                            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE).addComponent(
+                                lblPerformanceMode).addComponent(
+                                ckPerformanceMode, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                javax.swing.GroupLayout.DEFAULT_SIZE,
+                                javax.swing.GroupLayout.PREFERRED_SIZE)).addContainerGap(
+                                    javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
         lblRefreshRate.setText("Refresh Rate (s):");
         lblRefreshRate.setToolTipText("Enter the time in seconds between new checks.");
-
         txtRefreshRate.setText(Integer.valueOf(applicationSettingsBean.getRefreshInterval()).toString());
+
+        lblPerformanceMode.setText("Performance Mode:");
+        lblRefreshRate.setToolTipText("Check the box if the application will be collecting performance data.");
+        ckPerformanceMode.setSelected(applicationSettingsBean.isPerformanceMode());
 
         btnSave.setText("Save");
         btnSave.setSelected(true);
@@ -120,6 +133,7 @@ public class SettingsWindow extends JDialog {
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO acrescentar validação dos valores
         applicationSettingsBean.setRefreshInterval(new Integer(txtRefreshRate.getText()).intValue());
+        applicationSettingsBean.setPerformanceMode(ckPerformanceMode.isSelected());
 
         PreferencesManager.getInstance().storePreferences(applicationSettingsBean);
         dispose();
@@ -132,5 +146,7 @@ public class SettingsWindow extends JDialog {
     private javax.swing.JButton      btnCancel;
     private javax.swing.JLabel       lblRefreshRate;
     private javax.swing.JTextField   txtRefreshRate;
+    private javax.swing.JLabel       lblPerformanceMode;
+    private javax.swing.JCheckBox    ckPerformanceMode;
     private javax.swing.JFileChooser workingPathFileChooser;
 }

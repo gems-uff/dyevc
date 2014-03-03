@@ -3,6 +3,7 @@ package br.uff.ic.dyevc.gui.graph;
 //~--- non-JDK imports --------------------------------------------------------
 
 import br.uff.ic.dyevc.application.IConstants;
+import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.graph.GraphBuilder;
 import br.uff.ic.dyevc.graph.GraphDomainMapper;
@@ -15,10 +16,13 @@ import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexTooltipTransformer;
 import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
+import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 import br.uff.ic.dyevc.utils.RepositoryConverter;
+import br.uff.ic.dyevc.utils.StopWatchLogger;
 
 import edu.uci.ics.jung.algorithms.filters.EdgePredicateFilter;
 import edu.uci.ics.jung.algorithms.filters.Filter;
@@ -42,6 +46,9 @@ import edu.uci.ics.jung.visualization.VisualizationViewer;
 
 import org.apache.commons.collections15.Predicate;
 import org.apache.commons.collections15.Transformer;
+import org.apache.commons.lang.time.StopWatch;
+
+import org.slf4j.LoggerFactory;
 
 //~--- JDK imports ------------------------------------------------------------
 
@@ -102,6 +109,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private JButton                         beginButton;
     private JButton                         endButton;
     private JButton                         helpButton;
+    private ApplicationSettingsBean         settings;
     private final DefaultModalGraphMouse    graphMouse   = new DefaultModalGraphMouse<CommitInfo, CommitRelationship>();
     private final ScalingControl            scaler       = new CrossoverScalingControl();
     private String                          instructions =
@@ -130,11 +138,24 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         try {
 //          splash.setStatus("Initializing Graph component");
             this.rep = rep;
+            settings = PreferencesManager.getInstance().loadPreferences();
 //          SplashScreen.getInstance().setVisible(true);
+            StopWatchLogger watch = new StopWatchLogger(CommitHistoryWindow.class);
+            watch.start();
             initGraphComponent();
+            watch.stopAndLog("Process commit history graph for repository <" + rep.getName() + "> with id <"
+                             + rep.getId() + ">.");
+
 //          SplashScreen.getInstance().setStatus("Initializing Window components");
+            watch.start();
+
             initComponents();
             translateGraph(Position.END);
+
+            if (settings.isPerformanceMode()) {
+                watch.stopAndLog("Plot commit history graph for repository <" + rep.getName() + "> with id <"
+                                 + rep.getId() + ">.");
+            }
 //          SplashScreen.getInstance().setVisible(false);
         } catch (DyeVCException ex) {
 //          splash.dispose();
@@ -300,9 +321,9 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
     // <editor-fold defaultstate="collapsed" desc="initGraphComponent">
     private void initGraphComponent() throws DyeVCException {
-
         // create the commit history graph with all commits from repository and maps the graph to the source commit map
         GitCommitTools tools = GitCommitTools.getInstance(rep, true);
+
         RepositoryInfo info  = new RepositoryConverter(rep).toRepositoryInfo();
         tools.loadExternalCommits(info);
         graph = GraphBuilder.createBasicRepositoryHistoryGraph(tools);
@@ -657,12 +678,8 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * runs the graph with a demo repository
      */
     public static void main(String[] args) {
-        MonitoredRepository rep = new MonitoredRepository("rep1391645758732");
-        rep.setCloneAddress("F:\\mybackups\\Educacao\\Mestrado-UFF\\Git\\saposTeste");
-        rep.setName("saposTeste");
-        rep.setSystemName("sapos");
-
-//      rep.setId("rep1364318989748");
+        MonitoredRepositories reps = PreferencesManager.getInstance().loadMonitoredRepositories();
+        MonitoredRepository   rep  = MonitoredRepositories.getMonitoredProjectById("rep1391645758732");    // saposTeste
         new CommitHistoryWindow(rep).setVisible(true);
     }
 

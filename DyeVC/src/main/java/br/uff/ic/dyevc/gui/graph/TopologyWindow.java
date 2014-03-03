@@ -3,6 +3,7 @@ package br.uff.ic.dyevc.gui.graph;
 //~--- non-JDK imports --------------------------------------------------------
 
 import br.uff.ic.dyevc.application.IConstants;
+import br.uff.ic.dyevc.beans.ApplicationSettingsBean;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.graph.GraphBuilder;
 import br.uff.ic.dyevc.graph.transform.common.VertexStrokeHighlightTransformer;
@@ -21,6 +22,7 @@ import br.uff.ic.dyevc.model.topology.PullRelationship;
 import br.uff.ic.dyevc.model.topology.PushRelationship;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
@@ -41,6 +43,9 @@ import edu.uci.ics.jung.visualization.VisualizationViewer;
 
 import org.apache.commons.collections15.Predicate;
 import org.apache.commons.collections15.Transformer;
+import org.apache.commons.lang.time.StopWatch;
+
+import org.slf4j.LoggerFactory;
 
 //~--- JDK imports ------------------------------------------------------------
 
@@ -74,10 +79,10 @@ import javax.swing.ToolTipManager;
  */
 public class TopologyWindow extends javax.swing.JFrame {
     private static final long            serialVersionUID = 1689885032823010309L;
-    private final DefaultModalGraphMouse graphMouse       = new DefaultModalGraphMouse<CommitInfo,
-                                                                CommitRelationship>();
-    private final ScalingControl         scaler           = new CrossoverScalingControl();
-    private String                       instructions     =
+    private ApplicationSettingsBean      settings;
+    private final DefaultModalGraphMouse graphMouse   = new DefaultModalGraphMouse<CommitInfo, CommitRelationship>();
+    private final ScalingControl         scaler       = new CrossoverScalingControl();
+    private String                       instructions =
         "<html><p>Each vertex in the graph represents a known clone of this system in the topology.</p>"
         + "<p>Each vertex label shows the hostname and the clone name of the vertex, separated by a dash.</p>"
         + "<p>Each vertex type/color has a different meaning: </p>" + "<ul>"
@@ -131,10 +136,31 @@ public class TopologyWindow extends javax.swing.JFrame {
 //          splash.setStatus("Initializing Graph component");
             this.systemName = systemName;
             this.callerId   = callerId;
+            settings        = PreferencesManager.getInstance().loadPreferences();
 //          SplashScreen.getInstance().setVisible(true);
+            StopWatch watch = new StopWatch();
+            if (settings.isPerformanceMode()) {
+                watch.start();
+            }
+
             initGraphComponent();
+
+            if (settings.isPerformanceMode()) {
+                watch.stop();
+                LoggerFactory.getLogger(TopologyWindow.class).info("Time taken to process topology graph for system <"
+                                        + systemName + ">: " + watch.toString());
+
+            }
+
 //          SplashScreen.getInstance().setStatus("Initializing Window components");
+            if (settings.isPerformanceMode()) {
+                watch.reset();
+                watch.start();
+            }
+
             initComponents();
+            LoggerFactory.getLogger(TopologyWindow.class).info("Time taken to plot topology graph for system <"
+                                    + systemName + ">: " + watch.toString());
 //          SplashScreen.getInstance().setVisible(false);
         } catch (DyeVCException ex) {
 //          splash.dispose();

@@ -95,6 +95,7 @@ public final class PreferencesManager {
     public void storePreferences(ApplicationSettingsBean bean) {
         Preferences nodeToStore = pref.node(NODE_GENERAL_SETTINGS);
         nodeToStore.putInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL, bean.getRefreshInterval());
+        nodeToStore.putBoolean(ApplicationSettingsBean.PROP_PERFORMANCE_MODE, bean.isPerformanceMode());
         nodeToStore.put(ApplicationSettingsBean.PROP_LAST_USED_PATH, bean.getLastUsedPath());
 
         if (bean.getLastApplicationVersionUsed() != null) {
@@ -115,6 +116,7 @@ public final class PreferencesManager {
             ApplicationSettingsBean bean       = new ApplicationSettingsBean();
             bean.setRefreshInterval(nodeToLoad.getInt(ApplicationSettingsBean.PROP_REFRESHINTERVAL,
                     DEFAULT_CHECK_INTERVAL));
+            bean.setPerformanceMode(nodeToLoad.getBoolean(ApplicationSettingsBean.PROP_PERFORMANCE_MODE, false));
             bean.setLastUsedPath(nodeToLoad.get(ApplicationSettingsBean.PROP_LAST_USED_PATH, ""));
             bean.setLastApplicationVersionUsed(nodeToLoad.get(ApplicationSettingsBean.PROP_LAST_APP_VERSION_USED,
                     "0.0"));

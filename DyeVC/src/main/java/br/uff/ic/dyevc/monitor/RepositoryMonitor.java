@@ -15,9 +15,11 @@ import br.uff.ic.dyevc.tools.vcs.git.GitConnector;
 import br.uff.ic.dyevc.tools.vcs.git.GitTools;
 import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
 import br.uff.ic.dyevc.utils.PreferencesManager;
+import br.uff.ic.dyevc.utils.StopWatchLogger;
 
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.time.StopWatch;
 
 import org.slf4j.LoggerFactory;
 
@@ -99,6 +101,7 @@ public class RepositoryMonitor extends Thread {
             return;
         }
 
+        StopWatchLogger watch = new StopWatchLogger(RepositoryMonitor.class);
         while (true) {
             try {
                 MessageManager.getInstance().addMessage("Repository monitor is running.");
@@ -117,12 +120,21 @@ public class RepositoryMonitor extends Thread {
                         }
 
                         MessageManager.getInstance().addMessage("Monitoring new repository <"
-                                + repositoryToMonitor.getId() + "> with id <" + repositoryToMonitor.getName()
+                                + repositoryToMonitor.getName() + "> with id <" + repositoryToMonitor.getId()
                                 + ">. Check console for details.");
+
+                        watch.start();
+
                         checkRepository(repositoryToMonitor);
+                        watch.stopAndLog("Repository <" + repositoryToMonitor.getName() + "> with id <"
+                                         + repositoryToMonitor.getId() + "> was checked.");
 
                         if (!repositoryToMonitor.getRepStatus().isInvalid()) {
+                            watch.start();
+
                             updater.update(repositoryToMonitor, discardTopologyCache, versionChanged);
+                            watch.stopAndLog("Topology for repository <" + repositoryToMonitor.getName()
+                                             + "> with id <" + repositoryToMonitor.getId() + "> was updated.");
                         }
 
                         repositoryToMonitor = null;
@@ -136,12 +148,20 @@ public class RepositoryMonitor extends Thread {
                     for (MonitoredRepository monitoredRepository : MonitoredRepositories.getMonitoredProjects()) {
                         MessageManager.getInstance().addMessage("Checking repository " + ++count + " of "
                                 + MonitoredRepositories.getMonitoredProjects().size() + ": <"
-                                + monitoredRepository.getId() + "> with id <" + monitoredRepository.getName()
+                                + monitoredRepository.getName() + "> with id <" + monitoredRepository.getId()
                                 + ">. Check console for details.");
+
+                        watch.start();
+
                         checkRepository(monitoredRepository);
+                        watch.stopAndLog("Repository <" + monitoredRepository.getName() + "> with id <"
+                                         + monitoredRepository.getId() + "> was checked.");
 
                         if (!monitoredRepository.getRepStatus().isInvalid()) {
+                            watch.start();
                             updater.update(monitoredRepository, false, versionChanged);
+                            watch.stopAndLog("Topology for repository <" + monitoredRepository.getName()
+                                             + "> with id <" + monitoredRepository.getId() + "> was updated.");
                         }
                     }
 

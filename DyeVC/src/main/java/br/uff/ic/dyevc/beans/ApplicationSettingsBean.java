@@ -28,10 +28,34 @@ public class ApplicationSettingsBean implements Serializable {
         return WORKING_PATH;
     }
 
-    private int refreshInterval;
+    private int     refreshInterval;
+    private boolean performanceMode;
 
     /** Published name for the refreshInterval property */
     public static final String PROP_REFRESHINTERVAL = "refreshinterval";
+
+    /** Published name for the performanceMode property */
+    public static final String PROP_PERFORMANCE_MODE = "performanceMode";
+
+    /**
+     * Get the value of performanceMode
+     *
+     * @return the value of performanceMode
+     */
+    public boolean isPerformanceMode() {
+        return performanceMode;
+    }
+
+    /**
+     * Set the value of performanceMode
+     *
+     * @param performanceMode new value of performanceMode
+     */
+    public void setPerformanceMode(boolean performanceMode) {
+        boolean oldPerformanceMode = this.performanceMode;
+        this.performanceMode = performanceMode;
+        propertySupport.firePropertyChange(PROP_PERFORMANCE_MODE, oldPerformanceMode, performanceMode);
+    }
 
     /**
      * Get the value of refreshInterval
