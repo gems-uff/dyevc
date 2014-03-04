@@ -18,6 +18,7 @@ import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
+import br.uff.ic.dyevc.utils.ApplicationVersionUtils;
 import br.uff.ic.dyevc.utils.RepositoryConverter;
 import br.uff.ic.dyevc.utils.SystemUtils;
 
@@ -84,9 +85,12 @@ public class TopologyUpdater {
      * @param repositoryToUpdate the repository to be updated
      * @param discardCache If true, discards existing snapshot, if any, and works as if it is the first time the
      * @param versionChanged  If true, indicates that application version has changed.
+     * @param previousVersion The version of the application that was running before this one. Used to make specific
+     * version arrangements if versionChanged is true.
      * repository is monitored.
      */
-    public void update(MonitoredRepository repositoryToUpdate, boolean discardCache, boolean versionChanged) {
+    public void update(MonitoredRepository repositoryToUpdate, boolean discardCache, boolean versionChanged,
+                       String previousVersion) {
         LoggerFactory.getLogger(TopologyUpdater.class).trace("Topology updater is running.");
 
         if (!repositoryToUpdate.hasSystemName()) {
@@ -101,9 +105,13 @@ public class TopologyUpdater {
         this.converter          = new RepositoryConverter(repositoryToUpdate);
         this.discardCache       = discardCache;
 
+        if (true) {
+            doVersionSpecificProcessing(previousVersion);
+        }
+
         StringBuilder message = new StringBuilder("Updating topology ");
         if (discardCache) {
-            message.append("and cleaning snapshot ");
+            message.append("and discarding cache ");
         }
 
         message.append("for repository <").append(repositoryToUpdate.getId()).append("> with id <").append(
@@ -832,5 +840,18 @@ public class TopologyUpdater {
         }
 
         return nowTrackedCommits;
+    }
+
+    /**
+     * This method does some processing depending on the version of dyevc that is running, to clean data or any other
+     * processing that a new version demands.
+     * @param previousVersion Previous version of this application that was running.
+     */
+    private void doVersionSpecificProcessing(String previousVersion) {
+        // CommitInfo class structure changed on this version, so all snapshots should be discarded because they will give
+        // ClassCastException when being loaded.
+        if (ApplicationVersionUtils.isLessThanOrEqual(previousVersion, "0.2.16")) {
+            discardCache = true;
+        }
     }
 }

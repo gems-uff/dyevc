@@ -50,6 +50,7 @@ public class RepositoryMonitor extends Thread {
     private final TopologyUpdater    updater;
     private static RepositoryMonitor instance;
     private boolean                  versionChanged;
+    private String                   previousApplicationVersion;
 
     /**
      * Associates the specified window container and continuously monitors the specified list of repositories.
@@ -89,7 +90,9 @@ public class RepositoryMonitor extends Thread {
         LoggerFactory.getLogger(RepositoryMonitor.class).trace("Repository monitor is running.");
         int sleepTime = settings.getRefreshInterval() * 1000;
 
-        if (!(currentApplicationVersion.equals(settings.getLastApplicationVersionUsed()))) {
+        previousApplicationVersion = settings.getLastApplicationVersionUsed();
+
+        if (!(currentApplicationVersion.equals(previousApplicationVersion))) {
             versionChanged = true;
             settings.setLastApplicationVersionUsed(currentApplicationVersion);
             PreferencesManager.getInstance().storePreferences(settings);
@@ -132,7 +135,8 @@ public class RepositoryMonitor extends Thread {
                         if (!repositoryToMonitor.getRepStatus().isInvalid()) {
                             watch.start();
 
-                            updater.update(repositoryToMonitor, discardTopologyCache, versionChanged);
+                            updater.update(repositoryToMonitor, discardTopologyCache, versionChanged,
+                                           previousApplicationVersion);
                             watch.stopAndLog("Topology for repository <" + repositoryToMonitor.getName()
                                              + "> with id <" + repositoryToMonitor.getId() + "> was updated.");
                         }
@@ -159,7 +163,7 @@ public class RepositoryMonitor extends Thread {
 
                         if (!monitoredRepository.getRepStatus().isInvalid()) {
                             watch.start();
-                            updater.update(monitoredRepository, false, versionChanged);
+                            updater.update(monitoredRepository, false, versionChanged, previousApplicationVersion);
                             watch.stopAndLog("Topology for repository <" + monitoredRepository.getName()
                                              + "> with id <" + monitoredRepository.getId() + "> was updated.");
                         }

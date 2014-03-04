@@ -160,7 +160,7 @@ public class CommitDAO {
         String          queryEnd   = "}";
         Set<CommitInfo> result     = new HashSet<CommitInfo>();
 
-        if (size > 3 * BULK_READ_UPDATE_COMMITS_SIZE) {
+        if (size < 3 * BULK_READ_UPDATE_COMMITS_SIZE) {
             int i = 0;
             int j = i + BULK_READ_UPDATE_COMMITS_SIZE;
             // size not too long, get just the specified hashes
