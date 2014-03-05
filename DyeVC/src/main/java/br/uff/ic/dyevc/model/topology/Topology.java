@@ -1,6 +1,11 @@
 package br.uff.ic.dyevc.model.topology;
 
+//~--- non-JDK imports --------------------------------------------------------
+
 import br.uff.ic.dyevc.exception.DyeVCException;
+
+//~--- JDK imports ------------------------------------------------------------
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,7 +19,6 @@ import java.util.Set;
  */
 @SuppressWarnings("serial")
 public class Topology {
-
     /**
      * Stores the list of known clones of each system, mapped by its system
      * name.
@@ -29,6 +33,7 @@ public class Topology {
     }
 
     // <editor-fold defaultstate="collapsed" desc="RepositoryMap">
+
     /**
      * Resets the topology, replacing all existing repository information by the
      * list informed as parameter
@@ -46,6 +51,7 @@ public class Topology {
         for (RepositoryInfo ri : repos) {
             addRepositoryInfo(ri);
         }
+
         return this;
     }
 
@@ -58,20 +64,28 @@ public class Topology {
         if (!repositoryMap.containsKey(repos.getSystemName())) {
             repositoryMap.put(repos.getSystemName(), new CloneMap());
         }
+
         String key = repos.getId();
         repositoryMap.get(repos.getSystemName()).put(key, repos);
     }
-// </editor-fold>
+//  </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="CloneMap">
+
     /**
-     * Gets clone information for the given key
+     * Gets clone information for the given key. If there is no clone information for the specified systemName, then
+     * the result is null.
      *
      * @param cloneKey Clone key to look for
      * @return The clone info requested
      */
     public RepositoryInfo getRepositoryInfo(String systemName, String cloneKey) {
-        return repositoryMap.get(systemName).get(cloneKey);
+        CloneMap repoMap = repositoryMap.get(systemName);
+        if (repoMap != null) {
+            return repoMap.get(cloneKey);
+        }
+
+        return null;
     }
 
     /**
@@ -85,6 +99,7 @@ public class Topology {
         if (!repositoryMap.containsKey(systemName)) {
             throw new DyeVCException("System " + systemName + " is not a known system name.");
         }
+
         return repositoryMap.get(systemName).values();
     }
     // </editor-fold>
@@ -111,29 +126,33 @@ public class Topology {
         }
 
         ArrayList<CloneRelationship> cis = new ArrayList<CloneRelationship>();
-        CloneMap map = repositoryMap.get(systemName);
+        CloneMap                     map = repositoryMap.get(systemName);
         for (RepositoryInfo repositoryInfo : map.values()) {
-            //Clonekey of "pullsFrom" is the origin and this cloneInfo is the destination
+            // Clonekey of "pullsFrom" is the origin and this cloneInfo is the destination
             for (String cloneKey : repositoryInfo.getPullsFrom()) {
-               if (!map.containsKey(cloneKey)) {
+                if (!map.containsKey(cloneKey)) {
                     throw new DyeVCException("Clone <" + repositoryInfo.getCloneName()
-                            + "> pulls from repository with id <" + cloneKey
-                            + ">, that does not belong to this system.");
+                                             + "> pulls from repository with id <" + cloneKey
+                                             + ">, that does not belong to this system.");
                 }
+
                 PullRelationship cloneRelationship = new PullRelationship(map.get(cloneKey), repositoryInfo);
                 cis.add(cloneRelationship);
             }
+
             // RepositoryKey of "pushesTo" is the destination and this cloneInfo is the origin
             for (String cloneKey : repositoryInfo.getPushesTo()) {
-               if (!map.containsKey(cloneKey)) {
+                if (!map.containsKey(cloneKey)) {
                     throw new DyeVCException("Clone <" + repositoryInfo.getCloneName()
-                            + "> pushes to repository with id <" + cloneKey
-                            + ">, that does not belong to this system.");
+                                             + "> pushes to repository with id <" + cloneKey
+                                             + ">, that does not belong to this system.");
                 }
+
                 PushRelationship cloneRelationship = new PushRelationship(repositoryInfo, map.get(cloneKey));
                 cis.add(cloneRelationship);
             }
         }
+
         return cis;
     }
 
@@ -159,8 +178,8 @@ public class Topology {
      * @author Cristiano
      */
     @SuppressWarnings("serial")
-    private class CloneMap extends HashMap<String, RepositoryInfo> {
-    }
+    private class CloneMap extends HashMap<String, RepositoryInfo> {}
+
 
     @Override
     public String toString() {
@@ -168,6 +187,7 @@ public class Topology {
         for (String key : repositoryMap.keySet()) {
             value.append("<").append(key).append("> ");
         }
+
         return value.toString();
     }
 }
