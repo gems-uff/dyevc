@@ -5,6 +5,6 @@
 *.war
 *.ear
 *.bak
-/DyeVC/target/
-/DyeVC/src/main/jnlp/template2.vm.jnlp
-/DyeVC/src/main/java/br/uff/ic/dyevc/tests
+/target/
+/src/main/jnlp/template2.vm.jnlp
+/src/main/java/br/uff/ic/dyevc/tests
