@@ -37,6 +37,21 @@ DyeVC does not need to be formally installed. As it uses [Java Web Start technol
 * [JGit](http://www.eclipse.org/jgit/)
 * [Mongolab](https://mongolab.com/welcome/)
 
+#Information Usage
+
+DyeVC collects non-private information to be used solely for experimental purposes. No file contents are collected nor analyzed by the application. The following is a list of the information collected.
+
+* For repositories:
+    * Hostname where the repository is located.
+    * Path where the repository is located.
+    * Relations between repositories (push / pull list).
+* For commits:
+    * Date and time when the commit was done.
+    * Name of committer.
+    * Repositories where the commit is found.
+    * Commit predecessors (parents).
+    * Commit message.
+
 #License
 
 Copyright (c) 2013 Universidade Federal Fluminense (UFF)  
