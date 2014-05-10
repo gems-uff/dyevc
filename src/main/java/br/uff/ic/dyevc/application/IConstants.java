@@ -93,6 +93,12 @@ public interface IConstants {
     /** Color used to identify a commit that does not belong to a tracked branch and thus cannot be sent to other repositories. */
     public static final Color TOPOLOGY_COLOR_NOT_TRACKED = Color.LIGHT_GRAY;
 
+    /** Color used to identify the stroke of a commit that referenced by a branch. */
+    public static final Color TOPOLOGY_STROKE_COLOR_REFERENCED_BY_BRANCH = Color.BLACK;
+
+    /** Color used to identify the stroke of a commit that referenced by a tag (Orange Red). */
+    public static final Color TOPOLOGY_STROKE_COLOR_REFERENCED_BY_TAG = new Color(255, 69, 0);
+
     /** Default size for single vertices in graphs. */
     public static final int GRAPH_VERTEX_SINGLE_SIZE = 40;
 

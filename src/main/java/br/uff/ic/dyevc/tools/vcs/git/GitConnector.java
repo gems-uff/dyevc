@@ -50,10 +50,9 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -801,22 +800,33 @@ public class GitConnector {
     }
 
     /**
-     * Returns list of all tags
+     * Returns a map with all tags. Key is the tag name (e.g.: "refs/tags/v1.0") and value
+     * is the sha-1 of the referenced commit.
      *
      * @return
      */
-    public Set<String> getAllTags() throws VCSException {
+    public Map<String, String> getAllTags() throws VCSException {
         LoggerFactory.getLogger(GitConnector.class).trace("getAllTags -> Entry.");
 
-        Set<String> result = new TreeSet<String>();
+        Map<String, String> result = new TreeMap<String, String>();
         try {
             List<Ref> tagList = git.tagList().call();
 
             for (Iterator<Ref> it = tagList.iterator(); it.hasNext(); ) {
-                Ref ref = it.next();
-                result.add(ref.getName());
+                Ref    ref       = it.next();
+                String tagName   = ref.getName();
+                Ref    peeledRef = repository.peel(ref);
+                String commitHash;
+                if (peeledRef.getPeeledObjectId() == null) {
+                    // tag is a lightweight tag that points directly to the commit
+                    commitHash = peeledRef.getObjectId().getName();
+                } else {
+                    // tag is not lightweight, wo we get the commit hash from the peeled object
+                    commitHash = peeledRef.getPeeledObjectId().getName();
+                }
 
-
+                System.out.println(tagName + " > " + commitHash);
+                result.put(tagName, commitHash);
             }
         } catch (GitAPIException ex) {
             LoggerFactory.getLogger(GitConnector.class).error("Error retrieving all tags.", ex);

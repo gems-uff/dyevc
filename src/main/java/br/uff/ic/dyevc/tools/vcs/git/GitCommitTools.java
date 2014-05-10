@@ -44,8 +44,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -60,6 +58,11 @@ public class GitCommitTools {
      * Map of commits associated that are pointed by any branch heads with the pointing branch names.
      */
     private Map<String, List<String>> commitsToBranchNamesMap;
+
+    /**
+     * Map of commits associated that are pointed by any tags with the pointing tag names.
+     */
+    private Map<String, List<String>> commitsToTagNamesMap;
 
     /**
      * Map of commits with its properties. Each commit is identified by its id.
@@ -425,7 +428,9 @@ public class GitCommitTools {
     /**
      * Parse commits from the repository, starting with references specified in the branchHeads and taking all their
      * parents, until all the repository commits are processed. The method stops when queue is empty.
-     * @param branchHeads List of heads for each branch to start traverse from. Taken from the refs/heads of the repository.
+     *
+     * @param branchHeads List of heads for each branch to start traverse from. Taken from the refs/heads of the
+     * repository.
      * @throws IOException
      */
     private void parseLocalCommits(Set<String> branchHeads) throws IOException {
@@ -635,5 +640,31 @@ public class GitCommitTools {
         }
 
         return commitsToBranchNamesMap;
+    }
+
+    /**
+     * Retrieves a map with every commit pointed by a tag. The key is the commit hash and the value is the list of tag
+     * names that point to it.
+     *
+     * @return base commit or null if none
+     * @throws DyeVCException
+     */
+    public Map<String, List<String>> getTagsCommitsMap() throws DyeVCException {
+        if (commitsToTagNamesMap == null) {
+            commitsToTagNamesMap = new TreeMap<String, List<String>>();
+            Map<String, String> tags = git.getAllTags();
+            for (String tag : tags.keySet()) {
+                String       commitHash = tags.get(tag);
+                List<String> tagList    = commitsToTagNamesMap.get(commitHash);
+                if (tagList == null) {
+                    tagList = new ArrayList<String>();
+                    commitsToTagNamesMap.put(commitHash, tagList);
+                }
+
+                tagList.add(tag);
+            }
+        }
+
+        return commitsToTagNamesMap;
     }
 }

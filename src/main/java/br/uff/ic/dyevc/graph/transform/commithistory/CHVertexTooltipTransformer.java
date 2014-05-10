@@ -24,17 +24,21 @@ import java.util.Map;
 public class CHVertexTooltipTransformer implements Transformer<Object, String> {
     private final RepositoryInfo            info;
     private final Map<String, List<String>> commitToBranchNamesMap;
+    private final Map<String, List<String>> commitToTagNamesMap;
 
     /**
      * Constructs an instance of this transformer
      *
      * @param info the repository info of the repository that contains this vertex.
      * @param commitMap Map of commits to branch names that point to them.
+     * @param tagMap Map of commits to tag names that point to them.
      */
-    public CHVertexTooltipTransformer(RepositoryInfo info, Map<String, List<String>> commitMap) {
+    public CHVertexTooltipTransformer(RepositoryInfo info, Map<String, List<String>> commitMap,
+                                      Map<String, List<String>> tagMap) {
         super();
         this.info                   = info;
         this.commitToBranchNamesMap = commitMap;
+        this.commitToTagNamesMap    = tagMap;
     }
 
     /**
@@ -90,10 +94,19 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
 
             if (commitToBranchNamesMap.containsKey(ci.getHash())) {
                 details.append("<br><br>");
-                details.append("<b>The following branch(es) point to this commit:</b>");
+                details.append("<b>Branches that point to this commit:</b>");
 
                 for (String branchName : commitToBranchNamesMap.get(ci.getHash())) {
                     details.append("<br>").append("&nbsp;&nbsp;&nbsp;&nbsp;").append(branchName);
+                }
+            }
+
+            if (commitToTagNamesMap.containsKey(ci.getHash())) {
+                details.append("<br><br>");
+                details.append("<span style=\"color:orange\"><b>Tags that point to this commit:</b></span>");
+
+                for (String tagName : commitToTagNamesMap.get(ci.getHash())) {
+                    details.append("<br>").append("&nbsp;&nbsp;&nbsp;&nbsp;").append(tagName);
                 }
             }
 
