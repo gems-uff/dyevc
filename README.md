@@ -37,7 +37,7 @@ DyeVC does not need to be formally installed. As it uses [Java Web Start technol
 * [JGit](http://www.eclipse.org/jgit/)
 * [Mongolab](https://mongolab.com/welcome/)
 
-#Information Usage
+#Information Gathering
 
 DyeVC collects non-private information to be used solely for experimental purposes. No file contents are collected nor analyzed by the application. The following is a list of the information collected.
 

@@ -98,7 +98,9 @@ public class TopologyWindow extends javax.swing.JFrame {
         + "<li>Yellow edges represent a picked edge;</li>"
         + "<li>Green edges represent that source clone is synchronized with destination clone;</li>"
         + "<li>Red edges represent that source clone is not synchronized with destination clone.</li>" + "</ul>"
-        + "<p>Each edge label tells how many commits from the source clone are missing in "
+        + "<p>First number in edge labels tells how many tracked commits from the source clone are missing in "
+        + "the destination clone.</p>"
+        + "<p>Second number in edge labels tells how many non-tracked commits from the source clone are missing in "
         + "the destination clone.</p>" + "<br><p>Place the mouse over a vertex to view detailed information "
         + "regarding it.</p>" + "</html>";
     private String                                                       systemName;
