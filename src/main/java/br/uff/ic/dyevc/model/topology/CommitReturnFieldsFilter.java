@@ -6,24 +6,20 @@ import br.uff.ic.dyevc.persistence.GenericFilter;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 
-//~--- JDK imports ------------------------------------------------------------
-
-import java.util.Date;
-
 /**
  * Filter to be used in commit queries. All filters are inclusive (and operator
  * is implicit) and null fields should be discarded.
  * @author Cristiano
  */
 
-public class CommitFilter extends GenericFilter {
+public class CommitReturnFieldsFilter extends GenericFilter {
     @JsonProperty(value = "_id")
-    private String  hash;
-    private String  systemName;
-    private Date    commitDate;
-    private String  committer;
-    private Boolean tracked;
-    private String  foundIn;
+    private String hash;
+    private String systemName;
+    private String commitDate;
+    private String committer;
+    private String tracked;
+    private String foundIn;
 
     public String getFoundIn() {
         return foundIn;
@@ -49,11 +45,11 @@ public class CommitFilter extends GenericFilter {
         this.systemName = systemName;
     }
 
-    public Date getCommitDate() {
+    public String getCommitDate() {
         return commitDate;
     }
 
-    public void setCommitDate(Date commitDate) {
+    public void setCommitDate(String commitDate) {
         this.commitDate = commitDate;
     }
 
@@ -65,11 +61,11 @@ public class CommitFilter extends GenericFilter {
         this.committer = committer;
     }
 
-    public Boolean isTracked() {
+    public String getTracked() {
         return tracked;
     }
 
-    public void setTracked(Boolean tracked) {
+    public void setTracked(String tracked) {
         this.tracked = tracked;
     }
 }

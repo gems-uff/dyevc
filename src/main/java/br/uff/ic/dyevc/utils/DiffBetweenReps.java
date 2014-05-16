@@ -2,7 +2,6 @@ package br.uff.ic.dyevc.utils;
 
 //~--- non-JDK imports --------------------------------------------------------
 
-import br.uff.ic.dyevc.graph.GraphBuilder;
 import br.uff.ic.dyevc.model.CommitInfo;
 
 import org.apache.commons.collections15.Predicate;
@@ -18,6 +17,10 @@ public class DiffBetweenReps implements Predicate<CommitInfo> {
 
     @Override
     public boolean evaluate(CommitInfo ci) {
+        if ((originId == null) || (destinationId == null)) {
+            return false;
+        }
+
         return ci.getFoundIn().contains(originId) &&!ci.getFoundIn().contains(destinationId);
     }
 

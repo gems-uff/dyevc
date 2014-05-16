@@ -10,12 +10,14 @@ import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.topology.CloneRelationship;
 import br.uff.ic.dyevc.model.topology.CommitFilter;
+import br.uff.ic.dyevc.model.topology.CommitReturnFieldsFilter;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.persistence.CommitDAO;
 import br.uff.ic.dyevc.persistence.TopologyDAO;
 import br.uff.ic.dyevc.tools.vcs.git.GitCommitTools;
 import br.uff.ic.dyevc.utils.DiffBetweenReps;
+import br.uff.ic.dyevc.utils.TrackedCommitPredicate;
 
 import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
@@ -28,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 //~--- JDK imports ------------------------------------------------------------
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -97,20 +100,30 @@ public class GraphBuilder {
 
             CommitFilter filter = new CommitFilter();
             filter.setSystemName(systemName);
-            Set<CommitInfo> allSystemCommits = new CommitDAO().getCommitsByQuery(filter);
+
+            CommitReturnFieldsFilter returnFields = new CommitReturnFieldsFilter();
+            returnFields.setTracked("1");
+            returnFields.setFoundIn("1");
+            Set<CommitInfo> allSystemCommits = new CommitDAO().getCommitsByQuery(filter, returnFields);
 
             for (RepositoryInfo cloneInfo : top.getClonesForSystem(systemName)) {
                 graph.addVertex(cloneInfo);
                 LoggerFactory.getLogger(GraphBuilder.class).debug("Vertex added: " + cloneInfo);
             }
 
-            DiffBetweenReps diff = new DiffBetweenReps();
+            DiffBetweenReps        diff            = new DiffBetweenReps();
+            TrackedCommitPredicate commitPredicate = new TrackedCommitPredicate();
 
             for (CloneRelationship cloneRelationship : top.getRelationshipsForSystem(systemName)) {
                 diff.setOriginId(cloneRelationship.getOrigin().getId());
                 diff.setDestinationId(cloneRelationship.getDestination().getId());
-                int result = CollectionUtils.select(allSystemCommits, diff).size();
-                cloneRelationship.setNonSyncCommitsCount(result);
+                Collection<CommitInfo> diffCommits = CollectionUtils.select(allSystemCommits, diff);
+
+                int                    tracked     = CollectionUtils.select(diffCommits, commitPredicate).size();
+                cloneRelationship.setNonSyncTrackedCommitsCount(tracked);
+                int nonTracked = diffCommits.size() - tracked;
+                cloneRelationship.setNonSyncNonTrackedCommitsCount(nonTracked);
+
                 graph.addEdge(cloneRelationship, cloneRelationship.getOrigin(), cloneRelationship.getDestination(),
                               EdgeType.DIRECTED);
                 LoggerFactory.getLogger(GraphBuilder.class).debug("Edge added: " + cloneRelationship);

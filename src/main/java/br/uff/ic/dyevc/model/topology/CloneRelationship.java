@@ -9,14 +9,23 @@ package br.uff.ic.dyevc.model.topology;
 public class CloneRelationship {
     private RepositoryInfo origin;
     private RepositoryInfo destination;
-    private int            nonSyncCommitsCount;
+    private int            nonSyncTrackedCommitsCount;
+    private int            nonSyncNonTrackedCommitsCount;
 
-    public int getNonSyncCommitsCount() {
-        return nonSyncCommitsCount;
+    public int getNonSyncTrackedCommitsCount() {
+        return nonSyncTrackedCommitsCount;
     }
 
-    public void setNonSyncCommitsCount(int nonSyncCommitsCount) {
-        this.nonSyncCommitsCount = nonSyncCommitsCount;
+    public void setNonSyncTrackedCommitsCount(int nonSyncTrackedCommitsCount) {
+        this.nonSyncTrackedCommitsCount = nonSyncTrackedCommitsCount;
+    }
+
+    public int getNonSyncNonTrackedCommitsCount() {
+        return nonSyncNonTrackedCommitsCount;
+    }
+
+    public void setNonSyncNonTrackedCommitsCount(int nonSyncNonTrackedCommitsCount) {
+        this.nonSyncNonTrackedCommitsCount = nonSyncNonTrackedCommitsCount;
     }
 
     /**

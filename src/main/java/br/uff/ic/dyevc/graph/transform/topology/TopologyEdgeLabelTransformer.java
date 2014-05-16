@@ -13,7 +13,8 @@ import org.apache.commons.collections15.Transformer;
  */
 public class TopologyEdgeLabelTransformer implements Transformer<Object, String> {
     /**
-     * Returns a string telling how many commits are ahead / behind the two vertex of the relationship
+     * Returns a string telling how many tracked (TR) and non tracked (NTR) commits are ahead / behind the two vertex
+     * of the relationship.
      *
      * @param o Edge to be labeled
      * @return the edge formatted as a label
@@ -23,7 +24,8 @@ public class TopologyEdgeLabelTransformer implements Transformer<Object, String>
         if (o instanceof CloneRelationship) {
             CloneRelationship relation = (CloneRelationship)o;
 
-            return Integer.toString(relation.getNonSyncCommitsCount());
+            return Integer.toString(relation.getNonSyncTrackedCommitsCount()) + " - "
+                   + Integer.toString(relation.getNonSyncNonTrackedCommitsCount());
         }
 
         return "";

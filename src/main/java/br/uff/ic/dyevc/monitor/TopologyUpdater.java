@@ -13,6 +13,7 @@ import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
 import br.uff.ic.dyevc.model.MonitoredRepository;
 import br.uff.ic.dyevc.model.topology.CommitFilter;
+import br.uff.ic.dyevc.model.topology.CommitReturnFieldsFilter;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.model.topology.Topology;
 import br.uff.ic.dyevc.persistence.CommitDAO;
@@ -605,9 +606,9 @@ public class TopologyUpdater {
         if (newCommits != null) {
             if (!dbIsEmpty) {
                 // Create filter to return only hash and commitDate
-                CommitFilter returnFieldsFilter = new CommitFilter();
+                CommitReturnFieldsFilter returnFieldsFilter = new CommitReturnFieldsFilter();
                 returnFieldsFilter.setHash("1");
-                returnFieldsFilter.setCommitDate(new Date(1));
+                returnFieldsFilter.setCommitDate("1");
                 // Check db only if it is not empty, otherwise all commits in newCommits have to be inserted.
                 Set<CommitInfo> newCommitsInDatabase = commitDAO.getCommitsByHashes(newCommits,
                                                            converter.toRepositoryInfo().getSystemName(),

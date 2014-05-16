@@ -6,6 +6,7 @@ import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.ServiceException;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.topology.CommitFilter;
+import br.uff.ic.dyevc.model.topology.CommitReturnFieldsFilter;
 import br.uff.ic.dyevc.services.MongoLabProvider;
 import br.uff.ic.dyevc.utils.JsonSerializerUtils;
 
@@ -63,9 +64,9 @@ public class CommitDAO {
         parms.setQuery(commitFilter);
 
         // Sets fields to be returned (hash and commitDate)
-        CommitFilter returnFields = new CommitFilter();
+        CommitReturnFieldsFilter returnFields = new CommitReturnFieldsFilter();
         returnFields.setHash("1");
-        returnFields.setCommitDate(new Date(1));
+        returnFields.setCommitDate("1");
         parms.setReturnFields(returnFields);
         parms.setLimit(COMMIT_LIMIT);
 
@@ -95,7 +96,7 @@ public class CommitDAO {
      * @return List of commits that match the specified filter
      * @throws ServiceException
      */
-    public Set<CommitInfo> getCommitsByQuery(CommitFilter commitFilter, CommitFilter returnFieldsFilter)
+    public Set<CommitInfo> getCommitsByQuery(CommitFilter commitFilter, CommitReturnFieldsFilter returnFieldsFilter)
             throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByQuery -> Entry");
         MongoLabServiceParms parms = new MongoLabServiceParms();
@@ -136,7 +137,8 @@ public class CommitDAO {
      * @return List of commits that have the specified hashes.
      * @throws ServiceException
      */
-    public Set<CommitInfo> getCommitsByHashes(List<CommitInfo> cis, String systemName, CommitFilter returnFieldsFilter)
+    public Set<CommitInfo> getCommitsByHashes(List<CommitInfo> cis, String systemName,
+            CommitReturnFieldsFilter returnFieldsFilter)
             throws ServiceException {
         LoggerFactory.getLogger(CommitDAO.class).trace("getCommitsByHashes -> Entry");
 

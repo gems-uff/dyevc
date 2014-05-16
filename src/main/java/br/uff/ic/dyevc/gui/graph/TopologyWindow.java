@@ -316,7 +316,7 @@ public class TopologyWindow extends javax.swing.JFrame {
         vv.getRenderContext().setVertexLabelTransformer(new Transformer<RepositoryInfo, String>() {
             @Override
             public String transform(RepositoryInfo c) {
-                return c.getHostName() + " - " + c.getCloneName();
+                return c.getCloneName() + " [" + c.getId() + "]";
             }
         });
         vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.AUTO);
