@@ -724,7 +724,7 @@ public class TopologyUpdater {
                 repositoryToUpdate.getSystemName(), repositoryToUpdate.getName(), repositoryToUpdate.getId(),
                 cis.size(), repId, notToUpdateList.size());
 
-            if (notToUpdateList.size() < CommitDAO.BULK_READ_UPDATE_COMMITS_SIZE * 3) {
+            if (notToUpdateList.size() < CommitDAO.BULK_READ_UPDATE_COMMITS_SIZE) {
                 // The size of notToUpdateList is smaller than amount of hashes we can send in one call.
                 // Thus, update all commits but those in notToUpdateList.
                 commitDAO.updateCommitsWithNewRepository(repositoryToUpdate.getSystemName(), notToUpdateList, repId,
