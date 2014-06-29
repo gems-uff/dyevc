@@ -28,7 +28,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2:exec</goal>
             </goals>
             <properties>
-                <exec.args>-classpath %classpath br.uff.ic.dyevc.application.DyeVC</exec.args>
+                <exec.args>-Xmx2g -classpath %classpath br.uff.ic.dyevc.application.DyeVC</exec.args>
                 <exec.executable>java</exec.executable>
                 <exec.classpathScope>runtime</exec.classpathScope>
                 <skipTests>true</skipTests>
@@ -56,7 +56,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:1.2:exec</goal>
             </goals>
             <properties>
-                <exec.args>-classpath %classpath br.uff.ic.dyevc.application.DyeVC</exec.args>
+                <exec.args>-Xmx2g -classpath %classpath br.uff.ic.dyevc.application.DyeVC</exec.args>
                 <exec.executable>java</exec.executable>
             </properties>
         </action>
