@@ -825,7 +825,6 @@ public class GitConnector {
                     commitHash = peeledRef.getPeeledObjectId().getName();
                 }
 
-                System.out.println(tagName + " > " + commitHash);
                 result.put(tagName, commitHash);
             }
         } catch (GitAPIException ex) {

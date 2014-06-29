@@ -41,7 +41,7 @@ public class MongoLabProvider {
     public static final String        COLLECTION_COMMITS              = "/collections/commits";
     private static final String       API_KEY                         = "dgOZbb9cNfzHSfuANRekokGrWCYWYCEs";
     private static final String       BASE_URL                        =
-        "https://api.mongolab.com/api/1/databases/dyevceval";
+        "https://api.mongolab.com/api/1/databases/dyevc";
     private static final String       KEY_MESSAGE_WHEN_ERROR_OCCURRED = "message";
     private static final ObjectMapper mapper                          = new ObjectMapper();
 
