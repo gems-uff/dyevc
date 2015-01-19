@@ -41,6 +41,7 @@ import java.awt.Toolkit;
 import java.awt.TrayIcon;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -704,7 +705,7 @@ public class MainWindow extends javax.swing.JFrame {
      * @param message the message to be displayed.
      */
     public void notifyMessage(String message) {
-        trayIcon.displayMessage("DyeVC", message + " Click on this balloon if you want to see details.",
+        trayIcon.displayMessage("DyeVC", message + "\nClick on this balloon if you want to see details.",
                                 TrayIcon.MessageType.WARNING);
         MessageManager.getInstance().addMessage(message);
     }
@@ -716,23 +717,32 @@ public class MainWindow extends javax.swing.JFrame {
      */
     public void notifyMessages(List<RepositoryStatus> repStatusList) {
         LoggerFactory.getLogger(MainWindow.class).trace("notifyMessages -> Entry");
+        HashSet<RepositoryStatus> repositoriesWithMessages = new HashSet<RepositoryStatus>();
 
-        int countRepsWithMessages = 0;
         for (Iterator<RepositoryStatus> it = repStatusList.iterator(); it.hasNext(); ) {
             RepositoryStatus repositoryStatus = it.next();
             if (repositoryStatus.isInvalid()) {
-                countRepsWithMessages++;
+                repositoriesWithMessages.add(repositoryStatus);
             } else {
                 if ((repositoryStatus.getInvalidBranchesCount() > 0)
                         || (repositoryStatus.getNonSyncedBranchesCount() > 0)) {
-                    countRepsWithMessages++;
+                    repositoriesWithMessages.add(repositoryStatus);
                 }
             }
         }
 
-        if (countRepsWithMessages != lastMessagesCount) {
-            notifyMessage("There are messages on " + countRepsWithMessages + " repositories.");
-            lastMessagesCount = countRepsWithMessages;
+        if (repositoriesWithMessages.size() != lastMessagesCount) {
+            StringBuilder message = new StringBuilder("There are messages in the following repositories:\n");
+            int count = 0;
+            for(RepositoryStatus repStat : repositoriesWithMessages) {
+                String id = repStat.getRepositoryId();
+                MonitoredRepository rep = MonitoredRepositories.getMonitoredProjectById(id);
+                message.append("  - ").append(id);
+                message.append(" (").append(rep.getName()).append(")").append(" System: ").append(rep.getSystemName());
+                message.append("\n");
+            }
+            notifyMessage(message.toString());
+            lastMessagesCount = repositoriesWithMessages.size();
         }
 
         repoTable.repaint();
