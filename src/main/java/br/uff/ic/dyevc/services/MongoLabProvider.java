@@ -5,9 +5,11 @@ package br.uff.ic.dyevc.services;
 import br.uff.ic.dyevc.application.IConstants;
 import br.uff.ic.dyevc.exception.DyeVCException;
 import br.uff.ic.dyevc.exception.ServiceException;
+import br.uff.ic.dyevc.gui.core.MessageManager;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
 import br.uff.ic.dyevc.persistence.MongoLabServiceParms;
+import br.uff.ic.dyevc.utils.PreferencesManager;
 
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -39,11 +41,13 @@ public class MongoLabProvider {
 
     /** Path to access mongo lab collection for commits */
     public static final String        COLLECTION_COMMITS              = "/collections/commits";
-    private static final String       API_KEY                         = "dgOZbb9cNfzHSfuANRekokGrWCYWYCEs";
-    private static final String       BASE_URL                        =
-        "https://api.mongolab.com/api/1/databases/dyevc";
+    private static final String       API_KEY                         = PreferencesManager.getInstance().loadPreferences().getAppKey();
+    private static final String       BASE_URL                        = PreferencesManager.getInstance().loadPreferences().getDatabasePath();
     private static final String       KEY_MESSAGE_WHEN_ERROR_OCCURRED = "message";
     private static final ObjectMapper mapper                          = new ObjectMapper();
+    static {
+        MessageManager.getInstance().addMessage("Using database hosted at: " + BASE_URL);
+    }
 
     // <editor-fold defaultstate="collapsed" desc="repositories">
 

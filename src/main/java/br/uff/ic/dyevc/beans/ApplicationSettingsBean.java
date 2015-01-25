@@ -103,6 +103,34 @@ public class ApplicationSettingsBean implements Serializable {
         this.lastApplicationVersionUsed = lastApplicationVersionUsed;
     }
 
+    private String databasePath;
+    private static final String defaultDatabasePath = "https://api.mongolab.com/api/1/databases/dyevc";
+
+    /** Published name for the databasePath property */
+    public static final String PROP_DATABASE_PATH = "databasePath";
+
+    public String getDatabasePath() {
+        return (databasePath == null || databasePath.isEmpty() ? defaultDatabasePath : databasePath);
+    }
+
+    public void setDatabasePath(String databasePath) {
+        this.databasePath = (databasePath == null || databasePath.isEmpty() ? defaultDatabasePath : databasePath);
+    }
+
+    private String appKey;
+    private static final String defaultAppKey = "dgOZbb9cNfzHSfuANRekokGrWCYWYCEs";
+
+    /** Published name for the databasePath property */
+    public static final String PROP_APP_KEY = "appKey";
+
+    public String getAppKey() {
+        return (appKey == null || appKey.isEmpty() ? defaultAppKey : appKey);
+    }
+
+    public void setAppKey(String appKey) {
+        this.appKey = (appKey == null || appKey.isEmpty() ? defaultAppKey : appKey);
+    }
+
     /**
      * Constructs an object of this type.
      */
