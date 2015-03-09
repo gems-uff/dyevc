@@ -39,7 +39,7 @@ public class TopologyEdgePaintTransformer extends PickableEdgePaintTransformer<C
     public Paint transform(CloneRelationship e) {
         Paint paint = super.transform(e);
         if (!pi.isPicked(e)) {
-            if (e.getNonSyncTrackedCommitsCount() != 0) {
+            if ((e.getNonSyncTrackedCommitsCount() != 0) || (e.getNonSyncNonTrackedCommitsCount() != 0)) {
                 paint = Color.RED;
             }
         }
