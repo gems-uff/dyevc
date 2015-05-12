@@ -12,7 +12,6 @@ This is one the several research projects conducted by the **Software Maintenanc
 
 * Leonardo Gresta Paulino Murta (joined in Aug 2012)
 * Cristiano Cesario (joined in Aug 2012)
-* Wallace Ribeiro (joined in Mar 2013)
 
 #Download
 
