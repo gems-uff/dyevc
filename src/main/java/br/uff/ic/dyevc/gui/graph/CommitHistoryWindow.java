@@ -330,6 +330,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         RepositoryInfo info  = new RepositoryConverter(rep).toRepositoryInfo();
         tools.loadExternalCommits(info);
         graph = GraphBuilder.createBasicRepositoryHistoryGraph(tools);
+        graph = autoCollapse(graph);
         GraphDomainMapper<Map<String, CommitInfo>> mapper = new GraphDomainMapper(graph, tools.getCommitInfoMap());
         collapsedGraph = graph;
         Dimension preferredSize = new Dimension(580, 580);
@@ -717,5 +718,15 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         }
 
         modelTransformer.translate(dx, dy);
+    }
+    /**
+     * Automatically collapses a graph based on the existence of commit in other partners.
+     * Complete method documentation...
+     * @param graph Graph to be collapsed
+     * @return The original graph, collapsed by....
+     */
+    private DirectedOrderedSparseMultigraph autoCollapse(DirectedOrderedSparseMultigraph graph) {
+        //TODO implement method to automatically collapse graph...
+        return graph;
     }
 }
