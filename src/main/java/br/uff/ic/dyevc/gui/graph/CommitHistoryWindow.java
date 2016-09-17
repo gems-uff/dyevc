@@ -719,6 +719,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
         modelTransformer.translate(dx, dy);
     }
+    
     /**
      * Automatically collapses a graph based on the existence of commit in other partners.
      * Complete method documentation...
