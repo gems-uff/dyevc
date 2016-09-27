@@ -57,7 +57,7 @@ public class CommitInfo implements Comparable<CommitInfo>, Serializable {
      * Indicates if this commit was already visited in the process of plotting the graph
      */
     private boolean visited = false;
-
+    
     /**
      * Commit's identification.
      */
