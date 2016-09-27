@@ -763,7 +763,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                 
                 CommitInfo child = currentNode;
                 CommitInfo last_child = null;
-                while(NotVisited_and_DegreeTwo(child, visited_set))
+                while(NotVisited_and_DegreeTwo(child, visited_set) || child == currentNode)
                 {
                     //Add to new collapsed node
                     visited_set.add(child);
@@ -781,7 +781,10 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                 }
                 else {not_collapsed_set.add(currentNode);}
             }
-            else {not_collapsed_set.add(currentNode);}
+            else
+            {
+                if(!visited_set.contains(currentNode)) not_collapsed_set.add(currentNode);
+            }
             
             visited_set.add(currentNode);
         }
@@ -796,13 +799,13 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         }
         for (CommitRelationship commitRelationship : edges)
         {
-            graph.addEdge(commitRelationship, commitRelationship.getChild(), commitRelationship.getParent());
+            new_graph.addEdge(commitRelationship, commitRelationship.getChild(), commitRelationship.getParent());
         }
         for (Object commitRel : graph.getEdges())
         {
             CommitRelationship cr = (CommitRelationship) commitRel;
             if(not_collapsed_set.contains(cr.getChild()) && not_collapsed_set.contains(cr.getParent()))
-                graph.addEdge(cr, cr.getChild(), cr.getParent());
+                new_graph.addEdge(cr, cr.getChild(), cr.getParent());
         }
         
         return new_graph;
