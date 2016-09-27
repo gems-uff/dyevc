@@ -744,7 +744,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         for (Object v : graph.getVertices())
         {
             CommitInfo currentNode = (CommitInfo)v;
-            visited_set.add(currentNode);
             
             if(NotVisited_and_DegreeTwo(currentNode, visited_set))
             {
@@ -783,6 +782,8 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                 else {not_collapsed_set.add(currentNode);}
             }
             else {not_collapsed_set.add(currentNode);}
+            
+            visited_set.add(currentNode);
         }
         
         for (CommitInfo commitInfo : not_collapsed_set)

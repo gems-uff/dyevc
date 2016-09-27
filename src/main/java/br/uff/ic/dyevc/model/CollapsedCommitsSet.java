@@ -19,6 +19,7 @@ public class CollapsedCommitsSet extends CommitInfo
     
     public CollapsedCommitsSet(CommitInfo ci)
     {
+        commits = new HashSet<CommitInfo>();
         this.hash_code = ci.hashCode();
         commits.add(ci);
     }
