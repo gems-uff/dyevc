@@ -752,7 +752,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                 // Visit and add to visited_set all the parents and childs with same condition
                 CommitInfo parent = currentNode;
                 CommitInfo last_parent = null;
-                while(NotVisited_and_DegreeTwo(parent, visited_set))
+                while(NotVisited_and_DegreeTwo(parent, visited_set) && (parent.getType() == currentNode.getType()))
                 {
                     //Add to new collapsed node
                     visited_set.add(parent);
@@ -763,7 +763,8 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                 
                 CommitInfo child = currentNode;
                 CommitInfo last_child = null;
-                while(NotVisited_and_DegreeTwo(child, visited_set) || child == currentNode)
+                while((NotVisited_and_DegreeTwo(child, visited_set) && (parent.getType() == currentNode.getType()))
+                        || child == currentNode)
                 {
                     //Add to new collapsed node
                     visited_set.add(child);
@@ -813,6 +814,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     
     private boolean NotVisited_and_DegreeTwo(CommitInfo node, Set<CommitInfo> visited_set)
     {
-        return !visited_set.contains(node) && node.getParentsCount() == 1 && node.getChildrenCount() == 1;
+        return !visited_set.contains(node) &&
+                node.getParentsCount() == 1 && node.getChildrenCount() == 1;
     }
 }

@@ -54,6 +54,9 @@ public interface IConstants {
     /** Color used to identify a split node (where a branch occurs). */
     public static final Color COLOR_SPLIT = Color.RED;
 
+    /** Color used to identify a auto collapsed node. */
+    public static final Color COLOR_AUTO_COLLAPSE = Color.WHITE;
+    
     /** Color used to identify a node that holds collapsed nodes. */
     public static final Color COLOR_COLLAPSED = Color.MAGENTA;
 

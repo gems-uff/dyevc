@@ -2,6 +2,7 @@ package br.uff.ic.dyevc.graph.transform.commithistory;
 
 //~--- non-JDK imports --------------------------------------------------------
 
+import br.uff.ic.dyevc.model.CollapsedCommitsSet;
 import br.uff.ic.dyevc.model.CommitInfo;
 
 import edu.uci.ics.jung.graph.Graph;
@@ -35,6 +36,10 @@ public final class CHVertexLabelTransformer implements Transformer<Object, Strin
 
         if (o instanceof Graph) {
             return Integer.toString(getNodecount((Graph)o));
+        }
+        
+        if (o instanceof CollapsedCommitsSet) {
+            return o.toString();
         }
 
         return "";

@@ -47,4 +47,14 @@ public class CollapsedCommitsSet extends CommitInfo
 
         return hash_code == other.hashCode();
     }
+    
+    @Override public String toString()
+    {
+        return "... " + commits.size() + " ...";
+    }
+    
+    public int NumberOfCollapsedNodes()
+    {
+        return commits.size();
+    }
 }
