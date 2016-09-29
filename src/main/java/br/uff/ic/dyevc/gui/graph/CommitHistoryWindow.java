@@ -17,7 +17,7 @@ import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexStrokeTransformer;
 import br.uff.ic.dyevc.graph.transform.commithistory.CHVertexTooltipTransformer;
 import br.uff.ic.dyevc.graph.transform.common.ClusterVertexShapeTransformer;
 import br.uff.ic.dyevc.gui.core.MessageManager;
-import br.uff.ic.dyevc.model.CollapsedCommitsSet;
+import br.uff.ic.dyevc.model.CollapsedCommitInfo;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.CommitRelationship;
 import br.uff.ic.dyevc.model.MonitoredRepositories;
@@ -738,7 +738,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         Set<CommitInfo> visited_set = new HashSet<CommitInfo>();
         
         Set<CommitInfo> not_collapsed_set = new HashSet<CommitInfo>();
-        Set<CollapsedCommitsSet> collapses = new HashSet<CollapsedCommitsSet>();
+        Set<CollapsedCommitInfo> collapses = new HashSet<CollapsedCommitInfo>();
         Set<CommitRelationship> edges = new HashSet<CommitRelationship>();
         
         for (Object v : graph.getVertices())
@@ -747,7 +747,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             
             if(NotVisited_and_DegreeTwo(currentNode, visited_set))
             {
-                CollapsedCommitsSet collapsed_nodes = new CollapsedCommitsSet(currentNode);
+                CollapsedCommitInfo collapsed_nodes = new CollapsedCommitInfo(currentNode);
                 
                 // Visit and add to visited_set all the parents and childs with same condition
                 CommitInfo parent = currentNode;
@@ -794,7 +794,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         {
             new_graph.addVertex(commitInfo);
         }
-        for (CollapsedCommitsSet collapse : collapses)
+        for (CollapsedCommitInfo collapse : collapses)
         {
             new_graph.addVertex(collapse);
         }

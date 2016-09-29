@@ -2,7 +2,7 @@ package br.uff.ic.dyevc.graph.transform.commithistory;
 
 //~--- non-JDK imports --------------------------------------------------------
 
-import br.uff.ic.dyevc.model.CollapsedCommitsSet;
+import br.uff.ic.dyevc.model.CollapsedCommitInfo;
 import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.model.topology.RepositoryInfo;
@@ -58,11 +58,11 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
             details.append("</B> nodes.</html>");
         }
         
-        if ((o instanceof CollapsedCommitsSet)) {
-            CollapsedCommitsSet ccs = (CollapsedCommitsSet)o;
-            details.append("<html>This is a node representing a linear chain of commits which groups a total of <B>");
-            details.append(Integer.toString(ccs.NumberOfCollapsedNodes()));
-            details.append("</B> nodes.</html>");
+        if ((o instanceof CollapsedCommitInfo)) {
+            CollapsedCommitInfo ccs = (CollapsedCommitInfo)o;
+            details.append("<html>This is a node representing a linear chain of commits which groups a total of <b>");
+            details.append(ccs.toString());
+            details.append("</b> nodes.</html>");
         }
 
         if (o instanceof CommitInfo) {

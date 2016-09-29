@@ -62,7 +62,7 @@ public class CommitInfo implements Comparable<CommitInfo>, Serializable {
      * Commit's identification.
      */
     @JsonProperty(value = "_id")
-    private String hash;
+    protected String hash;
 
     /**
      * System name where this commit is found
@@ -72,7 +72,7 @@ public class CommitInfo implements Comparable<CommitInfo>, Serializable {
     /**
      * Date the commit was done.
      */
-    private Date commitDate;
+    protected Date commitDate;
 
     /**
      * Commiter (one's that effectively executed the commit action.

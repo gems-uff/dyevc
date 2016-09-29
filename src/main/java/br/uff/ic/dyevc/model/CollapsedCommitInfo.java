@@ -11,28 +11,21 @@ import java.util.HashSet;
  *
  * @author Ruben
  */
-public class CollapsedCommitsSet extends CommitInfo
+public class CollapsedCommitInfo extends CommitInfo
 {
     private HashSet<CommitInfo> commits;
     
-    private Integer hash_code;
-    
-    public CollapsedCommitsSet(CommitInfo ci)
+    public CollapsedCommitInfo(CommitInfo ci)
     {
         commits = new HashSet<CommitInfo>();
-        this.hash_code = ci.hashCode();
+        this.hash = ci.hash;
+        this.commitDate = ci.commitDate;
         commits.add(ci);
     }
     
     public void AddCommitToCollapse(CommitInfo commit)        
     {
         commits.add(commit);
-    }
-    
-    @Override
-    public int hashCode()
-    {
-        return hash_code;
     }
     
     @Override
@@ -43,9 +36,9 @@ public class CollapsedCommitsSet extends CommitInfo
         if (getClass() != obj.getClass()) {
             return false;
         }
-        CollapsedCommitsSet other = (CollapsedCommitsSet)obj;
+        CollapsedCommitInfo other = (CollapsedCommitInfo)obj;
 
-        return hash_code == other.hashCode();
+        return hash == other.hash;
     }
     
     @Override public String toString()

@@ -3,7 +3,7 @@ package br.uff.ic.dyevc.graph.transform.commithistory;
 //~--- non-JDK imports --------------------------------------------------------
 
 import br.uff.ic.dyevc.application.IConstants;
-import br.uff.ic.dyevc.model.CollapsedCommitsSet;
+import br.uff.ic.dyevc.model.CollapsedCommitInfo;
 import br.uff.ic.dyevc.model.CommitInfo;
 
 import edu.uci.ics.jung.graph.Graph;
@@ -46,14 +46,14 @@ public class CHTopologyVertexPaintTransformer implements Transformer<Object, Pai
             return getColor(getType((Graph)o));
         }
 
+        if (o instanceof CollapsedCommitInfo) {
+            return IConstants.COLOR_AUTO_COLLAPSE;
+        }
+        
         if (o instanceof CommitInfo) {
             CommitInfo ci = (CommitInfo)o;
 
             return getColor(ci.getType());
-        }
-        
-        if (o instanceof CollapsedCommitsSet) {
-            return IConstants.COLOR_AUTO_COLLAPSE;
         }
 
         return paint;
