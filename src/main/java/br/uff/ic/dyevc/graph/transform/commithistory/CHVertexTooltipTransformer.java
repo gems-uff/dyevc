@@ -60,12 +60,19 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
         
         if ((o instanceof CollapsedCommitInfo)) {
             CollapsedCommitInfo ccs = (CollapsedCommitInfo)o;
-            details.append("<html>This is a node representing a linear chain of commits which groups a total of <b>");
-            details.append(ccs.toString());
-            details.append("</b> nodes.</html>");
+            details.append("<html>This is a node representing a linear chain of commits which groups a total of ");
+            details.append("<b>" + Integer.toString(ccs.NumberOfCollapsedNodes()) + "</b> nodes.<br><br>");
+            details.append("<b>Older</b> commit in the set: <br>");
+            details.append("<b>Commit id: </b>").append(ccs.GetDescendant().getHash()).append("<br>");
+            details.append("<b>Time: </b>").append(DateUtil.format(ccs.GetDescendant().getCommitDate(),
+                    "yyyy-MM-dd HH:mm:ss.SSS")).append("<br><br>");
+            details.append("<b>Newest</b> commit in the set: <br>");
+            details.append("<b>Commit id: </b>").append(ccs.GetAncestor().getHash()).append("<br>");
+            details.append("<b>Time: </b>").append(DateUtil.format(ccs.GetAncestor().getCommitDate(),
+                    "yyyy-MM-dd HH:mm:ss.SSS")).append("<br>");
+            details.append("</html>");
         }
-
-        if (o instanceof CommitInfo) {
+        else if (o instanceof CommitInfo) {
             StringBuilder header   = new StringBuilder();
             CommitInfo    ci       = (CommitInfo)o;
 

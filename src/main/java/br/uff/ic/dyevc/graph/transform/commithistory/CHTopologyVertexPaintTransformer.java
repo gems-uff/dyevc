@@ -45,10 +45,6 @@ public class CHTopologyVertexPaintTransformer implements Transformer<Object, Pai
         if (o instanceof Graph) {
             return getColor(getType((Graph)o));
         }
-
-        if (o instanceof CollapsedCommitInfo) {
-            return IConstants.COLOR_AUTO_COLLAPSE;
-        }
         
         if (o instanceof CommitInfo) {
             CommitInfo ci = (CommitInfo)o;

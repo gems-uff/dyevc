@@ -15,12 +15,37 @@ public class CollapsedCommitInfo extends CommitInfo
 {
     private HashSet<CommitInfo> commits;
     
+    private CommitInfo descendant;
+    private CommitInfo ancestor;
+    
     public CollapsedCommitInfo(CommitInfo ci)
     {
         commits = new HashSet<CommitInfo>();
         this.hash = ci.hash;
+        this.type = ci.type;
         this.commitDate = ci.commitDate;
         commits.add(ci);
+    }
+    
+    public void SetDescendant(CommitInfo ci)
+    {
+        this.descendant = ci;
+        this.commitDate = ci.commitDate;
+    }
+    
+    public void SetAncestor(CommitInfo ci)
+    {
+        this.ancestor = ci;
+    }
+    
+    public CommitInfo GetAncestor()
+    {
+        return ancestor;
+    }
+    
+    public CommitInfo GetDescendant()
+    {
+        return descendant;
     }
     
     public void AddCommitToCollapse(CommitInfo commit)        

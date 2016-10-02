@@ -87,7 +87,7 @@ public class CommitInfo implements Comparable<CommitInfo>, Serializable {
     private Set<String> foundIn;
     private Set<String> previousFoundIn;
     private boolean     tracked;
-    private byte        type;
+    protected byte      type;
 
     public byte getType() {
         return type;

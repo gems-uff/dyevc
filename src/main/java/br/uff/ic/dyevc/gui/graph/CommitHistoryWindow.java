@@ -776,6 +776,8 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                 // Collapse is made
                 if (last_child != last_parent)
                 {
+                    collapsed_nodes.SetAncestor(last_parent);
+                    collapsed_nodes.SetDescendant(last_child);
                     collapses.add(collapsed_nodes);
                     edges.add(new CommitRelationship(parent, collapsed_nodes));
                     edges.add(new CommitRelationship(collapsed_nodes, child));

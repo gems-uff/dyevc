@@ -1,6 +1,7 @@
 package br.uff.ic.dyevc.application.branchhistory.chart;
 
 import br.uff.ic.dyevc.application.branchhistory.view.ProjectValues;
+import br.uff.ic.dyevc.model.CollapsedCommitInfo;
 import br.uff.ic.dyevc.model.CommitChange;
 import br.uff.ic.dyevc.model.CommitInfo;
 import br.uff.ic.dyevc.utils.DateUtil;
@@ -32,7 +33,14 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
             details.append(((Graph) o).getVertexCount());
             details.append("</B> nodes.</html>");
         }
-        if (o instanceof CommitInfo) {
+        
+        if ((o instanceof CollapsedCommitInfo)) {
+            CollapsedCommitInfo ccs = (CollapsedCommitInfo)o;
+            details.append("<html>This is a node representing a linear chain of commits which groups a total of <b>");
+            details.append(Integer.toString(ccs.NumberOfCollapsedNodes()));
+            details.append("</b> nodes.</html>");
+        }
+        else if (o instanceof CommitInfo) {
             CommitInfo ci = (CommitInfo) o;
             double value = projectValues.getValueByVersionId(ci.getHash());
             details.append("<html>");
