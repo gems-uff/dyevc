@@ -751,26 +751,18 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                 
                 // Visit and add to visited_set all the parents and childs with same condition
                 CommitInfo parent = currentNode;
-                CommitInfo last_parent = null;
-                while(NotVisited_and_DegreeTwo(parent, visited_set) && (parent.getType() == currentNode.getType()))
-                {
-                    //Add to new collapsed node
-                    visited_set.add(parent);
-                    collapsed_nodes.AddCommitToCollapse(parent);
-                    last_parent = parent;
-                    parent = (CommitInfo) graph.getPredecessors(parent).iterator().next();
-                }
+                CommitInfo last_parent = AddAllParentsToCollapse(currentNode, parent, collapsed_nodes, visited_set);
                 
                 CommitInfo child = currentNode;
                 CommitInfo last_child = null;
-                while((NotVisited_and_DegreeTwo(child, visited_set) && (parent.getType() == currentNode.getType()))
+                while((NotVisited_and_DegreeTwo(child, visited_set) && (child.getType() == currentNode.getType()))
                         || child == currentNode)
                 {
                     //Add to new collapsed node
                     visited_set.add(child);
                     collapsed_nodes.AddCommitToCollapse(child);
                     last_child = child;
-                    child = (CommitInfo) graph.getSuccessors(child).iterator().next();
+                    child = GetFirstChild(child);
                 }
                 
                 // Collapse is made
@@ -818,5 +810,30 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     {
         return !visited_set.contains(node) &&
                 node.getParentsCount() == 1 && node.getChildrenCount() == 1;
+    }
+    
+    private CommitInfo AddAllParentsToCollapse(CommitInfo currentNode, CommitInfo parent,
+            CollapsedCommitInfo collapsed_nodes, Set<CommitInfo> visited_set)
+    {
+        CommitInfo last_parent = null;
+        while(NotVisited_and_DegreeTwo(parent, visited_set) && (parent.getType() == currentNode.getType()))
+            {
+                //Add to new collapsed node
+                visited_set.add(parent);
+                collapsed_nodes.AddCommitToCollapse(parent);
+                last_parent = parent;
+                parent = GetFirstParent(parent);
+            }
+        return last_parent;
+    }
+    
+    private CommitInfo GetFirstParent(CommitInfo ci)
+    {
+        return (CommitInfo) graph.getPredecessors(ci).iterator().next();
+    }
+    
+    private CommitInfo GetFirstChild(CommitInfo ci)
+    {
+        return (CommitInfo) graph.getSuccessors(ci).iterator().next();
     }
 }
