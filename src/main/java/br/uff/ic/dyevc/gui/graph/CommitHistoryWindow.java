@@ -745,20 +745,40 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         {
             CommitInfo currentNode = (CommitInfo)v;
             
-            if(NotVisited_and_DegreeTwo(currentNode, visited_set))
+            if(!visited_set.contains(currentNode) && DegreeTwo(currentNode))
             {
                 CollapsedCommitInfo collapsed_nodes = new CollapsedCommitInfo(currentNode);
                 CommitInfo last_parent = AddAllParentsToCollapse(currentNode, collapsed_nodes, visited_set);
-                CommitInfo last_child = AddAllChildsToCollapse(currentNode, collapsed_nodes, visited_set);
-                
+                CommitInfo last_child = AddAllChildrenToCollapse(currentNode, collapsed_nodes, visited_set);
                 // If collapse is made
                 if (last_child != last_parent)
                 {
                     collapsed_nodes.SetAncestor(last_parent);
                     collapsed_nodes.SetDescendant(last_child);
                     collapses.add(collapsed_nodes);
-                    edges.add(new CommitRelationship(GetFirstParent(last_parent), collapsed_nodes));
-                    edges.add(new CommitRelationship(collapsed_nodes, GetFirstChild(last_child)));
+                    
+                    CommitInfo parent_of_collapse = GetFirstParent(last_parent);
+                    CommitInfo child_of_collapse = GetFirstChild(last_child);
+                    
+                    // Check existence of collapses with other colors both side of you
+                    
+                    if(!DegreeTwo(parent_of_collapse))
+                    {
+                        edges.add(new CommitRelationship(parent_of_collapse, collapsed_nodes));
+                    }
+                    else
+                    {
+                        CollapseAdjacentParents(collapsed_nodes, parent_of_collapse, currentNode, visited_set, collapses, edges);
+                    }
+                    
+                    if(!DegreeTwo(child_of_collapse))
+                    {
+                        edges.add(new CommitRelationship(collapsed_nodes, child_of_collapse));
+                    }
+                    else
+                    {
+                        CollapseAdjacentChildren(collapsed_nodes, child_of_collapse, currentNode, visited_set, collapses, edges);
+                    }
                 }
                 else {not_collapsed_set.add(currentNode);}
             }
@@ -766,7 +786,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             {
                 if(!visited_set.contains(currentNode)) not_collapsed_set.add(currentNode);
             }
-            
             visited_set.add(currentNode);
         }
         
@@ -791,6 +810,76 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         
         return new_graph;
     }
+
+    /**
+     * Collapses parents when they are chains of commits with different color
+     * @param collapsed_nodes
+     * @param parent_of_collapse
+     * @param currentNode
+     * @param visited_set
+     * @param collapses
+     * @param edges 
+     */
+    private void CollapseAdjacentParents(CollapsedCommitInfo collapsed_nodes, CommitInfo parent_of_collapse, CommitInfo currentNode,
+            Set<CommitInfo> visited_set, Set<CollapsedCommitInfo> collapses, Set<CommitRelationship> edges) {
+        // Firstly, look the parent of collapse:
+        CollapsedCommitInfo previous_collapse_par = collapsed_nodes;
+        while(!DegreeTwo(parent_of_collapse))
+        {
+            CollapsedCommitInfo collapsed_nodes_parents = new CollapsedCommitInfo(currentNode);
+            CommitInfo last_parent_p = AddAllParentsToCollapse(parent_of_collapse, collapsed_nodes_parents, visited_set);
+            if(last_parent_p != parent_of_collapse)
+            {
+                // There is a new collapsed node linked to previous
+                collapsed_nodes_parents.SetAncestor(last_parent_p);
+                collapsed_nodes_parents.SetDescendant(parent_of_collapse);
+                collapses.add(collapsed_nodes_parents);
+                edges.add(new CommitRelationship(collapsed_nodes_parents, previous_collapse_par));
+                previous_collapse_par = collapsed_nodes_parents;
+                parent_of_collapse = GetFirstParent(last_parent_p);
+            }
+            else
+            {
+                edges.add(new CommitRelationship(parent_of_collapse, previous_collapse_par));
+                break;
+            }
+        }
+    }
+    
+        /**
+     * Collapses children when they are chains of commits with different color
+     * @param collapsed_nodes
+     * @param parent_of_collapse
+     * @param currentNode
+     * @param visited_set
+     * @param collapses
+     * @param edges 
+     */
+    private void CollapseAdjacentChildren(CollapsedCommitInfo collapsed_nodes, CommitInfo child_of_collapse, CommitInfo currentNode,
+            Set<CommitInfo> visited_set, Set<CollapsedCommitInfo> collapses, Set<CommitRelationship> edges) {
+        // Firstly, look the parent of collapse:
+        CollapsedCommitInfo previous_collapse_ch = collapsed_nodes;
+        while(!DegreeTwo(child_of_collapse))
+        {
+            CollapsedCommitInfo collapsed_nodes_children = new CollapsedCommitInfo(currentNode);
+            CommitInfo last_children_c = AddAllChildrenToCollapse(child_of_collapse, collapsed_nodes_children, visited_set);
+            if(last_children_c != child_of_collapse)
+            {
+                // There is a new collapsed node linked to previous
+                collapsed_nodes_children.SetAncestor(child_of_collapse);
+                collapsed_nodes_children.SetDescendant(last_children_c);
+                collapses.add(collapsed_nodes_children);
+                edges.add(new CommitRelationship(previous_collapse_ch, collapsed_nodes_children));
+                previous_collapse_ch = collapsed_nodes_children;
+                child_of_collapse = GetFirstChild(last_children_c);
+            }
+            else
+            {
+                edges.add(new CommitRelationship(previous_collapse_ch, child_of_collapse));
+                break;
+            }
+        }
+    }
     
     /**
      * Visit and add to visited_set all parents of currentNode with same condition
@@ -803,14 +892,14 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     {
         CommitInfo parent = currentNode;
         CommitInfo last_collapsed_parent = null;
-        while(NotVisited_and_DegreeTwo(parent, visited_set) && (parent.getType() == currentNode.getType()))
-            {
-                //Add to new collapsed node
-                visited_set.add(parent);
-                collapsed_nodes.AddCommitToCollapse(parent);
-                last_collapsed_parent = parent;
-                parent = GetFirstParent(parent);
-            }
+        while(!visited_set.contains(parent) && DegreeTwo(parent) && parent.getType() == currentNode.getType())
+        {
+            //Add to new collapsed node
+            visited_set.add(parent);
+            collapsed_nodes.AddCommitToCollapse(parent);
+            last_collapsed_parent = parent;
+            parent = GetFirstParent(parent);
+        }
         return last_collapsed_parent;
     }
     
@@ -821,11 +910,11 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * @param visited_set
      * @return last element added
      */
-    private CommitInfo AddAllChildsToCollapse(CommitInfo currentNode, CollapsedCommitInfo collapsed_nodes, Set<CommitInfo> visited_set)
+    private CommitInfo AddAllChildrenToCollapse(CommitInfo currentNode, CollapsedCommitInfo collapsed_nodes, Set<CommitInfo> visited_set)
     {
         CommitInfo child = currentNode;
         CommitInfo last_collapsed_child = null;
-        while((NotVisited_and_DegreeTwo(child, visited_set) && (child.getType() == currentNode.getType()))
+        while((!visited_set.contains(child) && DegreeTwo(child) && child.getType() == currentNode.getType())
                 || child == currentNode)
         {
             //Add to new collapsed node
@@ -847,8 +936,8 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         return (CommitInfo) graph.getSuccessors(ci).iterator().next();
     }
     
-        private boolean NotVisited_and_DegreeTwo(CommitInfo node, Set<CommitInfo> visited_set)
+    private boolean DegreeTwo(CommitInfo node)
     {
-        return !visited_set.contains(node) && node.getParentsCount() == 1 && node.getChildrenCount() == 1;
+        return node.getParentsCount() == 1 && node.getChildrenCount() == 1;
     }
 }
