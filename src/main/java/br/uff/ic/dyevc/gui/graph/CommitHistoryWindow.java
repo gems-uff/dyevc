@@ -760,8 +760,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                     CommitInfo parent_of_collapse = GetFirstParent(last_parent);
                     CommitInfo child_of_collapse = GetFirstChild(last_child);
                     
-                    // Check existence of collapses with other colors both side of you
-                    
                     if(!DegreeTwo(parent_of_collapse))
                     {
                         edges.add(new CommitRelationship(parent_of_collapse, collapsed_nodes));
@@ -771,14 +769,14 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                         CollapseAdjacentParents(collapsed_nodes, parent_of_collapse, currentNode, visited_set, collapses, edges);
                     }
                     
-                    if(!DegreeTwo(child_of_collapse))
-                    {
+//                    if(!DegreeTwo(child_of_collapse))
+//                    {
                         edges.add(new CommitRelationship(collapsed_nodes, child_of_collapse));
-                    }
-                    else
-                    {
-                        CollapseAdjacentChildren(collapsed_nodes, child_of_collapse, currentNode, visited_set, collapses, edges);
-                    }
+//                    }
+//                    else
+//                    {
+//                        CollapseAdjacentChildren(collapsed_nodes, child_of_collapse, currentNode, visited_set, collapses, edges);
+//                    }
                 }
                 else {not_collapsed_set.add(currentNode);}
             }
@@ -857,7 +855,6 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      */
     private void CollapseAdjacentChildren(CollapsedCommitInfo collapsed_nodes, CommitInfo child_of_collapse, CommitInfo currentNode,
             Set<CommitInfo> visited_set, Set<CollapsedCommitInfo> collapses, Set<CommitRelationship> edges) {
-        // Firstly, look the parent of collapse:
         CollapsedCommitInfo previous_collapse_ch = collapsed_nodes;
         while(!DegreeTwo(child_of_collapse))
         {
