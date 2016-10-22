@@ -6,6 +6,7 @@
 package br.uff.ic.dyevc.model;
 
 import java.util.HashSet;
+import javafx.scene.chart.PieChart;
 
 /**
  *

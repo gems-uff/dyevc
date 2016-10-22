@@ -760,22 +760,21 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                     CommitInfo parent_of_collapse = GetFirstParent(last_parent);
                     CommitInfo child_of_collapse = GetFirstChild(last_child);
                     
-                    if(!DegreeTwo(parent_of_collapse))
-                    {
+//                    if(!DegreeTwo(parent_of_collapse))
+//                    {
                         edges.add(new CommitRelationship(parent_of_collapse, collapsed_nodes));
-                    }
-                    else
-                    {
-                        CollapseAdjacentParents(collapsed_nodes, parent_of_collapse, currentNode, visited_set, collapses, edges);
-                    }
-                    
+//                    }
+//                    else
+//                    {
+//                        CollapseAdjacentParents(collapsed_nodes, parent_of_collapse, visited_set, collapses, edges);
+//                    }
 //                    if(!DegreeTwo(child_of_collapse))
 //                    {
                         edges.add(new CommitRelationship(collapsed_nodes, child_of_collapse));
 //                    }
 //                    else
 //                    {
-//                        CollapseAdjacentChildren(collapsed_nodes, child_of_collapse, currentNode, visited_set, collapses, edges);
+//                        CollapseAdjacentChildren(collapsed_nodes, child_of_collapse, visited_set, collapses, edges);
 //                    }
                 }
                 else {not_collapsed_set.add(currentNode);}
@@ -818,13 +817,13 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * @param collapses
      * @param edges 
      */
-    private void CollapseAdjacentParents(CollapsedCommitInfo collapsed_nodes, CommitInfo parent_of_collapse, CommitInfo currentNode,
+    private void CollapseAdjacentParents(CollapsedCommitInfo collapsed_nodes, CommitInfo parent_of_collapse,
             Set<CommitInfo> visited_set, Set<CollapsedCommitInfo> collapses, Set<CommitRelationship> edges) {
         // Firstly, look the parent of collapse:
         CollapsedCommitInfo previous_collapse_par = collapsed_nodes;
-        while(!DegreeTwo(parent_of_collapse))
+        while(DegreeTwo(parent_of_collapse))
         {
-            CollapsedCommitInfo collapsed_nodes_parents = new CollapsedCommitInfo(currentNode);
+            CollapsedCommitInfo collapsed_nodes_parents = new CollapsedCommitInfo(parent_of_collapse);
             CommitInfo last_parent_p = AddAllParentsToCollapse(parent_of_collapse, collapsed_nodes_parents, visited_set);
             if(last_parent_p != parent_of_collapse)
             {
@@ -853,12 +852,12 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * @param collapses
      * @param edges 
      */
-    private void CollapseAdjacentChildren(CollapsedCommitInfo collapsed_nodes, CommitInfo child_of_collapse, CommitInfo currentNode,
+    private void CollapseAdjacentChildren(CollapsedCommitInfo collapsed_nodes, CommitInfo child_of_collapse, 
             Set<CommitInfo> visited_set, Set<CollapsedCommitInfo> collapses, Set<CommitRelationship> edges) {
         CollapsedCommitInfo previous_collapse_ch = collapsed_nodes;
-        while(!DegreeTwo(child_of_collapse))
+        while(DegreeTwo(child_of_collapse))
         {
-            CollapsedCommitInfo collapsed_nodes_children = new CollapsedCommitInfo(currentNode);
+            CollapsedCommitInfo collapsed_nodes_children = new CollapsedCommitInfo(child_of_collapse);
             CommitInfo last_children_c = AddAllChildrenToCollapse(child_of_collapse, collapsed_nodes_children, visited_set);
             if(last_children_c != child_of_collapse)
             {
@@ -897,7 +896,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             last_collapsed_parent = parent;
             parent = GetFirstParent(parent);
         }
-        return last_collapsed_parent;
+        return last_collapsed_parent == null? currentNode : last_collapsed_parent;
     }
     
     /**
@@ -920,7 +919,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
             last_collapsed_child = child;
             child = GetFirstChild(child);
         }
-        return last_collapsed_child;
+        return last_collapsed_child == null? currentNode : last_collapsed_child;
     }
     
     private CommitInfo GetFirstParent(CommitInfo ci)
