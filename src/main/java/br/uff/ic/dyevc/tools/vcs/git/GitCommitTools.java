@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * This class stores a history of commits in a Git repository.
@@ -98,6 +99,11 @@ public class GitCommitTools {
      * Collection of commit relationships, relating a parent commit and its children.
      */
     private List<CommitRelationship> commitRelationshipList;
+    
+    /**
+     * Collection of roots found in the repository. Roots are commits that have no parents.
+     */
+    private Set<CommitInfo> roots;
 
     /**
      * Connector used by this class to connect to a Git repository.
@@ -200,6 +206,7 @@ public class GitCommitTools {
         this.commitInfoTrackedMap    = new TreeMap<String, CommitInfo>();
         this.commitInfoNonTrackedMap = new TreeMap<String, CommitInfo>();
         this.commitRelationshipList  = new ArrayList<CommitRelationship>();
+        this.roots                   = new TreeSet<CommitInfo>();
         populateHistory();
         initialized = true;
     }
@@ -307,6 +314,20 @@ public class GitCommitTools {
     }
 
     /**
+     * Returns a set with all commits not found in any of repositories that {@link #rep} pushes from.
+     *
+     * @return a set with all commits not found in any of the repositories that {@link #rep} pushes from.
+     * @throws VCSException
+     */
+    public Set<CommitInfo> getRoots() throws VCSException {
+        if (!initialized) {
+            initialize();
+        }
+
+        return roots;
+    }
+
+    /**
      * Returns a set with all commits not found in any of repositories that {@link #rep} pulls to.
      *
      * @return a set with all commits not found in any of the repositories that {@link #rep} pulls to.
@@ -368,6 +389,10 @@ public class GitCommitTools {
                 CommitRelationship cr = new CommitRelationship(ci, commitInfoMap.get(hash), false);
                 commitRelationshipList.add(cr);
             }
+            
+            if (ci.getParents().isEmpty()) {
+                roots.add(ci);
+            }
         }
     }
 
@@ -400,7 +425,7 @@ public class GitCommitTools {
             Iterator<RevCommit> it = git.getLogForHeads(trackedBranchesRefs);
             while (it.hasNext()) {
                 RevCommit commit = it.next();
-                createCommitInfo(commit, true);
+                CommitInfo ci = createCommitInfo(commit, true);
             }
 
             parseLocalCommits(nonTrackedBranchesRefs);
@@ -508,13 +533,18 @@ public class GitCommitTools {
 
         // gets the list of parents for the commit
         RevCommit[] parents = commit.getParents();
+        
+        CommitInfo ci = commitInfoMap.get(commit.getName());
+        if (parents.length == 0) {
+            //if commit has no parents, then it is a root commit
+            roots.add(ci);
+        }
         for (int j = 0; j < parents.length; j++) {
 
             // for each parent in the list, parses it, creating a RevCommit
             RevCommit  parent = walk.parseCommit(parents[j]);
-            CommitInfo child  = commitInfoMap.get(commit.getName());
-            child.getParents().add(parent.getName());
-            CommitRelationship relation = new CommitRelationship(child, commitInfoMap.get(parent.getName()));
+            ci.getParents().add(parent.getName());
+            CommitRelationship relation = new CommitRelationship(ci, commitInfoMap.get(parent.getName()));
             commitRelationshipList.add(relation);
         }
 

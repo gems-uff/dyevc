@@ -31,8 +31,10 @@ import org.slf4j.LoggerFactory;
 //~--- JDK imports ------------------------------------------------------------
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A basic repository history graph implemented as a DAG that relates all the commits with its parents and children
@@ -61,7 +63,7 @@ public class GraphBuilder {
         notInPushList = tools.getCommitsNotInPushList();
         notInPullList = tools.getCommitsNotInPullList();
         notInRepList  = tools.getCommitsNotFoundLocally();
-
+        
         try {
             for (CommitInfo commitInfo : tools.getCommitInfos()) {
                 adjustCommitType(commitInfo);
@@ -76,6 +78,35 @@ public class GraphBuilder {
 
             throw ex;
         }
+        
+        Set<CommitInfo> roots = tools.getRoots();
+        
+        if (roots.size() > 1) { //Repository has more than 1 root, than create fake root to be the only initial commit
+            CommitInfo newRoot = new CommitInfo("rootCommit", "none");
+            newRoot.setAuthor("temporary");
+            newRoot.setCommitDate(new Date(0));
+            newRoot.setCommitter("temporary committer");
+            
+            String foundIn = "none";
+            Set<String> foundInSet = new TreeSet<String>();
+            foundInSet.add(foundIn);
+            newRoot.setFoundIn(foundInSet);
+            newRoot.setPreviousFoundIn(foundInSet);
+            
+            newRoot.setLastChanged(new Date(0));
+            newRoot.setShortMessage("Temporary commit to fake unique root.");
+            newRoot.setTracked(false);
+            adjustCommitType(newRoot);
+            graph.addVertex(newRoot);
+            
+            for (CommitInfo ci : roots) {
+                ci.getParents().add(newRoot.getHash());
+                CommitRelationship cr = new CommitRelationship(ci, newRoot);
+                graph.addEdge(cr, cr.getChild(), cr.getParent());
+            }
+
+        }
+
 
         LoggerFactory.getLogger(GraphBuilder.class).trace("createBasicRepositoryHistoryGraph -> Exit");
 
