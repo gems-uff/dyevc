@@ -86,6 +86,7 @@ import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ToolTipManager;
+import org.jfree.util.Log;
 
 /**
  * Displays the commit history for the specified repository
@@ -334,7 +335,8 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         RepositoryInfo info  = new RepositoryConverter(rep).toRepositoryInfo();
         tools.loadExternalCommits(info);
         graph = GraphBuilder.createBasicRepositoryHistoryGraph(tools);
-        graph = autoCollapse(graph);
+        graph = autoCollapse1(graph);
+        graph = autoCollapse2(graph);
         GraphDomainMapper<Map<String, CommitInfo>> mapper = new GraphDomainMapper(graph, tools.getCommitInfoMap());
         collapsedGraph = graph;
         Dimension preferredSize = new Dimension(580, 580);
@@ -730,7 +732,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
      * @param graph Graph to be collapsed
      * @return The original graph, collapsed by....
      */
-    private DirectedOrderedSparseMultigraph autoCollapse(DirectedOrderedSparseMultigraph graph) {
+    private DirectedOrderedSparseMultigraph autoCollapse1(DirectedOrderedSparseMultigraph graph) {
         //TODO implement method to automatically collapse graph...
         DirectedOrderedSparseMultigraph new_graph = new DirectedOrderedSparseMultigraph();
         
@@ -921,5 +923,102 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     private boolean DegreeTwo(CommitInfo node)
     {
         return node.getParentsCount() == 1 && node.getChildrenCount() == 1;
+    }
+    
+    private DirectedOrderedSparseMultigraph autoCollapse2(DirectedOrderedSparseMultigraph graph) {
+        //TODO implement method to automatically collapse graph...
+        DirectedOrderedSparseMultigraph new_graph = new DirectedOrderedSparseMultigraph();
+        
+        // Use sets for representing the all commit set
+        Set<CommitInfo> visited_set = new HashSet<CommitInfo>();
+        
+        Set<CommitInfo> not_collapsed_set = new HashSet<CommitInfo>();
+        Set<CollapsedCommitInfo> collapses = new HashSet<CollapsedCommitInfo>();
+        Set<CommitRelationship> edges = new HashSet<CommitRelationship>();
+        
+        for (Object v : graph.getVertices())
+        {
+            CommitInfo currentNode = (CommitInfo)v;
+
+            if(!visited_set.contains(currentNode))
+            {
+                if(currentNode.getParentsCount() == 1 && currentNode.getChildrenCount() == 2) // CONDITION 1
+                {
+                    Object[] children = graph.getPredecessors(currentNode).toArray();
+                    CommitInfo child1 = (CommitInfo) children[0];
+                    CommitInfo child2 = (CommitInfo) children[1];
+                    
+                    if(currentNode.getType() == child1.getType() && currentNode.getType() == child2.getType() &&
+                            child1.getChildrenCount() == 1 && child2.getChildrenCount() == 1 &&
+                            child1.getParentsCount() == 1 && child2.getParentsCount() == 1)
+                    {
+                        // Collapse vertexes (2 cases)
+                        if(GetFirstChild(child1) == child2 || GetFirstChild(child2) == child1) // First case
+                        {
+                            CollapsedCommitInfo collapsed_nodes = new CollapsedCommitInfo(currentNode);
+                            collapsed_nodes.AddCommitToCollapse(child1);
+                            // If collapse is made, remove collapsed vertexes from not_collapsed_set
+                            // (they can be there due to unknown order of enumeration)
+                            not_collapsed_set.remove(child1);
+                            visited_set.add(child1);
+                            collapsed_nodes.AddCommitToCollapse(child2);
+                            not_collapsed_set.remove(child2);
+                            visited_set.add(child2);
+                            collapses.add(collapsed_nodes);
+                            // Add edges pointing outside the collapse
+                            edges.add(new CommitRelationship(GetFirstParent(currentNode), collapsed_nodes));
+                            CommitInfo collapse_child = GetFirstChild(child1) == child2 ? GetFirstChild(child2) : GetFirstChild(child1);
+                            edges.add(new CommitRelationship(collapsed_nodes, collapse_child));
+                        }
+                        else if(GetFirstChild(child1) == GetFirstChild(child2) && GetFirstChild(child1).getChildrenCount() == 1 &&
+                                GetFirstChild(child1).getType() == currentNode.getType()) // Second case
+                        {
+                            CommitInfo child_of_childs = GetFirstChild(child1);
+                            CollapsedCommitInfo collapsed_nodes = new CollapsedCommitInfo(currentNode);
+                            collapsed_nodes.AddCommitToCollapse(child1);
+                            not_collapsed_set.remove(child1);
+                            visited_set.add(child1);
+                            collapsed_nodes.AddCommitToCollapse(child2);
+                            not_collapsed_set.remove(child2);
+                            visited_set.add(child2);
+                            collapsed_nodes.AddCommitToCollapse(child_of_childs);
+                            not_collapsed_set.remove(child_of_childs);
+                            visited_set.add(child_of_childs);
+                            collapses.add(collapsed_nodes);
+                            edges.add(new CommitRelationship(GetFirstParent(currentNode), collapsed_nodes));
+                            CommitInfo child_of_child_of_childs = GetFirstChild(child_of_childs);
+                            edges.add(new CommitRelationship(collapsed_nodes, child_of_child_of_childs));
+                        }
+                    }
+                }
+                else {not_collapsed_set.add(currentNode);}
+            }
+            else
+            {
+                if(!visited_set.contains(currentNode)) not_collapsed_set.add(currentNode);
+            }
+            visited_set.add(currentNode);
+        }
+        
+        for (CommitInfo commitInfo : not_collapsed_set)
+        {
+            new_graph.addVertex(commitInfo);
+        }
+        for (CollapsedCommitInfo collapse : collapses)
+        {
+            new_graph.addVertex(collapse);
+        }
+        for (CommitRelationship commitRelationship : edges)
+        {
+            new_graph.addEdge(commitRelationship, commitRelationship.getChild(), commitRelationship.getParent());
+        }
+        for (Object commitRel : graph.getEdges())
+        {
+            CommitRelationship cr = (CommitRelationship) commitRel;
+            if(not_collapsed_set.contains(cr.getChild()) && not_collapsed_set.contains(cr.getParent()))
+                new_graph.addEdge(cr, cr.getChild(), cr.getParent());
+        }
+        
+        return new_graph;
     }
 }
