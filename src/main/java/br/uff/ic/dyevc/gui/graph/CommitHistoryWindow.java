@@ -78,6 +78,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Iterator;
+import java.util.HashMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -335,8 +336,12 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         RepositoryInfo info  = new RepositoryConverter(rep).toRepositoryInfo();
         tools.loadExternalCommits(info);
         graph = GraphBuilder.createBasicRepositoryHistoryGraph(tools);
+        
         graph = autoCollapse1(graph);
         graph = autoCollapse2(graph);
+        graph = autoCollapse1(graph);
+        graph = autoCollapse2(graph);
+        
         GraphDomainMapper<Map<String, CommitInfo>> mapper = new GraphDomainMapper(graph, tools.getCommitInfoMap());
         collapsedGraph = graph;
         Dimension preferredSize = new Dimension(580, 580);
@@ -756,7 +761,9 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                 if (last_child != last_parent)
                 {
                     collapsed_nodes.SetAncestor(last_parent);
+                    collapsed_nodes.incrementParents();
                     collapsed_nodes.SetDescendant(last_child);
+                    collapsed_nodes.incrementChildren();
                     collapses.add(collapsed_nodes);
                     
                     CommitInfo parent_of_collapse = GetFirstParent(last_parent);
@@ -922,7 +929,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
     
     private boolean DegreeTwo(CommitInfo node)
     {
-        return node.getParentsCount() == 1 && node.getChildrenCount() == 1;
+        return graph.getPredecessorCount(node) == 1 && graph.getSuccessorCount(node) == 1;
     }
     
     private DirectedOrderedSparseMultigraph autoCollapse2(DirectedOrderedSparseMultigraph graph) {
@@ -935,6 +942,7 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         Set<CommitInfo> not_collapsed_set = new HashSet<CommitInfo>();
         Set<CollapsedCommitInfo> collapses = new HashSet<CollapsedCommitInfo>();
         Set<CommitRelationship> edges = new HashSet<CommitRelationship>();
+        Map<CommitInfo, CollapsedCommitInfo> node_collapse_dict = new HashMap<CommitInfo, CollapsedCommitInfo>();
         
         for (Object v : graph.getVertices())
         {
@@ -942,20 +950,20 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
 
             if(!visited_set.contains(currentNode))
             {
-                if(currentNode.getParentsCount() == 1 && currentNode.getChildrenCount() == 2) // CONDITION 1
+                if(graph.getPredecessorCount(currentNode) == 1 && graph.getSuccessorCount(currentNode) == 2) // CONDITION 1
                 {
-                    Object[] children = graph.getPredecessors(currentNode).toArray();
+                    Object[] children = graph.getSuccessors(currentNode).toArray();
                     CommitInfo child1 = (CommitInfo) children[0];
                     CommitInfo child2 = (CommitInfo) children[1];
                     
                     if(currentNode.getType() == child1.getType() && currentNode.getType() == child2.getType() &&
-                            child1.getChildrenCount() == 1 && child2.getChildrenCount() == 1 &&
-                            child1.getParentsCount() == 1 && child2.getParentsCount() == 1)
+                            graph.getSuccessorCount(child1) == 1 && graph.getSuccessorCount(child2) == 1)
                     {
+                        CollapsedCommitInfo collapsed_nodes = new CollapsedCommitInfo(currentNode);
                         // Collapse vertexes (2 cases)
-                        if(GetFirstChild(child1) == child2 || GetFirstChild(child2) == child1) // First case
+                        if((GetFirstChild(child1) == child2 && graph.getPredecessorCount(child1) == 1 && graph.getPredecessorCount(child2) == 2) ||
+                                (GetFirstChild(child2) == child1 && graph.getPredecessorCount(child1) == 2 && graph.getPredecessorCount(child2) == 1)) // First case
                         {
-                            CollapsedCommitInfo collapsed_nodes = new CollapsedCommitInfo(currentNode);
                             collapsed_nodes.AddCommitToCollapse(child1);
                             // If collapse is made, remove collapsed vertexes from not_collapsed_set
                             // (they can be there due to unknown order of enumeration)
@@ -964,17 +972,25 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                             collapsed_nodes.AddCommitToCollapse(child2);
                             not_collapsed_set.remove(child2);
                             visited_set.add(child2);
+                            collapsed_nodes.SetAncestor(GetFirstParent(currentNode));
+                            collapsed_nodes.incrementParents();
                             collapses.add(collapsed_nodes);
                             // Add edges pointing outside the collapse
-                            edges.add(new CommitRelationship(GetFirstParent(currentNode), collapsed_nodes));
+                            edges.add(new CommitRelationship(GetFirstParent(currentNode), currentNode));
                             CommitInfo collapse_child = GetFirstChild(child1) == child2 ? GetFirstChild(child2) : GetFirstChild(child1);
-                            edges.add(new CommitRelationship(collapsed_nodes, collapse_child));
+                            edges.add(new CommitRelationship(currentNode, collapse_child));
+                            collapsed_nodes.SetDescendant(GetFirstChild(collapse_child));
+                            collapsed_nodes.incrementChildren();
+                            
+                            node_collapse_dict.put(currentNode, collapsed_nodes);
+                            node_collapse_dict.put(child1, collapsed_nodes);
+                            node_collapse_dict.put(child2, collapsed_nodes);
                         }
-                        else if(GetFirstChild(child1) == GetFirstChild(child2) && GetFirstChild(child1).getChildrenCount() == 1 &&
+                        else if(graph.getPredecessorCount(child1) == 1 && graph.getPredecessorCount(child2) == 1 &&
+                                GetFirstChild(child1) == GetFirstChild(child2) && graph.getSuccessorCount(GetFirstChild(child1)) == 1 &&
                                 GetFirstChild(child1).getType() == currentNode.getType()) // Second case
                         {
                             CommitInfo child_of_childs = GetFirstChild(child1);
-                            CollapsedCommitInfo collapsed_nodes = new CollapsedCommitInfo(currentNode);
                             collapsed_nodes.AddCommitToCollapse(child1);
                             not_collapsed_set.remove(child1);
                             visited_set.add(child1);
@@ -984,20 +1000,30 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
                             collapsed_nodes.AddCommitToCollapse(child_of_childs);
                             not_collapsed_set.remove(child_of_childs);
                             visited_set.add(child_of_childs);
+                            collapsed_nodes.SetAncestor(GetFirstParent(currentNode));
+                            collapsed_nodes.incrementParents();
                             collapses.add(collapsed_nodes);
-                            edges.add(new CommitRelationship(GetFirstParent(currentNode), collapsed_nodes));
+                            
+                            edges.add(new CommitRelationship(GetFirstParent(currentNode), currentNode));
                             CommitInfo child_of_child_of_childs = GetFirstChild(child_of_childs);
-                            edges.add(new CommitRelationship(collapsed_nodes, child_of_child_of_childs));
+                            edges.add(new CommitRelationship(currentNode, child_of_child_of_childs));
+                            collapsed_nodes.SetDescendant(GetFirstChild(child_of_child_of_childs));
+                            collapsed_nodes.incrementChildren();
+                            
+                            node_collapse_dict.put(currentNode, collapsed_nodes);
+                            node_collapse_dict.put(child1, collapsed_nodes);
+                            node_collapse_dict.put(child2, collapsed_nodes);
+                            node_collapse_dict.put(child_of_childs, collapsed_nodes);
                         }
+                        else {not_collapsed_set.add(currentNode);}
                     }
+                    else {not_collapsed_set.add(currentNode);}
                 }
                 else {not_collapsed_set.add(currentNode);}
+                
+                visited_set.add(currentNode);
             }
-            else
-            {
-                if(!visited_set.contains(currentNode)) not_collapsed_set.add(currentNode);
-            }
-            visited_set.add(currentNode);
+            
         }
         
         for (CommitInfo commitInfo : not_collapsed_set)
@@ -1010,7 +1036,25 @@ public class CommitHistoryWindow extends javax.swing.JFrame {
         }
         for (CommitRelationship commitRelationship : edges)
         {
-            new_graph.addEdge(commitRelationship, commitRelationship.getChild(), commitRelationship.getParent());
+            CommitInfo child = commitRelationship.getChild();
+            CommitInfo parent = commitRelationship.getParent();
+            if(!not_collapsed_set.contains(child) && not_collapsed_set.contains(parent))
+            {
+                CollapsedCommitInfo c = node_collapse_dict.get(child);
+                new_graph.addEdge(new CommitRelationship(parent, c), c, parent);
+            }
+            else if(not_collapsed_set.contains(child) && !not_collapsed_set.contains(parent))
+            {
+                CollapsedCommitInfo p = node_collapse_dict.get(parent);
+                new_graph.addEdge(new CommitRelationship(p, child), child, p);
+            }
+            else if(!not_collapsed_set.contains(child) && !not_collapsed_set.contains(parent))
+            {
+                CollapsedCommitInfo c = node_collapse_dict.get(child);
+                CollapsedCommitInfo p = node_collapse_dict.get(parent);
+                if(new_graph.findEdge(c, p) == null)
+                    new_graph.addEdge(new CommitRelationship(p, c), c, p);
+            }
         }
         for (Object commitRel : graph.getEdges())
         {

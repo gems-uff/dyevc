@@ -6,6 +6,7 @@
 package br.uff.ic.dyevc.model;
 
 import java.util.HashSet;
+import java.util.Set;
 import javafx.scene.chart.PieChart;
 
 /**
@@ -26,6 +27,10 @@ public class CollapsedCommitInfo extends CommitInfo
         this.type = ci.type;
         this.commitDate = ci.commitDate;
         commits.add(ci);
+    }
+    
+    public HashSet<CommitInfo> getCollapsedCommits() {
+        return commits;
     }
     
     public void SetDescendant(CommitInfo ci)

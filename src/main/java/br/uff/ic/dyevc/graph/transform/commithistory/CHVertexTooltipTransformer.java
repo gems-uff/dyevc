@@ -60,7 +60,7 @@ public class CHVertexTooltipTransformer implements Transformer<Object, String> {
         
         if ((o instanceof CollapsedCommitInfo)) {
             CollapsedCommitInfo ccs = (CollapsedCommitInfo)o;
-            details.append("<html>This is a node representing a linear chain of commits which groups a total of ");
+            details.append("<html>This is a node representing a collapse of commits which groups a total of ");
             details.append("<b>" + Integer.toString(ccs.NumberOfCollapsedNodes()) + "</b> nodes.<br><br>");
             details.append("<b>Older</b> commit in the set: <br>");
             details.append("<b>Commit id: </b>").append(ccs.GetDescendant().getHash()).append("<br>");
