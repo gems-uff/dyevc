@@ -35,7 +35,7 @@ DyeVC does not need to be formally installed. As it uses [Java Web Start technol
 * [Java Web Start](http://docs.oracle.com/javase/6/docs/technotes/guides/javaws/)
 * [JUNG](http://jung.sourceforge.net/)
 * [JGit](http://www.eclipse.org/jgit/)
-* [Mongolab](https://mongolab.com/welcome/)
+* [Mongolab](https://mlab.com/)
 
 # Information Gathering
 
