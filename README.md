@@ -1,4 +1,4 @@
-#About
+# About
 
 Dye over Version Control (DyeVC) is an analogy to the usage of dye over cells to visualize the mitosis process. This way, we aim at visualizing how clones of Distributed Version Control Systems (DVCS) evolve and at supporting users on controlling this evolution.
 
@@ -8,35 +8,36 @@ This project was proposed by professor **Leonardo Murta** and first version was 
 
 This is one the several research projects conducted by the **Software Maintenance and Evolution Group - GEMS** (Acronym taken from the Portuguese group name: Grupo de Evolução e Manutenção de Sofware). For more information regarding this and other research projects conducted by the group, refer to the [GEMS website](http://gems.ic.uff.br/).
 
-#Team
+# Team
 
 * Leonardo Gresta Paulino Murta (joined in Aug 2012)
 * Cristiano Cesario (joined in Aug 2012)
+* Ruben Interian (joined in Nov 2016)
 
-#Download
+# Download
 
 DyeVC does not need to be formally installed. As it uses [Java Web Start technology](http://docs.oracle.com/javase/6/docs/technotes/guides/javaws/), all you have to do is point your browser to [this link](http://www.ic.uff.br/~ccesario/DyeVC/DyeVC.jnlp) or click the button below and the application will automatically download and execute, creating a shortcut in your computer to ease future access.
 
 [![Launch DyeVC](https://raw.githubusercontent.com/gems-uff/dyevc/master/src/main/resources/LaunchDyeVCButton.png)](http://www.ic.uff.br/~ccesario/DyeVC/DyeVC.jnlp)
 
-#Documentation
+# Documentation
 
 * [Article presented at the 1st Brazilian Workshop on Software Visualization, Evolution and Maintenance](http://www.ic.uff.br/~ccesario/DyeVC_VEM2013.pdf)
 * [Wiki](https://github.com/gems-uff/dyevc/wiki)
 
-#Development
+# Development
 
 * [Source Code](https://github.com/gems-uff/dyevc)
 * [Issue Tracking](https://github.com/gems-uff/dyevc/issues)
 
-#Technologies
+# Technologies
 
 * [Java Web Start](http://docs.oracle.com/javase/6/docs/technotes/guides/javaws/)
 * [JUNG](http://jung.sourceforge.net/)
 * [JGit](http://www.eclipse.org/jgit/)
 * [Mongolab](https://mongolab.com/welcome/)
 
-#Information Gathering
+# Information Gathering
 
 DyeVC collects non-private information to be used solely for experimental purposes. No file contents are collected nor analyzed by the application. The following is a list of the information collected.
 
@@ -51,7 +52,7 @@ DyeVC collects non-private information to be used solely for experimental purpos
     * Commit predecessors (parents).
     * Commit message.
 
-#License
+# License
 
 Copyright (c) 2013 Universidade Federal Fluminense (UFF)  
   
