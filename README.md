@@ -24,7 +24,7 @@ DyeVC does not need to be formally installed. As it uses [Java Web Start technol
 
 * [Article presented at the 1st Brazilian Workshop on Software Visualization, Evolution and Maintenance](http://www.ic.uff.br/~ccesario/DyeVC_VEM2013.pdf)
 * [Wiki](https://github.com/gems-uff/dyevc/wiki)
-* [Article presented at the XXX Brazilian Software Engineering Symposium (SBES)](http://dl.acm.org.ez24.periodicos.capes.gov.br/citation.cfm?id=2973854)
+* [Article presented at the XXX Brazilian Software Engineering Symposium (SBES)](docs/acm_sbes2016.pdf)
 * [Master's Thesis - Awareness over Distributed Repositories](docs/dissertation.pdf)
 # Development
 
